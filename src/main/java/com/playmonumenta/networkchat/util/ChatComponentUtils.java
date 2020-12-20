@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat.util;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.JsonArray;
@@ -87,7 +88,7 @@ public interface ChatComponentUtils {
 				}
 				rawJsonText.add("with", withJson);
 			}
-		}
+		} // TODO Error if not instanceof these from an updated version with the other raw json text types?
 
 		String insertion = component.getInsertion();
 		if (insertion != null && !insertion.isEmpty()) {
@@ -97,8 +98,8 @@ public interface ChatComponentUtils {
 		ClickEvent clickEvent = component.getClickEvent();
 		if (clickEvent != null) {
 			JsonObject clickJson = new JsonObject();
-			clickJson.add("action", clickEvent.getAction());
-			clickJson.add("value", clickEvent.getValue());
+			clickJson.addProperty("action", clickEvent.getAction().toString().toLowerCase());
+			clickJson.addProperty("value", clickEvent.getValue());
 			rawJsonText.add("clickEvent", clickJson);
 		}
 		
@@ -106,25 +107,74 @@ public interface ChatComponentUtils {
 		if (hoverEvent != null) {
 			JsonObject hoverJson = new JsonObject();
 			HoverEvent.Action action = hoverEvent.getAction();
-			hoverJson.add("action", action.toString().toLowerCase());
+			hoverJson.addProperty("action", action.toString().toLowerCase());
 
 			List<Content> contents = hoverEvent.getContents();
-			JsonElement hoverActionJson;
 			switch (action) {
-			case HoverEvent.Action.SHOW_ENTITY:
-				// TODO
-				hoverJson.add("contents", hoverActionJson);
+			case SHOW_ENTITY:
+				JsonObject showEntityObj = new JsonObject();
+				Entity entity = (Entity) contents.get(0);
+
+				String entityId = entity.getId();
+				if (entityId != null && !entityId.isEmpty()) {
+					showEntityObj.addProperty("id", entityId);
+				}
+
+				String entityType = entity.getType();
+				if (entityType != null && !entityType.isEmpty()) {
+					showEntityObj.addProperty("type", entityType);
+				}
+
+				BaseComponent entityName = entity.getName();
+				JsonElement entityNameJson = toJson(entityName);
+				if (entityNameJson != null) {
+					showEntityObj.add("name", entityNameJson);
+				}
+
+				hoverJson.add("contents", showEntityObj);
 				break;
-			case HoverEvent.Action.SHOW_ITEM:
-				// TODO
-				hoverJson.add("contents", hoverActionJson);
+			case SHOW_ITEM:
+				Item item = (Item) contents.get(0);
+				JsonObject itemJson = new JsonObject();
+
+				itemJson.addProperty("id", item.getId());
+
+				int itemCount = item.getCount();
+				if (itemCount > 1) {
+					itemJson.addProperty("count", itemCount);
+				}
+
+				if (item.getTag() != null && item.getTag().getNbt() != null) {
+					itemJson.addProperty("tag", item.getTag().getNbt());
+				}
+
+				hoverJson.add("contents", itemJson);
 				break;
-			case HoverEvent.Action.SHOW_TEXT:
-				// TODO
-				hoverJson.add("contents", hoverActionJson);
+			case SHOW_TEXT:
+				JsonArray hoverTextJson = new JsonArray();
+
+				for (Content content : contents) {
+					Text hoverTextPart = (Text) content;
+					if (hoverTextPart == null) {
+						// TODO Error?
+						continue;
+					}
+
+					if (hoverTextPart.getValue() instanceof BaseComponent) {
+						JsonElement hoverTextPartJson = toJson((BaseComponent) (hoverTextPart.getValue()));
+						hoverTextJson.add(hoverTextPartJson);
+					} else if (hoverTextPart.getValue() instanceof String) {
+						hoverTextJson.add((String) (hoverTextPart.getValue()));
+					} else {
+						// TODO Error?
+						continue;
+					}
+				}
+
+				hoverJson.add("contents", hoverTextJson);
 				break;
+			// TODO Default error/not implemented?
 			}
-			contents
 
 			rawJsonText.add("hoverEvent", hoverJson);
 		}
