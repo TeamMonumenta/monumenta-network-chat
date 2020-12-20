@@ -6,7 +6,6 @@ import java.util.List;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonPrimitive;
 
 import net.md_5.bungee.api.ChatColor;
@@ -23,7 +22,7 @@ import net.md_5.bungee.api.chat.hover.content.Entity;
 import net.md_5.bungee.api.chat.hover.content.Item;
 import net.md_5.bungee.api.chat.hover.content.Text;
 
-public interface ChatComponentUtils {
+public class ChatComponentUtils {
 	public static JsonElement toJson(BaseComponent component) {
 		if (component == null) {
 			return null;
@@ -173,7 +172,9 @@ public interface ChatComponentUtils {
 
 				hoverJson.add("contents", hoverTextJson);
 				break;
-			// TODO Default error/not implemented?
+			default:
+				// TODO Default error/not implemented?
+				break;
 			}
 
 			rawJsonText.add("hoverEvent", hoverJson);

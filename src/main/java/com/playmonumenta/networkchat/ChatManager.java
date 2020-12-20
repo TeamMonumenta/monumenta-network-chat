@@ -3,10 +3,7 @@ package com.playmonumenta.networkchat;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 
 import org.bukkit.entity.Player;
@@ -49,6 +46,8 @@ public class ChatManager implements Listener {
 				return;
 			}
 			// TODO
+			break;
+		default:
 			break;
 		}
 	}
