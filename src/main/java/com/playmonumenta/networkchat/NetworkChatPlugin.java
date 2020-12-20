@@ -33,16 +33,12 @@ public class NetworkChatPlugin extends JavaPlugin {
 		}
 
 		/* Load the config file & parse it */
-		boolean joinMessagesEnabled = true;
-
 		YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
-		if (!config.isBoolean("join_messages_enabled")) {
-			joinMessagesEnabled = config.getBoolean("join_messages_enabled");
-		}
+		boolean joinMessagesEnabled = config.getBoolean("join-messages-enabled", true);
 
 		/* Echo config */
-		getLogger().info("join_messages_enabled=" + joinMessagesEnabled);
+		getLogger().info("join-messages-enabled=" + joinMessagesEnabled);
 
 		getServer().getPluginManager().registerEvents(new ChatListener(joinMessagesEnabled), this);
 	}
