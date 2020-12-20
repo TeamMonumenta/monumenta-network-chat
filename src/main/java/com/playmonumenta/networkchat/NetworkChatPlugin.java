@@ -45,6 +45,7 @@ public class NetworkChatPlugin extends JavaPlugin {
 		getLogger().info("join_messages_enabled=" + joinMessagesEnabled);
 
 		getServer().getPluginManager().registerEvents(new ChatListener(joinMessagesEnabled), this);
+		getServer().getPluginManager().registerEvents(new RedisDataListener(this), this);
 	}
 
 	@Override
