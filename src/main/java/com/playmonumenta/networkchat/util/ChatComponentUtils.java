@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat.util;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.ItemTag;
 import net.md_5.bungee.api.chat.KeybindComponent;
 import net.md_5.bungee.api.chat.ScoreComponent;
 import net.md_5.bungee.api.chat.SelectorComponent;
@@ -23,6 +25,217 @@ import net.md_5.bungee.api.chat.hover.content.Item;
 import net.md_5.bungee.api.chat.hover.content.Text;
 
 public class ChatComponentUtils {
+	public static BaseComponent[] fromJson(JsonElement rawJsonText) throws Exception {
+		if (rawJsonText == null) {
+			throw new Exception("RawJsonText is null.");
+		}
+
+		if (rawJsonText.isJsonPrimitive()) {
+			BaseComponent[] primitiveResult = new BaseComponent[1];
+			primitiveResult[0] = new TextComponent(rawJsonText.getAsJsonPrimitive().getAsString());
+			return primitiveResult;
+
+		} else if (rawJsonText.isJsonArray()) {
+			JsonArray rawJsonComponents = rawJsonText.getAsJsonArray();
+			List<BaseComponent> components = new ArrayList<BaseComponent>();
+			for (JsonElement componentJson : rawJsonComponents) {
+				BaseComponent[] parsedComponentParts = fromJson(componentJson);
+				if (parsedComponentParts.length == 0) {
+					throw new Exception("RawJsonText array has length of 0.");
+				}
+
+				BaseComponent component;
+				if (parsedComponentParts.length == 1) {
+					component = parsedComponentParts[0];
+				} else {
+					component = new TextComponent("");
+					component.setExtra(Arrays.asList(parsedComponentParts));
+				}
+				components.add(component);
+			}
+			return components.toArray(new BaseComponent[0]);
+
+		} else if (rawJsonText.isJsonObject()) {
+			JsonObject rawJsonTextObj = rawJsonText.getAsJsonObject();
+			BaseComponent rootComponent;
+
+			// Handle the different component types.
+			if (rawJsonTextObj.has("text")) {
+				String textValue = rawJsonTextObj.getAsJsonPrimitive("text").getAsString();
+				rootComponent = new TextComponent(textValue);
+
+			} else if (rawJsonTextObj.has("translate")) {
+				String translateValue = rawJsonTextObj.getAsJsonPrimitive("translate").getAsString();
+
+				List<BaseComponent> withValuesList = new ArrayList<BaseComponent>();
+				JsonArray withJsonArray = rawJsonTextObj.getAsJsonArray("with");
+				if (withJsonArray != null) {
+					for (JsonElement withSlotJson : withJsonArray) {
+						BaseComponent[] withSlotParts = fromJson(withSlotJson);
+						TextComponent withSlot = new TextComponent("");
+						withSlot.setExtra(Arrays.asList(withSlotParts));
+						withValuesList.add(withSlot);
+					}
+				}
+				BaseComponent[] withValues = withValuesList.toArray(new BaseComponent[0]);
+
+				rootComponent = new TranslatableComponent(translateValue, withValues);
+
+			} else if (rawJsonTextObj.has("score")) {
+				JsonObject scoreJson = rawJsonTextObj.getAsJsonObject("score");
+				String scoreName = scoreJson.getAsJsonPrimitive("name").getAsString();
+				String scoreObjective = scoreJson.getAsJsonPrimitive("objective").getAsString();
+				String scoreValue = scoreJson.getAsJsonPrimitive("value").getAsString();
+
+				if (scoreValue == null) {
+					rootComponent = new ScoreComponent(scoreName, scoreObjective);
+				} else {
+					rootComponent = new ScoreComponent(scoreName, scoreObjective, scoreValue);
+				}
+
+			} else if (rawJsonTextObj.has("selector")) {
+				String selectorValue = rawJsonTextObj.getAsJsonPrimitive("selector").getAsString();
+				rootComponent = new SelectorComponent(selectorValue);
+
+			} else if (rawJsonTextObj.has("keybind")) {
+				String keybindValue = rawJsonTextObj.getAsJsonPrimitive("keybind").getAsString();
+				rootComponent = new KeybindComponent(keybindValue);
+
+			} else if (rawJsonTextObj.has("nbt")) {
+				throw new Exception("NbtComponent was not available at the time this plugin was created, sorry!");
+
+			} else {
+				throw new Exception("Unknown RawJsonText component type.");
+			}
+
+			if (rawJsonTextObj.has("bold")) {
+				rootComponent.setBold(rawJsonTextObj.getAsJsonPrimitive("bold").getAsBoolean());
+			}
+			if (rawJsonTextObj.has("italic")) {
+				rootComponent.setItalic(rawJsonTextObj.getAsJsonPrimitive("italic").getAsBoolean());
+			}
+			if (rawJsonTextObj.has("underlined")) {
+				rootComponent.setUnderlined(rawJsonTextObj.getAsJsonPrimitive("underlined").getAsBoolean());
+			}
+			if (rawJsonTextObj.has("strikethrough")) {
+				rootComponent.setStrikethrough(rawJsonTextObj.getAsJsonPrimitive("strikethrough").getAsBoolean());
+			}
+			if (rawJsonTextObj.has("obfuscated")) {
+				rootComponent.setStrikethrough(rawJsonTextObj.getAsJsonPrimitive("obfuscated").getAsBoolean());
+			}
+
+			if (rawJsonTextObj.has("color")) {
+				String colorString = rawJsonTextObj.getAsJsonPrimitive("color").getAsString();
+				// If errors occur on ChatColor.of("#RRGGBB"), more advanced parsing is required.
+				rootComponent.setColor(ChatColor.of(colorString));
+			}
+
+			if (rawJsonTextObj.has("insertion")) {
+				String insertionString = rawJsonTextObj.getAsJsonPrimitive("insertion").getAsString();
+				rootComponent.setInsertion(insertionString);
+			}
+
+			if (rawJsonTextObj.has("clickEvent")) {
+				JsonObject clickEventJson = rawJsonTextObj.getAsJsonObject("clickEvent");
+				ClickEvent.Action clickAction = ClickEvent.Action.valueOf(clickEventJson.getAsJsonPrimitive("action").getAsString().toUpperCase());
+				String clickValue = clickEventJson.getAsJsonPrimitive("value").getAsString();
+				ClickEvent clickEvent = new ClickEvent(clickAction, clickValue);
+				rootComponent.setClickEvent(clickEvent);
+			}
+
+			if (rawJsonTextObj.has("hoverEvent")) {
+				JsonObject hoverEventJson = rawJsonTextObj.getAsJsonObject("hoverEvent");
+				HoverEvent.Action hoverAction = HoverEvent.Action.valueOf(hoverEventJson.getAsJsonPrimitive("action").getAsString().toUpperCase());
+				List<Content> contents = new ArrayList<Content>();
+				if (hoverAction.equals(HoverEvent.Action.SHOW_ENTITY)) {
+					JsonObject shownEntityJson = hoverEventJson.getAsJsonObject("contents");
+					if (shownEntityJson == null) {
+						shownEntityJson = hoverEventJson.getAsJsonObject("value");
+					}
+
+					String shownEntityType = null;
+					String shownEntityId = "00000000-0000-0000-0000-000000000000";
+					BaseComponent shownEntityName = null;
+
+					JsonPrimitive shownEntityTypeJson = shownEntityJson.getAsJsonPrimitive("type");
+					if (shownEntityTypeJson != null) {
+						shownEntityType = shownEntityTypeJson.getAsString();
+					}
+
+					JsonElement shownEntityNameJson = shownEntityJson.get("name");
+					if (shownEntityNameJson != null) {
+						BaseComponent[] shownEntityNameComponents = fromJson(shownEntityNameJson);
+						if (shownEntityNameComponents.length == 1) {
+							shownEntityName = shownEntityNameComponents[0];
+						} else {
+							shownEntityName = new TextComponent("");
+							shownEntityName.setExtra(Arrays.asList(shownEntityNameComponents));
+						}
+					}
+
+					contents.add(new Entity(shownEntityType, shownEntityId, shownEntityName));
+
+				} else if (hoverAction.equals(HoverEvent.Action.SHOW_ITEM)) {
+					JsonObject shownItemContents = hoverEventJson.getAsJsonObject("contents");
+
+					String shownItemId = "minecraft:air";
+					int shownItemCount = 1;
+					String shownItemTagString = null;
+
+					if (shownItemContents != null) {
+						shownItemId = shownItemContents.getAsJsonPrimitive("id").getAsString();
+						JsonPrimitive shownItemCountJson = shownItemContents.getAsJsonPrimitive("count");
+						if (shownItemCountJson != null) {
+							shownItemCount = shownItemCountJson.getAsInt();
+						}
+						JsonPrimitive shownItemTagJson = shownItemContents.getAsJsonPrimitive("tag");
+						if (shownItemTagJson != null) {
+							shownItemTagString = shownItemTagJson.getAsString();
+						}
+					}/* else {
+						JsonPrimitive shownItemLegacyValue = hoverEventJson.getAsJsonPrimitive("value");
+						String shownItemSlotMojangson = shownItemLegacyValue.getAsString();
+						// TODO HERE
+					}*/
+
+					ItemTag shownItemTag = null;
+					if (shownItemTagString != null) {
+						shownItemTag = ItemTag.ofNbt(shownItemTagString);
+					}
+					contents.add(new Item(shownItemId, shownItemCount, shownItemTag));
+
+				} else if (hoverAction.equals(HoverEvent.Action.SHOW_TEXT)) {
+					JsonElement shownTextJson = hoverEventJson.get("contents");
+					if (shownTextJson == null) {
+						shownTextJson = hoverEventJson.get("value");
+					}
+					contents.add(new Text(fromJson(shownTextJson)));
+
+				} else {
+					throw new Exception("Unknown hoverEvent action" + hoverEventJson.getAsJsonPrimitive("action").getAsString() + ".");
+				}
+
+				HoverEvent hoverEvent = new HoverEvent(hoverAction, contents);
+				rootComponent.setHoverEvent(hoverEvent);
+			}
+
+			if (rawJsonTextObj.has("font")) {
+				rootComponent.setFont(rawJsonTextObj.getAsJsonPrimitive("font").getAsString());
+			}
+
+			if (rawJsonTextObj.has("extra")) {
+				rootComponent.setExtra(Arrays.asList(fromJson(rawJsonTextObj.get("extra"))));
+			}
+
+			BaseComponent[] components = new BaseComponent[1];
+			components[0] = rootComponent;
+			return components;
+
+		} else {
+			throw new Exception("Unsupported json element for RawJsonText.");
+		}
+	}
+
 	public static JsonElement toJson(BaseComponent component) {
 		if (component == null) {
 			return null;
@@ -53,7 +266,7 @@ public class ChatComponentUtils {
 			rawJsonText.addProperty("obfuscated", flag);
 		}
 		ChatColor color = component.getColorRaw();
-		if (flag != null) {
+		if (color != null) {
 			rawJsonText.addProperty("color", color.toString().toLowerCase());
 		}
 
@@ -87,7 +300,10 @@ public class ChatComponentUtils {
 				}
 				rawJsonText.add("with", withJson);
 			}
-		} // TODO Error if not instanceof these from an updated version with the other raw json text types?
+		} else {
+			// TODO Error if not instanceof these from an updated version with the other raw json text types?
+			return null;
+		}
 
 		String insertion = component.getInsertion();
 		if (insertion != null && !insertion.isEmpty()) {
@@ -143,7 +359,7 @@ public class ChatComponentUtils {
 					itemJson.addProperty("count", itemCount);
 				}
 
-				if (item.getTag() != null && item.getTag().getNbt() != null) {
+				if (item.getTag() != null && item.getTag().getNbt() != null && !item.getTag().getNbt().equals("{}")) {
 					itemJson.addProperty("tag", item.getTag().getNbt());
 				}
 
@@ -178,6 +394,11 @@ public class ChatComponentUtils {
 			}
 
 			rawJsonText.add("hoverEvent", hoverJson);
+		}
+
+		String font = component.getFontRaw();
+		if (font != null && !font.isEmpty()) {
+			rawJsonText.addProperty("font", font);
 		}
 
 		List<BaseComponent> extra = component.getExtra();
