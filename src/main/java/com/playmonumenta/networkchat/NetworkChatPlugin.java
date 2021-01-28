@@ -15,6 +15,7 @@ public class NetworkChatPlugin extends JavaPlugin {
 	@Override
 	public void onLoad() {
 		GlobalChatCommand.register(this);
+		ChatCommand.register();
 	}
 
 	@Override
