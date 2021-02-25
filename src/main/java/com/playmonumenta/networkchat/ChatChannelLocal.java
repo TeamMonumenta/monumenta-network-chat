@@ -54,6 +54,8 @@ public class ChatChannelLocal extends ChatChannelBase {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					// TODO Perms check
+
 					// Ignore [prefixArguments.size()] ID vs shorthand, they both mean the same thing.
 					ChatChannelLocal newChannel = new ChatChannelLocal((String)args[prefixArguments.size()-1]);
 					// Throws an exception if the channel already exists, failing the command.
@@ -99,8 +101,8 @@ public class ChatChannelLocal extends ChatChannelBase {
 	public void distributeMessage(ChatMessage message) {
 		// TODO Check permission to see the message.
 		ChatManager chatManager = ChatManager.getInstance();
-		for (Map.Entry<Player, PlayerChatState> playerStateEntry : ChatManager.getInstance().mPlayerStates.entrySet()) {
-			Player player = playerStateEntry.getKey();
+		for (Map.Entry<UUID, PlayerChatState> playerStateEntry : ChatManager.getInstance().getPlayerStates().entrySet()) {
+			UUID playerId = playerStateEntry.getKey();
 			PlayerChatState state = playerStateEntry.getValue();
 
 			if (state.isListening(this)) {

@@ -42,6 +42,18 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
+			arguments.add(new MultiLiteralArgument("delete"));
+			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChatManager.getChannelNames().toArray(new String[0]);
+			}));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return deleteChannel(sender, (String)args[1]);
+				})
+				.register();
+
+			arguments.clear();
 			arguments.add(new MultiLiteralArgument("say"));
 			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
 				return ChatManager.getChannelNames().toArray(new String[0]);
@@ -106,6 +118,14 @@ public class ChatCommand {
 		return 1;
 	}
 
+	private static int deleteChannel(CommandSender sender, String channelId) throws WrapperCommandSyntaxException {
+		// TODO Perms check
+
+		// May call CommandAPI.fail()
+		ChatManager.deleteChannel(channelId);
+		return 1;
+	}
+
 	private static int joinChannel(CommandSender sender, String channelId) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
@@ -150,7 +170,7 @@ public class ChatCommand {
 
 	private static int sendMessage(CommandSender sender, String channelId, String message) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (sender != callee && callee instanceof Player) {
+		if (callee instanceof Player && sender != callee) {
 			CommandAPI.fail("Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
 
@@ -159,7 +179,7 @@ public class ChatCommand {
 			CommandAPI.fail("No such channel " + channelId + ".");
 		}
 
-		boolean messageSent = channel.sendMessage(sender, message);
+		boolean messageSent = channel.sendMessage(callee, message);
 		return messageSent ? 1 : 0;
 	}
 
