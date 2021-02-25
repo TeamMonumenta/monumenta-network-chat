@@ -45,6 +45,7 @@ public class NetworkChatPlugin extends JavaPlugin {
 
 		mChatManager = ChatManager.getInstance(this);
 
+		getServer().getPluginManager().registerEvents(mChatManager, this);
 		getServer().getPluginManager().registerEvents(new ChatListener(joinMessagesEnabled), this);
 		getServer().getPluginManager().registerEvents(new RedisDataListener(this), this);
 	}

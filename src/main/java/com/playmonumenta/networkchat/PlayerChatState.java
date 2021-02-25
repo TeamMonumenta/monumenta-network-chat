@@ -4,20 +4,22 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.entity.Player;
 
+// TODO Track how many players are in a channel on this server/overall
 public class PlayerChatState {
 	// From vanilla client limits
 	public static final int MAX_DISPLAYED_MESSAGES = 100;
 
 	private Player mPlayer;
 	private boolean mChatPaused;
-	private ChatChannelBase mActiveChannel;
+	private UUID mActiveChannelId;
 
 	// Channels not in these sets will use the default channel watch status.
-	private Set<ChatChannelBase> mWatchedChannels;
-	private Set<ChatChannelBase> mUnwatchedChannels;
+	private Set<UUID> mWatchedChannelIds;
+	private Set<UUID> mUnwatchedChannelIds;
 
 	private List<ChatMessage> mSeenMessages;
 	private List<ChatMessage> mUnseenMessages;
@@ -26,8 +28,8 @@ public class PlayerChatState {
 		mPlayer = player;
 		mChatPaused = false;
 
-		mWatchedChannels = new HashSet<ChatChannelBase>();
-		mUnwatchedChannels = new HashSet<ChatChannelBase>();
+		mWatchedChannelIds = new HashSet<UUID>();
+		mUnwatchedChannelIds = new HashSet<UUID>();
 
 		// TODO Get default channel here
 		unsetActiveChannel();
@@ -40,6 +42,7 @@ public class PlayerChatState {
 		if (message.isDeleted()) {
 			return;
 		}
+		UUID channelId = message.getChannelUniqueId();
 
 		if (mChatPaused) {
 			if (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
@@ -90,39 +93,66 @@ public class PlayerChatState {
 
 	public void setActiveChannel(ChatChannelBase channel) {
 		joinChannel(channel);
-		mActiveChannel = channel;
+		mActiveChannelId = channel.getUniqueId();
 	}
 
 	public void unsetActiveChannel() {
 		// TODO Consider setting a default channel?
-		mActiveChannel = null;
+		mActiveChannelId = null;
 	}
 
 	public void joinChannel(ChatChannelBase channel) {
-		mWatchedChannels.add(channel);
-		mUnwatchedChannels.remove(channel);
-		if (mActiveChannel == null) {
-			mActiveChannel = channel;
+		UUID channelId = channel.getUniqueId();
+		mWatchedChannelIds.add(channelId);
+		mUnwatchedChannelIds.remove(channelId);
+		if (mActiveChannelId == null) {
+			mActiveChannelId = channelId;
 		}
 	}
 
 	public void leaveChannel(ChatChannelBase channel) {
-		if (channel == mActiveChannel) {
+		UUID channelId = channel.getUniqueId();
+		if (channelId == mActiveChannelId) {
 			unsetActiveChannel();
 		}
-		mWatchedChannels.remove(channel);
-		mUnwatchedChannels.add(channel);
+		mWatchedChannelIds.remove(channelId);
+		mUnwatchedChannelIds.add(channelId);
+	}
+
+	// For channel deletion
+	public void unregisterChannel(UUID channelId) {
+		if (channelId == mActiveChannelId) {
+			unsetActiveChannel();
+		}
+		mWatchedChannelIds.remove(channelId);
+		mUnwatchedChannelIds.remove(channelId);
+	}
+
+	public UUID getActiveChannelId() {
+		return mActiveChannelId;
 	}
 
 	public ChatChannelBase getActiveChannel() {
-		return mActiveChannel;
+		return ChatManager.getChannel(mActiveChannelId);
 	}
 
 	public boolean isListening(ChatChannelBase channel) {
-		return !mUnwatchedChannels.contains(channel);
+		UUID channelId = channel.getUniqueId();
+		if (mUnwatchedChannelIds.contains(channelId)) {
+			return false;
+		} else if (mWatchedChannelIds.contains(channelId)) {
+			return true;
+		} else {
+			// TODO Use channel's settings, NYI
+			return true;
+		}
 	}
 
 	public Set<ChatChannelBase> getMutedChannels() {
-		return new HashSet<ChatChannelBase>(mUnwatchedChannels);
+		Set<ChatChannelBase> channels = new HashSet<ChatChannelBase>();
+		for (UUID channelId : mUnwatchedChannelIds) {
+			channels.add(ChatManager.getChannel(channelId));
+		}
+		return channels;
 	}
 }

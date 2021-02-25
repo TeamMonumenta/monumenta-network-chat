@@ -4,14 +4,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
+
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 
 public class ChatManager implements Listener {
@@ -19,15 +25,13 @@ public class ChatManager implements Listener {
 
 	private static ChatManager INSTANCE = null;
 	private static Plugin mPlugin = null;
-	protected static Map<String, Map<String, ChatChannelBase>> mChannels = new HashMap<String, Map<String, ChatChannelBase>>();
-	protected static Map<Player, PlayerChatState> mPlayerStates = new HashMap<Player, PlayerChatState>();
+	protected static Map<UUID, ChatChannelBase> mChannels = new HashMap<>();
+	protected static Map<String, ChatChannelBase> mChannelsByName = new HashMap<>();
+	protected static Map<Player, PlayerChatState> mPlayerStates = new HashMap<>();
 
 	private ChatManager(Plugin plugin) {
 		INSTANCE = this;
 		mPlugin = plugin;
-
-		// Add empty map for each channel class
-		mChannels.put(ChatChannelLocal.getChannelClassId(), new HashMap<String, ChatChannelBase>());
 	}
 
 	public static ChatManager getInstance() {
@@ -41,56 +45,58 @@ public class ChatManager implements Listener {
 		return INSTANCE;
 	}
 
+	public static Map<Player, PlayerChatState> getPlayerStates() {
+		return mPlayerStates;
+	}
+
 	public static PlayerChatState getPlayerState(Player player) {
 		return mPlayerStates.get(player);
 	}
 
-	public static Set<String> getChannelClassIds() {
-		return new HashSet<String>(mChannels.keySet());
+	public static Set<String> getChannelNames() {
+		return new HashSet<>(mChannelsByName.keySet());
 	}
 
-	public static Set<String> getChannelIds(String channelClassId) {
-		Map<String, ChatChannelBase> channelMap = mChannels.get(channelClassId);
-
-		if (channelMap == null) {
-			return new HashSet<String>();
-		}
-		return channelMap.keySet();
-	}
-
-	public static void registerNewChannel(ChatChannelBase channel) {
+	public static void registerNewChannel(ChatChannelBase channel) throws WrapperCommandSyntaxException {
 		if (channel == null) {
 			return;
 		}
 
-		String channelClassId = channel.getChannelClassId();
-		Map<String, ChatChannelBase> channelMap = mChannels.get(channelClassId);
-		if (channelMap == null) {
-			// TODO Log this. This should never happen. It should be created above.
-			channelMap = new HashMap<>();
-			mChannels.put(channelClassId, channelMap);
-		}
-
-		String channelId = channel.getChannelId();
-		ChatChannelBase oldChannel = channelMap.get(channelId);
+		String channelName = channel.getName();
+		ChatChannelBase oldChannel = mChannelsByName.get(channelName);
 		if (oldChannel != null) {
-			// TODO Channel already exists! What now?
-			return;
+			CommandAPI.fail("Channel " + channelName + " already exists!");
 		}
-		channelMap.put(channelId, channel);
+		UUID uuid = channel.getUniqueId();
+		mChannels.put(uuid, channel);
+		mChannelsByName.put(channelName, channel);
 	}
 
-	public static ChatChannelBase getChannel(String channelClassId, String channelId) {
-		if (channelClassId == null || channelId == null) {
-			return null;
+	public static ChatChannelBase getChannel(UUID channelUuid) {
+		return mChannels.get(channelUuid);
+	}
+
+	public static ChatChannelBase getChannel(String channelName) {
+		return mChannelsByName.get(channelName);
+	}
+
+	public static void renameChannel(String oldName, String newName) throws WrapperCommandSyntaxException {
+		ChatChannelBase channel = mChannelsByName.get(oldName);
+		if (channel == null) {
+			CommandAPI.fail("Channel " + oldName + " does not exist!");
 		}
 
-		Map<String, ChatChannelBase> channelMap = mChannels.get(channelClassId);
-		if (channelMap == null) {
-			return null;
+		if (mChannelsByName.get(newName) != null) {
+			CommandAPI.fail("Channel " + newName + " already exists!");
 		}
 
-		return channelMap.get(channelId);
+		// NOTE: May call CommandAPI.fail to cancel the change before it occurs.
+		channel.setName(newName);
+
+		mChannelsByName.put(newName, channel);
+		mChannelsByName.remove(oldName);
+
+		// TODO Broadcast and save the change
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -107,5 +113,23 @@ public class ChatManager implements Listener {
 		default:
 			break;
 		}
+	}
+
+	@EventHandler(priority = EventPriority.LOW)
+	public void playerJoinEvent(PlayerJoinEvent event) throws Exception {
+		Player player = event.getPlayer();
+
+		// TODO Load player chat state, preferably before they log in.
+
+		mPlayerStates.put(player, new PlayerChatState(player));
+	}
+
+	@EventHandler(priority = EventPriority.LOW)
+	public void playerQuitEvent(PlayerQuitEvent event) throws Exception {
+		Player player = event.getPlayer();
+
+		// TODO Save player chat state
+
+		mPlayerStates.remove(player);
 	}
 }

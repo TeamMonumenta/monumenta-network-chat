@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import java.util.List;
+import java.util.UUID;
 
 import com.google.gson.JsonObject;
 
@@ -8,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 public abstract class ChatChannelBase {
 	public static ChatChannelBase fromJson(JsonObject channelJson) throws Exception {
@@ -21,27 +23,30 @@ public abstract class ChatChannelBase {
 	}
 
 	// DEFINE ME - Load a channel from json, allowing messages in that channel to be received
-	//public static ChatChannelClassHere fromJsonInternal(JsonObject channelJson) throws Exception;
+	//protected static ChatChannelClassHere fromJsonInternal(JsonObject channelJson) throws Exception;
 
 	public abstract JsonObject toJson();
 
 	// OVERRIDE ME - Register commands for new channels; continues off an existing argument list of literals.
+	// Channel ID is at index = prefixArguments.size() - 1
 	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
 		;
 	}
 
 	// OVERRIDE ME - Return an identifier for this channel class.
-	public static String getChannelClassId() {
+	public static String getClassId() {
 		return null;
 	}
 
-	// OVERRIDE ME - Return a shorthand identifier for this channel class.
-	public static String getChannelClassShorthand() {
-		return null;
-	}
+	// Return this channel's UUID
+	public abstract UUID getUniqueId();
 
-	// Return an identifier for this channel within its class.
-	public abstract String getChannelId();
+	// Set this channel's name (MUST ONLY be called from ChatManager).
+	// May call CommandAPI.fail() to cancel, ie for direct messages or insufficient permissions.
+	protected abstract void setName(String name) throws WrapperCommandSyntaxException;
+
+	// Return this channel's name
+	public abstract String getName();
 
 	// Check for access, then send a message to the network.
 	// This broadcasts the message without displaying for network messages.
