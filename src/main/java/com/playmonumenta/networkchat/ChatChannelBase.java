@@ -52,7 +52,7 @@ public abstract class ChatChannelBase {
 	// This broadcasts the message without displaying for network messages.
 	public abstract boolean sendMessage(CommandSender sender, String message);
 
-	// Distributes a message to the appropriate player chat states. May be local or remote messages.
+	// Distributes a received message to the appropriate player chat states. May be local or remote messages.
 	// Note that the message may not be displayed right away if the player has paused their chat.
 	public abstract void distributeMessage(ChatMessage message);
 

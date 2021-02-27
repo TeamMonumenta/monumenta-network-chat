@@ -6,11 +6,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.entity.Player;
 
+import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
@@ -21,15 +23,18 @@ public class ChatChannelLocal extends ChatChannelBase {
 	public static final String CHANNEL_CLASS_ID = "local";
 
 	private UUID mUUID;
+	private String mShardName;
 	private String mName;
 
-	private ChatChannelLocal(UUID uuid, String name) {
+	private ChatChannelLocal(UUID uuid, String shardName, String name) {
 		mUUID = uuid;
+		mShardName = shardName;
 		mName = name;
 	}
 
-	public ChatChannelLocal(String name) {
+	public ChatChannelLocal(String name) throws Exception {
 		mUUID = UUID.randomUUID();
+		mShardName = NetworkRelayAPI.getShardName();
 		mName = name;
 	}
 
@@ -40,8 +45,9 @@ public class ChatChannelLocal extends ChatChannelBase {
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID uuid = UUID.fromString(uuidString);
+		String shardName = channelJson.getAsJsonPrimitive("shardName").getAsString();
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
-		return new ChatChannelLocal(uuid, name);
+		return new ChatChannelLocal(uuid, shardName, name);
 	}
 
 	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
@@ -54,10 +60,16 @@ public class ChatChannelLocal extends ChatChannelBase {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					String channelName = (String)args[prefixArguments.size()-1];
+					ChatChannelLocal newChannel = null;
 					// TODO Perms check
 
 					// Ignore [prefixArguments.size()] ID vs shorthand, they both mean the same thing.
-					ChatChannelLocal newChannel = new ChatChannelLocal((String)args[prefixArguments.size()-1]);
+					try {
+						newChannel = new ChatChannelLocal(channelName);
+					} catch (Exception e) {
+						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChatManager.registerNewChannel(newChannel);
 				})
@@ -69,6 +81,7 @@ public class ChatChannelLocal extends ChatChannelBase {
 		JsonObject result = new JsonObject();
 		result.addProperty("type", CHANNEL_CLASS_ID);
 		result.addProperty("uuid", mUUID.toString());
+		result.addProperty("shardName", mShardName);
 		result.addProperty("name", mName);
 		return result;
 	}
@@ -92,7 +105,7 @@ public class ChatChannelLocal extends ChatChannelBase {
 	public boolean sendMessage(CommandSender sender, String message) {
 		// TODO Add permission check for local chat.
 		ChatMessage chatMessage = new ChatMessage(this, sender, message);
-		// TODO Broadcast for logging purposes.
+		// TODO Broadcast for logging purposes, then distribute when the message returns.
 		distributeMessage(chatMessage);
 
 		return true;
@@ -100,6 +113,16 @@ public class ChatChannelLocal extends ChatChannelBase {
 
 	public void distributeMessage(ChatMessage message) {
 		// TODO Check permission to see the message.
+		ChatChannelBase messageChannel = message.getChannel();
+		try {
+			if (!(messageChannel instanceof ChatChannelLocal) ||
+				!(((ChatChannelLocal) messageChannel).mShardName.equals(NetworkRelayAPI.getShardName()))) {
+				return;
+			}
+		} catch (Exception e) {
+			// Not connected to RabbitMQ - if this happens, this function doesn't get called anyways.
+			return;
+		}
 		ChatManager chatManager = ChatManager.getInstance();
 		for (Map.Entry<UUID, PlayerChatState> playerStateEntry : ChatManager.getInstance().getPlayerStates().entrySet()) {
 			UUID playerId = playerStateEntry.getKey();
