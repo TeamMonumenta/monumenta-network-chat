@@ -11,19 +11,19 @@ import org.bukkit.entity.Player;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
-public abstract class ChatChannelBase {
-	public static ChatChannelBase fromJson(JsonObject channelJson) throws Exception {
+public abstract class ChannelBase {
+	public static ChannelBase fromJson(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 
-		if (channelClassId.equals(ChatChannelLocal.CHANNEL_CLASS_ID)) {
-			return ChatChannelLocal.fromJsonInternal(channelJson);
+		if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
+			return ChannelLocal.fromJsonInternal(channelJson);
 		} else {
 			throw new Exception("No such chat channel class ID " + channelClassId);
 		}
 	}
 
 	// DEFINE ME - Load a channel from json, allowing messages in that channel to be received
-	//protected static ChatChannelClassHere fromJsonInternal(JsonObject channelJson) throws Exception;
+	//protected static ChannelBase fromJsonInternal(JsonObject channelJson) throws Exception;
 
 	public abstract JsonObject toJson();
 
@@ -41,7 +41,7 @@ public abstract class ChatChannelBase {
 	// Return this channel's UUID
 	public abstract UUID getUniqueId();
 
-	// Set this channel's name (MUST ONLY be called from ChatManager).
+	// Set this channel's name (MUST ONLY be called from ChannelManager).
 	// May call CommandAPI.fail() to cancel, ie for direct messages or insufficient permissions.
 	protected abstract void setName(String name) throws WrapperCommandSyntaxException;
 
@@ -50,12 +50,12 @@ public abstract class ChatChannelBase {
 
 	// Check for access, then send a message to the network.
 	// This broadcasts the message without displaying for network messages.
-	public abstract boolean sendMessage(CommandSender sender, String message);
+	public abstract void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException;
 
-	// Distributes a received message to the appropriate player chat states. May be local or remote messages.
+	// Distributes a received message to the appropriate local player chat states. May be local or remote messages.
 	// Note that the message may not be displayed right away if the player has paused their chat.
-	public abstract void distributeMessage(ChatMessage message);
+	public abstract void distributeMessage(Message message);
 
-	// Show a message to a player; must be called from ChatMessage via PlayerChatState, not directly.
-	protected abstract void showMessage(CommandSender recipient, ChatMessage message);
+	// Show a message to a player; must be called from Message via PlayerState, not directly.
+	protected abstract void showMessage(CommandSender recipient, Message message);
 }

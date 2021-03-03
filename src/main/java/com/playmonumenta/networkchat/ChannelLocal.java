@@ -19,35 +19,36 @@ import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
-public class ChatChannelLocal extends ChatChannelBase {
+// A channel visible only to this shard (and moderators who opt in from elsewhere)
+public class ChannelLocal extends ChannelBase {
 	public static final String CHANNEL_CLASS_ID = "local";
 
 	private UUID mUUID;
 	private String mShardName;
 	private String mName;
 
-	private ChatChannelLocal(UUID uuid, String shardName, String name) {
+	private ChannelLocal(UUID uuid, String shardName, String name) {
 		mUUID = uuid;
 		mShardName = shardName;
 		mName = name;
 	}
 
-	public ChatChannelLocal(String name) throws Exception {
+	public ChannelLocal(String name) throws Exception {
 		mUUID = UUID.randomUUID();
 		mShardName = NetworkRelayAPI.getShardName();
 		mName = name;
 	}
 
-	protected static ChatChannelLocal fromJsonInternal(JsonObject channelJson) throws Exception {
+	protected static ChannelBase fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
-			throw new Exception("Cannot create ChatChannelLocal from channel ID " + channelClassId);
+			throw new Exception("Cannot create ChannelLocal from channel ID " + channelClassId);
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID uuid = UUID.fromString(uuidString);
 		String shardName = channelJson.getAsJsonPrimitive("shardName").getAsString();
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
-		return new ChatChannelLocal(uuid, shardName, name);
+		return new ChannelLocal(uuid, shardName, name);
 	}
 
 	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
@@ -61,17 +62,17 @@ public class ChatChannelLocal extends ChatChannelBase {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size()-1];
-					ChatChannelLocal newChannel = null;
+					ChannelLocal newChannel = null;
 					// TODO Perms check
 
 					// Ignore [prefixArguments.size()] ID vs shorthand, they both mean the same thing.
 					try {
-						newChannel = new ChatChannelLocal(channelName);
+						newChannel = new ChannelLocal(channelName);
 					} catch (Exception e) {
 						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
-					ChatManager.registerNewChannel(newChannel);
+					ChannelManager.registerNewChannel(newChannel);
 				})
 				.register();
 		}
@@ -94,6 +95,10 @@ public class ChatChannelLocal extends ChatChannelBase {
 		return mUUID;
 	}
 
+	public String getShardName() {
+		return mShardName;
+	}
+
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		mName = name;
 	}
@@ -102,31 +107,28 @@ public class ChatChannelLocal extends ChatChannelBase {
 		return mName;
 	}
 
-	public boolean sendMessage(CommandSender sender, String message) {
+	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
 		// TODO Add permission check for local chat.
-		ChatMessage chatMessage = new ChatMessage(this, sender, message);
+		Message Message = new Message(this, sender, message);
 		// TODO Broadcast for logging purposes, then distribute when the message returns.
-		distributeMessage(chatMessage);
-
-		return true;
+		distributeMessage(Message);
 	}
 
-	public void distributeMessage(ChatMessage message) {
+	public void distributeMessage(Message message) {
 		// TODO Check permission to see the message.
-		ChatChannelBase messageChannel = message.getChannel();
+		ChannelBase messageChannel = message.getChannel();
 		try {
-			if (!(messageChannel instanceof ChatChannelLocal) ||
-				!(((ChatChannelLocal) messageChannel).mShardName.equals(NetworkRelayAPI.getShardName()))) {
+			if (!(messageChannel instanceof ChannelLocal) ||
+				!(((ChannelLocal) messageChannel).mShardName.equals(NetworkRelayAPI.getShardName()))) {
 				return;
 			}
 		} catch (Exception e) {
 			// Not connected to RabbitMQ - if this happens, this function doesn't get called anyways.
 			return;
 		}
-		ChatManager chatManager = ChatManager.getInstance();
-		for (Map.Entry<UUID, PlayerChatState> playerStateEntry : ChatManager.getInstance().getPlayerStates().entrySet()) {
+		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			UUID playerId = playerStateEntry.getKey();
-			PlayerChatState state = playerStateEntry.getValue();
+			PlayerState state = playerStateEntry.getValue();
 
 			if (state.isListening(this)) {
 				state.receiveMessage(message);
@@ -134,7 +136,7 @@ public class ChatChannelLocal extends ChatChannelBase {
 		}
 	}
 
-	protected void showMessage(CommandSender recipient, ChatMessage message) {
+	protected void showMessage(CommandSender recipient, Message message) {
 		// TODO Use configurable formatting, not hard-coded formatting.
 		recipient.sendMessage("§7<§f" + mName + " (l)§7> §f" + message.getSender() + " §7»§f " + message.getMessage());
 	}

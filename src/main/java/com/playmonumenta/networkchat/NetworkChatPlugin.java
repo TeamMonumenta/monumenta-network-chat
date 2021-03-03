@@ -10,11 +10,12 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class NetworkChatPlugin extends JavaPlugin {
-	public ChatManager mChatManager = null;
+	public ChannelManager mChannelManager = null;
+	public MessageManager mMessageManager = null;
+	public PlayerStateManager mPlayerStateManager = null;
 
 	@Override
 	public void onLoad() {
-		GlobalChatCommand.register(this);
 		ChatCommand.register();
 	}
 
@@ -43,10 +44,12 @@ public class NetworkChatPlugin extends JavaPlugin {
 		/* Echo config */
 		getLogger().info("join-messages-enabled=" + joinMessagesEnabled);
 
-		mChatManager = ChatManager.getInstance(this);
+		mChannelManager = ChannelManager.getInstance(this);
+		mMessageManager = MessageManager.getInstance(this);
+		mPlayerStateManager = PlayerStateManager.getInstance(this);
 
-		getServer().getPluginManager().registerEvents(mChatManager, this);
-		//getServer().getPluginManager().registerEvents(new ChatListener(joinMessagesEnabled), this); // TODO Properly remove later
+		getServer().getPluginManager().registerEvents(mMessageManager, this);
+		getServer().getPluginManager().registerEvents(mPlayerStateManager, this);
 	}
 
 	@Override

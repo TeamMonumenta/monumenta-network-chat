@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.bukkit.command.CommandSender;
 
-public class ChatMessage {
+public class Message {
 	private final Instant mInstant;
 	private final UUID mChannelUuid;
 	private final String mSender;
@@ -13,7 +13,7 @@ public class ChatMessage {
 	private boolean mIsDeleted = false;
 
 	// Normally called through a channel
-	protected ChatMessage(ChatChannelBase channel, CommandSender sender, String message) {
+	protected Message(ChannelBase channel, CommandSender sender, String message) {
 		mInstant = Instant.now();
 		mChannelUuid = channel.getUniqueId();
 		mSender = sender.getName();
@@ -21,7 +21,7 @@ public class ChatMessage {
 	}
 
 	// For when receiving remote messages
-	private ChatMessage(Instant instant, UUID channelUuid, String sender, String message) {
+	private Message(Instant instant, UUID channelUuid, String sender, String message) {
 		mInstant = instant;
 		mChannelUuid = channelUuid;
 		mSender = sender;
@@ -36,8 +36,8 @@ public class ChatMessage {
 		return mChannelUuid;
 	}
 
-	public ChatChannelBase getChannel() {
-		return ChatManager.getChannel(mChannelUuid);
+	public ChannelBase getChannel() {
+		return ChannelManager.getChannel(mChannelUuid);
 	}
 
 	public String getSender() {
@@ -52,13 +52,13 @@ public class ChatMessage {
 		return mIsDeleted;
 	}
 
-	// Must be called from PlayerChatState to allow pausing messages.
+	// Must be called from PlayerState to allow pausing messages.
 	// Returns false if the channel is not loaded.
 	protected boolean showMessage(CommandSender recipient) {
 		if (mIsDeleted) {
 			return true;
 		}
-		ChatChannelBase channel = ChatManager.getChannel(mChannelUuid);
+		ChannelBase channel = ChannelManager.getChannel(mChannelUuid);
 		if (channel == null) {
 			return false;
 		}

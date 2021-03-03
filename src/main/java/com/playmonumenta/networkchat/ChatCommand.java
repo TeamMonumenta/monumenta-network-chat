@@ -25,13 +25,13 @@ public class ChatCommand {
 
 		arguments.add(new MultiLiteralArgument("new"));
 		arguments.add(new TextArgument("Channel ID"));
-		ChatChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+		ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 
 		for (String baseCommand : COMMANDS) {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("rename"));
 			arguments.add(new TextArgument("Old Channel ID").overrideSuggestions((sender) -> {
-				return ChatManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			arguments.add(new TextArgument("New Channel ID"));
 			new CommandAPICommand(baseCommand)
@@ -44,7 +44,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
 			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChatManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -56,20 +56,21 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("say"));
 			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChatManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			arguments.add(new GreedyStringArgument("Message"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					return sendMessage(sender, (String)args[1], (String)args[2]);
+					sendMessage(sender, (String)args[1], (String)args[2]);
+					return 1;
 				})
 				.register();
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("join"));
 			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChatManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -81,7 +82,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("leave"));
 			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChatManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -114,7 +115,7 @@ public class ChatCommand {
 		// TODO Perms check
 
 		// May call CommandAPI.fail()
-		ChatManager.renameChannel(oldChannelId, newChannelId);
+		ChannelManager.renameChannel(oldChannelId, newChannelId);
 		return 1;
 	}
 
@@ -122,7 +123,7 @@ public class ChatCommand {
 		// TODO Perms check
 
 		// May call CommandAPI.fail()
-		ChatManager.deleteChannel(channelId);
+		ChannelManager.deleteChannel(channelId);
 		return 1;
 	}
 
@@ -133,12 +134,12 @@ public class ChatCommand {
 		}
 
 		Player target = (Player) callee;
-		PlayerChatState playerState = ChatManager.getPlayerState(target);
+		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
 			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
 		}
 
-		ChatChannelBase channel = ChatManager.getChannel(channelId);
+		ChannelBase channel = ChannelManager.getChannel(channelId);
 		if (channel == null) {
 			CommandAPI.fail("No such channel " + channelId + ".");
 		}
@@ -154,12 +155,12 @@ public class ChatCommand {
 		}
 
 		Player target = (Player) callee;
-		PlayerChatState playerState = ChatManager.getPlayerState(target);
+		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
 			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
 		}
 
-		ChatChannelBase channel = ChatManager.getChannel(channelId);
+		ChannelBase channel = ChannelManager.getChannel(channelId);
 		if (channel == null) {
 			CommandAPI.fail("No such channel " + channelId + ".");
 		}
@@ -174,13 +175,13 @@ public class ChatCommand {
 			CommandAPI.fail("Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
 
-		ChatChannelBase channel = ChatManager.getChannel(channelId);
+		ChannelBase channel = ChannelManager.getChannel(channelId);
 		if (channel == null) {
 			CommandAPI.fail("No such channel " + channelId + ".");
 		}
 
-		boolean messageSent = channel.sendMessage(callee, message);
-		return messageSent ? 1 : 0;
+		channel.sendMessage(callee, message);
+		return 1;
 	}
 
 	private static int pause(CommandSender sender) throws WrapperCommandSyntaxException {
@@ -190,7 +191,7 @@ public class ChatCommand {
 		}
 
 		Player target = (Player) callee;
-		PlayerChatState playerState = ChatManager.getPlayerState(target);
+		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
 			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
 		}
@@ -206,7 +207,7 @@ public class ChatCommand {
 		}
 
 		Player target = (Player) callee;
-		PlayerChatState playerState = ChatManager.getPlayerState(target);
+		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
 			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
 		}

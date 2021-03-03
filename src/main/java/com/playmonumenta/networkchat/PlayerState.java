@@ -16,7 +16,7 @@ import com.google.gson.JsonPrimitive;
 import org.bukkit.entity.Player;
 
 // TODO Track how many players are in a channel on this server/overall
-public class PlayerChatState {
+public class PlayerState {
 	// From vanilla client limits
 	public static final int MAX_DISPLAYED_MESSAGES = 100;
 
@@ -28,10 +28,10 @@ public class PlayerChatState {
 	private Set<UUID> mWatchedChannelIds;
 	private Set<UUID> mUnwatchedChannelIds;
 
-	private List<ChatMessage> mSeenMessages;
-	private List<ChatMessage> mUnseenMessages;
+	private List<Message> mSeenMessages;
+	private List<Message> mUnseenMessages;
 
-	public PlayerChatState(Player player) {
+	public PlayerState(Player player) {
 		mPlayer = player;
 		mChatPaused = false;
 
@@ -41,12 +41,12 @@ public class PlayerChatState {
 		// TODO Get default channel here
 		unsetActiveChannel();
 
-		mSeenMessages = new ArrayList<ChatMessage>(MAX_DISPLAYED_MESSAGES);
-		mUnseenMessages = new ArrayList<ChatMessage>(MAX_DISPLAYED_MESSAGES);
+		mSeenMessages = new ArrayList<Message>(MAX_DISPLAYED_MESSAGES);
+		mUnseenMessages = new ArrayList<Message>(MAX_DISPLAYED_MESSAGES);
 	}
 
-	public static PlayerChatState fromJson(Player player, JsonObject obj) {
-		PlayerChatState state = new PlayerChatState(player);
+	public static PlayerState fromJson(Player player, JsonObject obj) {
+		PlayerState state = new PlayerState(player);
 
 		// TODO for when message playback is implemented for transferring between servers.
 		/*
@@ -119,7 +119,7 @@ public class PlayerChatState {
 		return result;
 	}
 
-	public void receiveMessage(ChatMessage message) {
+	public void receiveMessage(Message message) {
 		if (message.isDeleted()) {
 			return;
 		}
@@ -146,7 +146,7 @@ public class PlayerChatState {
 			mPlayer.sendMessage("");
 		}
 
-		for (ChatMessage message : mSeenMessages) {
+		for (Message message : mSeenMessages) {
 			message.showMessage(mPlayer);
 		}
 	}
@@ -167,7 +167,7 @@ public class PlayerChatState {
 		}
 
 		// Show all unseen messages
-		for (ChatMessage message : mUnseenMessages) {
+		for (Message message : mUnseenMessages) {
 			message.showMessage(mPlayer);
 		}
 		mSeenMessages.addAll(mUnseenMessages);
@@ -176,7 +176,7 @@ public class PlayerChatState {
 		mChatPaused = false;
 	}
 
-	public void setActiveChannel(ChatChannelBase channel) {
+	public void setActiveChannel(ChannelBase channel) {
 		joinChannel(channel);
 		mActiveChannelId = channel.getUniqueId();
 	}
@@ -194,7 +194,11 @@ public class PlayerChatState {
 		return new HashSet<>(mUnwatchedChannelIds);
 	}
 
-	public void joinChannel(ChatChannelBase channel) {
+	public boolean isWatchingChannelId(UUID channelId) {
+		return mWatchedChannelIds.contains(channelId);
+	}
+
+	public void joinChannel(ChannelBase channel) {
 		UUID channelId = channel.getUniqueId();
 		mWatchedChannelIds.add(channelId);
 		mUnwatchedChannelIds.remove(channelId);
@@ -203,7 +207,7 @@ public class PlayerChatState {
 		}
 	}
 
-	public void leaveChannel(ChatChannelBase channel) {
+	public void leaveChannel(ChannelBase channel) {
 		UUID channelId = channel.getUniqueId();
 		if (channelId == mActiveChannelId) {
 			unsetActiveChannel();
@@ -225,11 +229,11 @@ public class PlayerChatState {
 		return mActiveChannelId;
 	}
 
-	public ChatChannelBase getActiveChannel() {
-		return ChatManager.getChannel(mActiveChannelId);
+	public ChannelBase getActiveChannel() {
+		return ChannelManager.getChannel(mActiveChannelId);
 	}
 
-	public boolean isListening(ChatChannelBase channel) {
+	public boolean isListening(ChannelBase channel) {
 		UUID channelId = channel.getUniqueId();
 		if (mUnwatchedChannelIds.contains(channelId)) {
 			return false;
@@ -241,10 +245,10 @@ public class PlayerChatState {
 		}
 	}
 
-	public Set<ChatChannelBase> getMutedChannels() {
-		Set<ChatChannelBase> channels = new HashSet<ChatChannelBase>();
+	public Set<ChannelBase> getMutedChannels() {
+		Set<ChannelBase> channels = new HashSet<ChannelBase>();
 		for (UUID channelId : mUnwatchedChannelIds) {
-			channels.add(ChatManager.getChannel(channelId));
+			channels.add(ChannelManager.getChannel(channelId));
 		}
 		return channels;
 	}
