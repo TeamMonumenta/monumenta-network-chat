@@ -252,4 +252,14 @@ public class PlayerState {
 		}
 		return channels;
 	}
+
+	protected void channelLoaded(UUID channelId) {
+		ChannelBase loadedChannel = ChannelManager.getChannel(channelId);
+		if (loadedChannel == null) {
+			// Channel was deleted
+			unregisterChannel(channelId);
+			// TODO Group deleted channel messages together.
+			mPlayer.sendMessage("Channel UUID " + channelId.toString() + " is no longer available.");
+		} // TODO Consider handling ChannelFuture, or properly loaded channels.
+	}
 }

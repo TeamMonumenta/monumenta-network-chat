@@ -6,7 +6,6 @@ import java.util.UUID;
 import com.google.gson.JsonObject;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
@@ -18,7 +17,7 @@ public abstract class ChannelBase {
 		if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
 			return ChannelLocal.fromJsonInternal(channelJson);
 		} else {
-			throw new Exception("No such chat channel class ID " + channelClassId);
+			return ChannelFuture.fromJsonInternal(channelJson);
 		}
 	}
 

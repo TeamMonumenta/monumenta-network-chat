@@ -13,6 +13,7 @@ import com.playmonumenta.redissync.RedisAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
+import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 
 import org.bukkit.Bukkit;
@@ -20,6 +21,7 @@ import org.bukkit.plugin.Plugin;
 
 public class ChannelManager {
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
+	private static final String REDIS_CHANNEL_NAME_TO_UUID_PATH = "networkchat:channel_uuids";
 
 	private static ChannelManager INSTANCE = null;
 	private static Plugin mPlugin = null;
@@ -60,8 +62,8 @@ public class ChannelManager {
 		if (oldChannel != null) {
 			CommandAPI.fail("Channel " + channelName + " already exists!");
 		}
-		UUID uuid = channel.getUniqueId();
-		mChannels.put(uuid, channel);
+		UUID channelId = channel.getUniqueId();
+		mChannels.put(channelId, channel);
 		mChannelsByName.put(channelName, channel);
 	}
 
@@ -70,33 +72,36 @@ public class ChannelManager {
 			return;
 		}
 
-		UUID uuid = channel.getUniqueId();
+		UUID channelId = channel.getUniqueId();
 
 		// Unregister any old channels as needed.
-		ChannelBase oldChannel = mChannels.get(uuid);
+		ChannelBase oldChannel = mChannels.get(channelId);
 		boolean sendQueuedMessages = false;
 		if (oldChannel != null) {
 			if (oldChannel instanceof ChannelLoading) {
 				// It's safe to replace a loading channel with a loading one.
 				sendQueuedMessages = true;
 			} else {
-				// TODO unregister the old channel so the new one can load.
+				// Unregister the old channel so the new one can load.
+				PlayerStateManager.unregisterChannel(channelId);
+				mChannelsByName.remove(oldChannel.getName());
+				mChannels.remove(channelId);
 			}
 		}
 
 		// Continue registering the loaded channel.
 		String channelName = channel.getName();
-		mChannels.put(uuid, channel);
+		mChannels.put(channelId, channel);
 		mChannelsByName.put(channelName, channel);
 
 		if (sendQueuedMessages) {
-			// TODO
+			// TODO Send queued messages to players waiting on them
 			;
 		}
 	}
 
-	public static ChannelBase getChannel(UUID channelUuid) {
-		return mChannels.get(channelUuid);
+	public static ChannelBase getChannel(UUID channelId) {
+		return mChannels.get(channelId);
 	}
 
 	public static ChannelBase getChannel(String channelName) {
@@ -143,48 +148,63 @@ public class ChannelManager {
 		RedisAPI.getInstance().async().hdel(REDIS_CHANNELS_PATH, channelId.toString());
 	}
 
-	public static void loadChannel(UUID channelId) {
+	public static void loadChannel(UUID channelId, PlayerState playerState) {
 		/* Note that mChannels containing the channel ID means
 		 * either the channel is loaded, or is being loaded. */
-		if (channelId == null || mChannels.containsKey(channelId)) {
+		ChannelBase preloadedChannel = mChannels.get(channelId);
+		if (preloadedChannel != null) {
+			if (preloadedChannel instanceof ChannelLoading) {
+				((ChannelLoading) preloadedChannel).addWaitingPlayerState(playerState);
+			}
 			return;
 		}
+		ChannelBase channel = null;
 
 		// Mark the channel as loading
-		mChannels.put(channelId, new ChannelLoading(channelId));
+		ChannelLoading loadingChannel = new ChannelLoading(channelId);
+		mChannels.put(channelId, loadingChannel);
 
 		// Get the channel from Redis async
 		String channelIdStr = channelId.toString();
-		Bukkit.getServer().getScheduler().runTaskAsynchronously(mPlugin, () -> {
-			RedisAPI api = RedisAPI.getInstance();
-			String jsonData = api.sync().hget(REDIS_CHANNELS_PATH, channelIdStr);
-			if (jsonData == null) {
-				Bukkit.getServer().getScheduler().runTask(mPlugin, () -> {
-					// No channel was found, alert the player it was deleted.
-				});
-			} else {
-				Gson gson = new Gson();
-				final JsonObject channelJson = gson.fromJson(jsonData, JsonObject.class);
-				Bukkit.getServer().getScheduler().runTask(mPlugin, () -> {
-					// Channel json was found, load it in sync.
-					ChannelBase channel = null;
-					try {
-						channel = ChannelBase.fromJson(channelJson);
-					} catch (Exception e) {
-						/* TODO Log the error, and somehow mark the channel as "exists, but can't load"
-						 * Messages will be ignored, but assume that it's a type from a future plugin version,
-						 * and don't remove the channel from players. */
-						return;
-					}
-
-					registerLoadedChannel(channel);
-				});
-			}
+		// TODO Consider returning RedisFuture so PlayerState can handle this directly?
+		RedisFuture<String> channelDataFuture = RedisAPI.getInstance().async().hget(REDIS_CHANNELS_PATH, channelIdStr);
+		channelDataFuture.thenApply(channelData -> {
+			loadChannelApply(channelId, channelData);
+			return channelData;
 		});
 	}
 
+	private static void loadChannelApply(UUID channelId, String channelData) {
+		ChannelBase channel = mChannels.get(channelId);
+		if (!(channel instanceof ChannelLoading)) {
+			// Channel already finished loading.
+			return;
+		}
+
+		Gson gson = new Gson();
+		ChannelLoading loadingChannel = (ChannelLoading) channel;
+		if (channelData == null) {
+			// No channel was found, alert the player it was deleted.
+			PlayerStateManager.unregisterChannel(channelId);
+			mChannels.remove(channelId);
+			loadingChannel.alertPlayerStates();
+			return;
+		} else {
+			// Channel was found. Attempt to register it.
+			JsonObject channelJson = gson.fromJson(channelData, JsonObject.class);
+			try {
+				channel = ChannelBase.fromJson(channelJson);
+			} catch (Exception e) {
+				mPlugin.getLogger().severe("Caught exception trying to load channel " + channelId.toString() + ": " + e);
+				return;
+			}
+			registerLoadedChannel(channel);
+			loadingChannel.alertPlayerStates();
+		}
+	}
+
 	public static void saveChannel(ChannelBase channel) {
-		if (channel == null || channel instanceof ChannelLoading) {
+		if (channel == null || channel instanceof ChannelLoading || channel instanceof ChannelFuture) {
 			return;
 		}
 

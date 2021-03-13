@@ -50,6 +50,17 @@ public class PlayerStateManager implements Listener {
 		return mPlayerStates.get(player.getUniqueId());
 	}
 
+	public static void unregisterChannel(UUID channelId) {
+		for (Map.Entry<UUID, PlayerState> playerStateEntry : mPlayerStates.entrySet()) {
+			UUID playerId = playerStateEntry.getKey();
+			Player player = Bukkit.getPlayer(playerId);
+			PlayerState playerState = playerStateEntry.getValue();
+			// TODO Make this fancier, and display the old name.
+			player.sendMessage("Channel " + channelId.toString() + " has been removed.");
+			playerState.unregisterChannel(channelId);
+		}
+	}
+
 	@EventHandler(priority = EventPriority.LOW)
 	public void playerJoinEvent(PlayerJoinEvent event) throws Exception {
 		Player player = event.getPlayer();
@@ -67,30 +78,14 @@ public class PlayerStateManager implements Listener {
 			mPlugin.getLogger().info("Loaded data for player " + player.getName());
 		}
 
-		// TODO Load channels from Redis, and failing that revoke those channels. Placeholder:
-		Set<UUID> loadedChannels = ChannelManager.getLoadedChannelIds();
-		boolean channelDeleted = false;
 		for (UUID channelId : playerState.getWatchedChannelIds()) {
-			if (channelId != null && !loadedChannels.contains(channelId)) {
-				channelDeleted = true;
-				playerState.unregisterChannel(channelId);
-			}
+			ChannelManager.loadChannel(channelId, playerState);
 		}
 		for (UUID channelId : playerState.getUnwatchedChannelIds()) {
-			if (channelId != null && !loadedChannels.contains(channelId)) {
-				channelDeleted = true;
-				playerState.unregisterChannel(channelId);
-			}
+			ChannelManager.loadChannel(channelId, playerState);
 		}
 		UUID activeChannelId = playerState.getActiveChannelId();
-		if (activeChannelId != null && !loadedChannels.contains(activeChannelId)) {
-			channelDeleted = true;
-			playerState.unregisterChannel(activeChannelId);
-		}
-		if (channelDeleted) {
-			player.sendMessage("One or more channels are no longer available.");
-		}
-		// End of channel loading placeholder
+		ChannelManager.loadChannel(activeChannelId, playerState);
 
 		// TODO Send login messages here (once implemented)
 	}

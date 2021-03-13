@@ -1,32 +1,27 @@
 package com.playmonumenta.networkchat;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
-import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ProxiedCommandSender;
-import org.bukkit.entity.Player;
 
 import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 // A channel that has not finished loading. This may not be saved.
 public class ChannelLoading extends ChannelBase {
 	public static final String CHANNEL_CLASS_ID = "loading";
 
-	private UUID mUUID;
+	private UUID mId;
+	private Set<PlayerState> mAwaitingPlayers = new HashSet<>();
 
-	protected ChannelLoading(UUID uuid) {
-		mUUID = uuid;
+	/* Note: This channel type may only be created by this plugin while waiting for Redis data.
+	 * This is why it is the only channel whose constructor is protected, and has no name. */
+	protected ChannelLoading(UUID channelId) {
+		mId = channelId;
 	}
 
 	// NOTE: This channel type should never be saved, as it could overwrite a real channel.
@@ -41,7 +36,7 @@ public class ChannelLoading extends ChannelBase {
 	}
 
 	public UUID getUniqueId() {
-		return mUUID;
+		return mId;
 	}
 
 	protected void setName(String name) throws WrapperCommandSyntaxException {
@@ -65,5 +60,17 @@ public class ChannelLoading extends ChannelBase {
 	// The channel is loading - we can't determine who can see this yet!
 	protected void showMessage(CommandSender recipient, Message message) {
 		;
+	}
+
+	// Register a player state waiting for this channel to finish loading.
+	public void addWaitingPlayerState(PlayerState playerState) {
+		mAwaitingPlayers.add(playerState);
+	}
+
+	// Notify the player the channel has finish loading, or failed to load.
+	protected void alertPlayerStates() {
+		for (PlayerState playerState : mAwaitingPlayers) {
+			playerState.channelLoaded(mId);
+		}
 	}
 }

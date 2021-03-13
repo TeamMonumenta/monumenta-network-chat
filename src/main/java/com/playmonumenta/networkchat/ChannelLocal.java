@@ -9,32 +9,29 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ProxiedCommandSender;
-import org.bukkit.entity.Player;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 // A channel visible only to this shard (and moderators who opt in from elsewhere)
 public class ChannelLocal extends ChannelBase {
 	public static final String CHANNEL_CLASS_ID = "local";
 
-	private UUID mUUID;
+	private UUID mId;
 	private String mShardName;
 	private String mName;
 
-	private ChannelLocal(UUID uuid, String shardName, String name) {
-		mUUID = uuid;
+	private ChannelLocal(UUID channelId, String shardName, String name) {
+		mId = channelId;
 		mShardName = shardName;
 		mName = name;
 	}
 
 	public ChannelLocal(String name) throws Exception {
-		mUUID = UUID.randomUUID();
+		mId = UUID.randomUUID();
 		mShardName = NetworkRelayAPI.getShardName();
 		mName = name;
 	}
@@ -45,10 +42,10 @@ public class ChannelLocal extends ChannelBase {
 			throw new Exception("Cannot create ChannelLocal from channel ID " + channelClassId);
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
-		UUID uuid = UUID.fromString(uuidString);
+		UUID channelId = UUID.fromString(uuidString);
 		String shardName = channelJson.getAsJsonPrimitive("shardName").getAsString();
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
-		return new ChannelLocal(uuid, shardName, name);
+		return new ChannelLocal(channelId, shardName, name);
 	}
 
 	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
@@ -81,7 +78,7 @@ public class ChannelLocal extends ChannelBase {
 	public JsonObject toJson() {
 		JsonObject result = new JsonObject();
 		result.addProperty("type", CHANNEL_CLASS_ID);
-		result.addProperty("uuid", mUUID.toString());
+		result.addProperty("uuid", mId.toString());
 		result.addProperty("shardName", mShardName);
 		result.addProperty("name", mName);
 		return result;
@@ -92,7 +89,7 @@ public class ChannelLocal extends ChannelBase {
 	}
 
 	public UUID getUniqueId() {
-		return mUUID;
+		return mId;
 	}
 
 	public String getShardName() {
