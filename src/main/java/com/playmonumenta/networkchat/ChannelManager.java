@@ -20,17 +20,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 public class ChannelManager {
+	private static final String REDIS_CHANNEL_NAME_TO_UUID_PATH = "networkchat:channel_name_to_uuids";
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
-	private static final String REDIS_CHANNEL_NAME_TO_UUID_PATH = "networkchat:channel_uuids";
+	private static final String REDIS_CHANNEL_PARTICIPANTS_PATH = "networkchat:channel_participants";
 
 	private static ChannelManager INSTANCE = null;
 	private static Plugin mPlugin = null;
+	private static Map<String, UUID> mChannelIdsByName = null;
 	private static Map<UUID, ChannelBase> mChannels = new HashMap<>();
 	private static Map<String, ChannelBase> mChannelsByName = new HashMap<>();
 
 	private ChannelManager(Plugin plugin) {
 		INSTANCE = this;
 		mPlugin = plugin;
+		loadAllChannelNames();
 	}
 
 	public static ChannelManager getInstance() {
@@ -229,5 +232,21 @@ public class ChannelManager {
 		saveChannel(channel);
 
 		// No announcements or deletion to do.
+	}
+
+	private static void loadAllChannelNames() {
+		RedisFuture<Map<String, String>> channelDataFuture = RedisAPI.getInstance().async().hgetall(REDIS_CHANNEL_NAME_TO_UUID_PATH);
+		channelDataFuture.thenApply(channelStrIdsByName -> {
+			mChannelIdsByName = new Map<>();
+			if (channelNamestoUuids != null) {
+				for (Map.Entry<String, String> entry : channelStrIdsByName.entrySet()) {
+					String channelName = entry.getKey();
+					String channelIdStr = entry.getValue();
+					UUID channelId = UUID.fromString(channelIdStr);
+					mChannelIdsByName.put(channelName, channelId);
+				}
+			}
+			return channelStrIdsByName;
+		});
 	}
 }
