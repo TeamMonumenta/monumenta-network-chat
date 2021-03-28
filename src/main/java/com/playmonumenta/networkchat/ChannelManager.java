@@ -237,8 +237,8 @@ public class ChannelManager {
 	private static void loadAllChannelNames() {
 		RedisFuture<Map<String, String>> channelDataFuture = RedisAPI.getInstance().async().hgetall(REDIS_CHANNEL_NAME_TO_UUID_PATH);
 		channelDataFuture.thenApply(channelStrIdsByName -> {
-			mChannelIdsByName = new Map<>();
-			if (channelNamestoUuids != null) {
+			mChannelIdsByName = new HashMap<>();
+			if (channelStrIdsByName != null) {
 				for (Map.Entry<String, String> entry : channelStrIdsByName.entrySet()) {
 					String channelName = entry.getKey();
 					String channelIdStr = entry.getValue();
