@@ -8,13 +8,20 @@ import java.util.UUID;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
-import org.bukkit.command.CommandSender;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+
+import org.bukkit.command.CommandSender;
+
+import net.kyori.adventure.audience.MessageType;
+import net.kyori.adventure.identity.Identity;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.transformation.TransformationType;
+import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 // A channel visible only to this shard (and moderators who opt in from elsewhere)
 public class ChannelLocal extends ChannelBase {
@@ -104,11 +111,11 @@ public class ChannelLocal extends ChannelBase {
 		return mName;
 	}
 
-	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
+	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		// TODO Add permission check for local chat.
-		Message Message = new Message(this, sender, message);
+		Message message = new Message(this, sender, messageText, true, true);
 		// TODO Broadcast for logging purposes, then distribute when the message returns.
-		distributeMessage(Message);
+		distributeMessage(message);
 	}
 
 	public void distributeMessage(Message message) {
@@ -117,6 +124,7 @@ public class ChannelLocal extends ChannelBase {
 		try {
 			if (!(messageChannel instanceof ChannelLocal) ||
 				!(((ChannelLocal) messageChannel).mShardName.equals(NetworkRelayAPI.getShardName()))) {
+				// TODO: Command spy goes here-ish
 				return;
 			}
 		} catch (Exception e) {
@@ -134,7 +142,33 @@ public class ChannelLocal extends ChannelBase {
 	}
 
 	protected void showMessage(CommandSender recipient, Message message) {
+		MiniMessage minimessage = MiniMessage.builder()
+			.transformation(TransformationType.COLOR)
+			.transformation(TransformationType.DECORATION)
+			.markdown()
+			.markdownFlavor(DiscordFlavor.get())
+			.build();
+
 		// TODO Use configurable formatting, not hard-coded formatting.
-		recipient.sendMessage("§7<§f" + mName + " (l)§7> §f" + message.getSender() + " §7»§f " + message.getMessage());
+		// "§7<§f" + mName + " (l)§7> §f" + message.getSender() + " §7» §f" + message.getMessage()
+		String prefix = "<gray>[<white><channelName> (l)<gray>] <white><sender> <gray>» <white>";
+		String suffix = "<hover:show_text:\"Moderator thingy?\">    </hover>";
+		// TODO We should use templates to insert these and related formatting.
+		prefix = prefix.replace("<channelName>", mName)
+		    .replace("<sender>", message.getSenderName());
+
+		UUID senderUuid = message.getSenderId();
+		Identity senderIdentity;
+		if (senderUuid == null) {
+			senderIdentity = Identity.nil();
+		} else {
+			senderIdentity = Identity.identity(senderUuid);
+		}
+
+		Component fullMessage = Component.empty()
+		    .append(minimessage.parse(prefix))
+		    .append(message.getMessage())
+		    .append(minimessage.parse(suffix));
+		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
 	}
 }

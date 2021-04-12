@@ -149,6 +149,7 @@ public class ChannelManager {
 		// TODO Broadcast the change to other shards
 
 		RedisAPI.getInstance().async().hdel(REDIS_CHANNELS_PATH, channelId.toString());
+		RedisAPI.getInstance().async().hdel(REDIS_CHANNEL_PARTICIPANTS_PATH, channelId.toString());
 	}
 
 	public static void loadChannel(UUID channelId, PlayerState playerState) {

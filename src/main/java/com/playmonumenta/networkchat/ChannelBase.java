@@ -21,8 +21,10 @@ public abstract class ChannelBase {
 		}
 	}
 
-	// DEFINE ME - Load a channel from json, allowing messages in that channel to be received
-	//protected static ChannelBase fromJsonInternal(JsonObject channelJson) throws Exception;
+	// OVERRIDE ME - Load a channel from json, allowing messages in that channel to be received
+	protected static ChannelBase fromJsonInternal(JsonObject channelJson) throws Exception {
+		throw new Exception("Channel has no fromJsonInternal() method!");
+	}
 
 	public abstract JsonObject toJson();
 

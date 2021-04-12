@@ -3,28 +3,68 @@ package com.playmonumenta.networkchat;
 import java.time.Instant;
 import java.util.UUID;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.transformation.TransformationType;
+import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
+
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public class Message {
 	private final Instant mInstant;
 	private final UUID mChannelId;
-	private final String mSender;
-	private final String mMessage;
+	private final UUID mSenderId;
+	private final String mSenderName;
+	private final Component mMessage;
 	private boolean mIsDeleted = false;
 
 	// Normally called through a channel
-	protected Message(ChannelBase channel, CommandSender sender, String message) {
+	protected Message(ChannelBase channel, CommandSender sender, Component message) {
 		mInstant = Instant.now();
 		mChannelId = channel.getUniqueId();
-		mSender = sender.getName();
+		if (sender instanceof Player) {
+			mSenderId = ((Player) sender).getUniqueId();
+		} else {
+			mSenderId = null;
+		}
+		mSenderName = sender.getName();
 		mMessage = message;
 	}
 
+	// Normally called through a channel
+	protected Message(ChannelBase channel, CommandSender sender, String message, boolean allowDecoration, boolean allowColor) {
+		mInstant = Instant.now();
+		mChannelId = channel.getUniqueId();
+		if (sender instanceof Player) {
+			mSenderId = ((Player) sender).getUniqueId();
+		} else {
+			mSenderId = null;
+		}
+		mSenderName = sender.getName();
+
+		MiniMessage.Builder minimessageBuilder = MiniMessage.builder()
+		    .removeDefaultTransformations();
+
+		if (allowColor) {
+			minimessageBuilder.transformation(TransformationType.COLOR);
+		}
+
+		if (allowDecoration) {
+			minimessageBuilder.transformation(TransformationType.DECORATION)
+			    .markdown()
+			    .markdownFlavor(DiscordFlavor.get());
+		}
+
+		mMessage = minimessageBuilder.build().parse(message);
+	}
+
 	// For when receiving remote messages
-	private Message(Instant instant, UUID channelId, String sender, String message) {
+	private Message(Instant instant, UUID channelId, UUID senderId, String senderName, Component message) {
 		mInstant = instant;
 		mChannelId = channelId;
-		mSender = sender;
+		mSenderId = senderId;
+		mSenderName = senderName;
 		mMessage = message;
 	}
 
@@ -40,11 +80,15 @@ public class Message {
 		return ChannelManager.getChannel(mChannelId);
 	}
 
-	public String getSender() {
-		return mSender;
+	public UUID getSenderId() {
+		return mSenderId;
 	}
 
-	public String getMessage() {
+	public String getSenderName() {
+		return mSenderName;
+	}
+
+	public Component getMessage() {
 		return mMessage;
 	}
 
