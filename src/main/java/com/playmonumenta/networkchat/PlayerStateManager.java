@@ -85,7 +85,9 @@ public class PlayerStateManager implements Listener {
 			ChannelManager.loadChannel(channelId, playerState);
 		}
 		UUID activeChannelId = playerState.getActiveChannelId();
-		ChannelManager.loadChannel(activeChannelId, playerState);
+		if (activeChannelId != null) {
+			ChannelManager.loadChannel(activeChannelId, playerState);
+		}
 
 		// TODO Send login messages here (once implemented)
 	}

@@ -1,8 +1,10 @@
 package com.playmonumenta.networkchat;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
@@ -19,6 +21,7 @@ import org.bukkit.command.CommandSender;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
@@ -113,9 +116,21 @@ public class ChannelLocal extends ChannelBase {
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		// TODO Add permission check for local chat.
-		Message message = new Message(this, sender, messageText, true, true);
-		// TODO Broadcast for logging purposes, then distribute when the message returns.
-		distributeMessage(message);
+		Set<TransformationType> allowedTransforms = new HashSet<>();
+		allowedTransforms.add(TransformationType.COLOR);
+		allowedTransforms.add(TransformationType.DECORATION);
+		allowedTransforms.add(TransformationType.KEYBIND);
+		allowedTransforms.add(TransformationType.FONT);
+		allowedTransforms.add(TransformationType.GRADIENT);
+		allowedTransforms.add(TransformationType.RAINBOW);
+		Message message = Message.createMessage(this, sender, null, messageText, true, allowedTransforms);
+
+		try {
+			MessageManager.getInstance().broadcastMessage(message);
+		} catch (Exception e) {
+			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
+			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
+		}
 	}
 
 	public void distributeMessage(Message message) {
@@ -151,7 +166,7 @@ public class ChannelLocal extends ChannelBase {
 
 		// TODO Use configurable formatting, not hard-coded formatting.
 		// "§7<§f" + mName + " (l)§7> §f" + message.getSender() + " §7» §f" + message.getMessage()
-		String prefix = "<gray>[<white><channelName> (l)<gray>] <white><sender> <gray>» <white>";
+		String prefix = "<gray>\\<<white><channelName> (l)<gray>> <white><sender> <gray>» <white>";
 		String suffix = "<hover:show_text:\"Moderator thingy?\">    </hover>";
 		// TODO We should use templates to insert these and related formatting.
 		prefix = prefix.replace("<channelName>", mName)

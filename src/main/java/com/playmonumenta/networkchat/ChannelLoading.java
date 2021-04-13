@@ -1,6 +1,8 @@
 package com.playmonumenta.networkchat;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,6 +19,7 @@ public class ChannelLoading extends ChannelBase {
 
 	private UUID mId;
 	private Set<PlayerState> mAwaitingPlayers = new HashSet<>();
+	private List<Message> mQueuedMessages = new ArrayList<>();
 
 	/* Note: This channel type may only be created by this plugin while waiting for Redis data.
 	 * This is why it is the only channel whose constructor is protected, and has no name. */
@@ -67,10 +70,25 @@ public class ChannelLoading extends ChannelBase {
 		mAwaitingPlayers.add(playerState);
 	}
 
+	// Register a message waiting for this channel to finish loading.
+	public void addMessage(Message message) {
+		mQueuedMessages.add(message);
+	}
+
 	// Notify the player the channel has finish loading, or failed to load.
-	protected void alertPlayerStates() {
+	protected void finishLoading() {
 		for (PlayerState playerState : mAwaitingPlayers) {
 			playerState.channelLoaded(mId);
+		}
+
+		// If the newly loaded channel is valid, distribute messages that were missed
+		ChannelBase channel = ChannelManager.getChannel(mId);
+		if (channel == null
+		    || channel instanceof ChannelFuture) {
+			return;
+		}
+		for (Message message : mQueuedMessages) {
+			channel.distributeMessage(message);
 		}
 	}
 }

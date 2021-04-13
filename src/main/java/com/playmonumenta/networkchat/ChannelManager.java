@@ -157,7 +157,7 @@ public class ChannelManager {
 		 * either the channel is loaded, or is being loaded. */
 		ChannelBase preloadedChannel = mChannels.get(channelId);
 		if (preloadedChannel != null) {
-			if (preloadedChannel instanceof ChannelLoading) {
+			if (preloadedChannel instanceof ChannelLoading && playerState != null) {
 				((ChannelLoading) preloadedChannel).addWaitingPlayerState(playerState);
 			}
 			return;
@@ -167,10 +167,38 @@ public class ChannelManager {
 		// Mark the channel as loading
 		ChannelLoading loadingChannel = new ChannelLoading(channelId);
 		mChannels.put(channelId, loadingChannel);
+		loadingChannel.addWaitingPlayerState(playerState);
 
 		// Get the channel from Redis async
 		String channelIdStr = channelId.toString();
 		// TODO Consider returning RedisFuture so PlayerState can handle this directly?
+		RedisFuture<String> channelDataFuture = RedisAPI.getInstance().async().hget(REDIS_CHANNELS_PATH, channelIdStr);
+		channelDataFuture.thenApply(channelData -> {
+			loadChannelApply(channelId, channelData);
+			return channelData;
+		});
+	}
+
+	public static void loadChannel(UUID channelId, Message message) {
+		/* Note that mChannels containing the channel ID means
+		 * either the channel is loaded, or is being loaded. */
+		ChannelBase preloadedChannel = mChannels.get(channelId);
+		if (preloadedChannel != null) {
+			if (preloadedChannel instanceof ChannelLoading && message != null) {
+				((ChannelLoading) preloadedChannel).addMessage(message);
+			}
+			return;
+		}
+		ChannelBase channel = null;
+
+		// Mark the channel as loading
+		ChannelLoading loadingChannel = new ChannelLoading(channelId);
+		mChannels.put(channelId, loadingChannel);
+		loadingChannel.addMessage(message);
+
+		// Get the channel from Redis async
+		String channelIdStr = channelId.toString();
+		// TODO Consider returning RedisFuture so Message can handle this directly?
 		RedisFuture<String> channelDataFuture = RedisAPI.getInstance().async().hget(REDIS_CHANNELS_PATH, channelIdStr);
 		channelDataFuture.thenApply(channelData -> {
 			loadChannelApply(channelId, channelData);
@@ -191,7 +219,7 @@ public class ChannelManager {
 			// No channel was found, alert the player it was deleted.
 			PlayerStateManager.unregisterChannel(channelId);
 			mChannels.remove(channelId);
-			loadingChannel.alertPlayerStates();
+			loadingChannel.finishLoading();
 			return;
 		} else {
 			// Channel was found. Attempt to register it.
@@ -203,7 +231,7 @@ public class ChannelManager {
 				return;
 			}
 			registerLoadedChannel(channel);
-			loadingChannel.alertPlayerStates();
+			loadingChannel.finishLoading();
 		}
 	}
 

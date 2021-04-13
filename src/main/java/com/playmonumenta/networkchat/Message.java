@@ -1,14 +1,20 @@
 package com.playmonumenta.networkchat;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
+
+import com.google.gson.JsonObject;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 public class Message {
@@ -16,56 +22,83 @@ public class Message {
 	private final UUID mChannelId;
 	private final UUID mSenderId;
 	private final String mSenderName;
+	private final NamespacedKey mSenderType;
+	private final JsonObject mExtraData;
 	private final Component mMessage;
 	private boolean mIsDeleted = false;
 
-	// Normally called through a channel
-	protected Message(ChannelBase channel, CommandSender sender, Component message) {
-		mInstant = Instant.now();
-		mChannelId = channel.getUniqueId();
-		if (sender instanceof Player) {
-			mSenderId = ((Player) sender).getUniqueId();
-		} else {
-			mSenderId = null;
-		}
-		mSenderName = sender.getName();
-		mMessage = message;
-	}
-
-	// Normally called through a channel
-	protected Message(ChannelBase channel, CommandSender sender, String message, boolean allowDecoration, boolean allowColor) {
-		mInstant = Instant.now();
-		mChannelId = channel.getUniqueId();
-		if (sender instanceof Player) {
-			mSenderId = ((Player) sender).getUniqueId();
-		} else {
-			mSenderId = null;
-		}
-		mSenderName = sender.getName();
-
-		MiniMessage.Builder minimessageBuilder = MiniMessage.builder()
-		    .removeDefaultTransformations();
-
-		if (allowColor) {
-			minimessageBuilder.transformation(TransformationType.COLOR);
-		}
-
-		if (allowDecoration) {
-			minimessageBuilder.transformation(TransformationType.DECORATION)
-			    .markdown()
-			    .markdownFlavor(DiscordFlavor.get());
-		}
-
-		mMessage = minimessageBuilder.build().parse(message);
-	}
-
-	// For when receiving remote messages
-	private Message(Instant instant, UUID channelId, UUID senderId, String senderName, Component message) {
+	private Message(Instant instant, UUID channelId, UUID senderId, String senderName, NamespacedKey senderType, JsonObject extraData, Component message) {
 		mInstant = instant;
 		mChannelId = channelId;
 		mSenderId = senderId;
 		mSenderName = senderName;
+		mSenderType = senderType;
+		mExtraData = extraData;
 		mMessage = message;
+	}
+
+	// Normally called through a channel
+	protected static Message createMessage(ChannelBase channel, CommandSender sender, JsonObject extraData, Component message) {
+		Instant instant = Instant.now();
+		UUID channelId = channel.getUniqueId();
+		UUID senderId = null;
+		if (sender instanceof Player) {
+			senderId = ((Player) sender).getUniqueId();
+		}
+		NamespacedKey senderType = null;
+		if (sender instanceof Entity) {
+			senderType = ((Entity) sender).getType().getKey();
+		}
+		return new Message(instant, channelId, senderId, sender.getName(), senderType, extraData, message);
+	}
+
+	// Normally called through a channel
+	protected static Message createMessage(ChannelBase channel, CommandSender sender, JsonObject extraData, String message, boolean markdown, Set<TransformationType> textTransformations) {
+		MiniMessage.Builder minimessageBuilder = MiniMessage.builder()
+		    .removeDefaultTransformations();
+
+		if (markdown) {
+			minimessageBuilder.markdown()
+			    .markdownFlavor(DiscordFlavor.get());
+		}
+
+		for (TransformationType transform : textTransformations) {
+			minimessageBuilder.transformation(transform);
+		}
+
+		Component messageComponent = minimessageBuilder.build().parse(message);
+
+		return Message.createMessage(channel, sender, extraData, messageComponent);
+	}
+
+	// For when receiving remote messages
+	protected static Message fromJson(JsonObject object) {
+		Instant instant = Instant.ofEpochMilli(object.get("instant").getAsLong());;
+		UUID channelId = UUID.fromString(object.get("channelId").getAsString());
+		UUID senderId = UUID.fromString(object.get("senderId").getAsString());
+		String senderName = object.get("senderName").getAsString();
+		NamespacedKey senderType = NamespacedKey.fromString(object.get("senderType").getAsString());
+		JsonObject extraData = null;
+		if (object.get("extra") != null) {
+			extraData = object.get("extra").getAsJsonObject();
+		}
+		Component message = GsonComponentSerializer.gson().deserializeFromTree(object.get("message"));
+
+		return new Message(instant, channelId, senderId, senderName, senderType, extraData, message);
+	}
+
+	protected JsonObject toJson() {
+		JsonObject object = new JsonObject();
+
+		object.addProperty("instant", mInstant.toEpochMilli());
+		object.addProperty("channelId", mChannelId.toString());
+		object.addProperty("senderId", mSenderId.toString());
+		object.addProperty("senderName", mSenderName);
+		object.addProperty("senderType", mSenderType.toString());
+		object.add("extra", mExtraData);
+		object.add("message", GsonComponentSerializer.gson().serializeToTree(mMessage));
+
+		return object;
 	}
 
 	public Instant getInstant() {
@@ -86,6 +119,10 @@ public class Message {
 
 	public String getSenderName() {
 		return mSenderName;
+	}
+
+	public NamespacedKey getSenderType() {
+		return mSenderType;
 	}
 
 	public Component getMessage() {
