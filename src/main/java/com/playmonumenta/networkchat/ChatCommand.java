@@ -28,6 +28,7 @@ public class ChatCommand {
 
 		arguments.add(new MultiLiteralArgument("new"));
 		arguments.add(new TextArgument("Channel ID"));
+		ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 
 		for (String baseCommand : COMMANDS) {

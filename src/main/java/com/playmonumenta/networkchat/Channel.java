@@ -14,7 +14,9 @@ public abstract class Channel {
 	public static Channel fromJson(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 
-		if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
+		if (channelClassId.equals(ChannelGlobal.CHANNEL_CLASS_ID)) {
+			return ChannelGlobal.fromJsonInternal(channelJson);
+		} else if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
 			return ChannelLocal.fromJsonInternal(channelJson);
 		} else {
 			return ChannelFuture.fromJsonInternal(channelJson);
