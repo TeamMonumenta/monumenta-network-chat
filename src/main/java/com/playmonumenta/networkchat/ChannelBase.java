@@ -54,9 +54,9 @@ public abstract class ChannelBase {
 	public abstract void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException;
 
 	// Distributes a received message to the appropriate local player chat states. May be local or remote messages.
-	// Note that the message may not be displayed right away if the player has paused their chat.
+	// Note that sending to player chat state allows chat to be paused.
 	public abstract void distributeMessage(Message message);
 
-	// Show a message to a player; must be called from Message via PlayerState, not directly.
+	// Show a message to a player immediately; must be called from Message via PlayerState, not directly.
 	protected abstract void showMessage(CommandSender recipient, Message message);
 }

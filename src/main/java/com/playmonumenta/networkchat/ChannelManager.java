@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -7,7 +8,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.redissync.RedisAPI;
 
 import dev.jorel.commandapi.CommandAPI;
@@ -16,7 +19,11 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
 public class ChannelManager {
@@ -26,13 +33,16 @@ public class ChannelManager {
 
 	private static ChannelManager INSTANCE = null;
 	private static Plugin mPlugin = null;
+	private static File mForceLoadedFile;
+	private static Set<UUID> mForceLoadedChannels = new HashSet<>();
 	private static Map<String, UUID> mChannelIdsByName = null;
 	private static Map<UUID, ChannelBase> mChannels = new HashMap<>();
-	private static Map<String, ChannelBase> mChannelsByName = new HashMap<>();
 
 	private ChannelManager(Plugin plugin) {
 		INSTANCE = this;
 		mPlugin = plugin;
+		mForceLoadedFile = new File(plugin.getDataFolder(), "forceLoadedChannels.json");
+		reload();
 		loadAllChannelNames();
 	}
 
@@ -47,29 +57,77 @@ public class ChannelManager {
 		return INSTANCE;
 	}
 
+	public static void reload() {
+		// Load the list of forceloaded channels
+		JsonObject forceLoadJson;
+		try {
+			forceLoadJson = FileUtils.readJson(mForceLoadedFile.getPath());
+		} catch (Exception e) {
+			mPlugin.getLogger().warning("Could not load force load config; assuming file does not exist yet.");
+			return;
+		}
+
+		Set<UUID> previouslyForceLoaded = mForceLoadedChannels;
+		mForceLoadedChannels = new HashSet<>();
+
+		for (Map.Entry<String, JsonElement> forceLoadEntry : forceLoadJson.entrySet()) {
+			String channelIdStr = forceLoadEntry.getKey();
+			try {
+				UUID channelId = UUID.fromString(channelIdStr);
+				mForceLoadedChannels.add(channelId);
+				loadChannel(channelId, (PlayerState) null);
+			} catch (Exception e) {
+				continue;
+			}
+		}
+
+		// TODO Unload channels from previouslyForceLoaded if appropriate
+	}
+
+	public static void saveConfig() {
+		JsonObject forceLoadJson = new JsonObject();
+		for (UUID channelId : mForceLoadedChannels) {
+			ChannelBase channel = mChannels.get(channelId);
+			if (channel == null) {
+				continue;
+			}
+			String channelName = channel.getName();
+			forceLoadJson.addProperty(channelId.toString(), channelName);
+		}
+		try {
+			FileUtils.writeJson(mForceLoadedFile.getPath(), forceLoadJson);
+		} catch (Exception e) {
+			mPlugin.getLogger().warning("Could not save force load config.");
+		}
+	}
+
 	public static Set<UUID> getLoadedChannelIds() {
 		return new HashSet<>(mChannels.keySet());
 	}
 
 	public static Set<String> getChannelNames() {
-		return new HashSet<>(mChannelsByName.keySet());
+		return new HashSet<>(mChannelIdsByName.keySet());
 	}
 
+	// Used for new channels
 	public static void registerNewChannel(ChannelBase channel) throws WrapperCommandSyntaxException {
 		if (channel == null) {
 			return;
 		}
 
 		String channelName = channel.getName();
-		ChannelBase oldChannel = mChannelsByName.get(channelName);
-		if (oldChannel != null) {
+		UUID oldChannelId = mChannelIdsByName.get(channelName);
+		if (oldChannelId != null) {
 			CommandAPI.fail("Channel " + channelName + " already exists!");
 		}
 		UUID channelId = channel.getUniqueId();
+		RedisAPI.getInstance().async().hset(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName, channelId.toString());
+		mChannelIdsByName.put(channelName, channelId);
 		mChannels.put(channelId, channel);
-		mChannelsByName.put(channelName, channel);
+		saveChannel(channel);
 	}
 
+	// Used for channels that are done loading from Redis
 	public static void registerLoadedChannel(ChannelBase channel) {
 		if (channel == null) {
 			return;
@@ -87,7 +145,6 @@ public class ChannelManager {
 			} else {
 				// Unregister the old channel so the new one can load.
 				PlayerStateManager.unregisterChannel(channelId);
-				mChannelsByName.remove(oldChannel.getName());
 				mChannels.remove(channelId);
 			}
 		}
@@ -95,7 +152,6 @@ public class ChannelManager {
 		// Continue registering the loaded channel.
 		String channelName = channel.getName();
 		mChannels.put(channelId, channel);
-		mChannelsByName.put(channelName, channel);
 
 		if (sendQueuedMessages) {
 			// TODO Send queued messages to players waiting on them
@@ -108,32 +164,42 @@ public class ChannelManager {
 	}
 
 	public static ChannelBase getChannel(String channelName) {
-		return mChannelsByName.get(channelName);
+		UUID channelId = mChannelIdsByName.get(channelName);
+		if (channelId == null) {
+			return null;
+		}
+		return mChannels.get(channelId);
 	}
 
 	public static void renameChannel(String oldName, String newName) throws WrapperCommandSyntaxException {
-		ChannelBase channel = mChannelsByName.get(oldName);
-		if (channel == null) {
+		UUID oldChannelId = mChannelIdsByName.get(oldName);
+		if (oldChannelId == null) {
 			CommandAPI.fail("Channel " + oldName + " does not exist!");
 		}
+		ChannelBase channel = mChannels.get(oldChannelId);
+		if (channel == null || channel instanceof ChannelLoading) {
+			loadChannel(oldChannelId, (PlayerState) null);
+			CommandAPI.fail("Channel " + oldName + " not yet loaded, try again.");
+		}
 
-		if (mChannelsByName.get(newName) != null) {
+		if (mChannelIdsByName.get(newName) != null) {
 			CommandAPI.fail("Channel " + newName + " already exists!");
 		}
 
 		// NOTE: May call CommandAPI.fail to cancel the change before it occurs.
 		channel.setName(newName);
 
-		mChannelsByName.put(newName, channel);
-		mChannelsByName.remove(oldName);
+		mChannelIdsByName.put(newName, channel.getUniqueId());
+		mChannelIdsByName.remove(oldName);
 
 		// TODO Broadcast the change
 
 		saveChannel(channel);
+		RedisAPI.getInstance().async().hdel(REDIS_CHANNEL_NAME_TO_UUID_PATH, oldName);
 	}
 
 	public static void deleteChannel(String channelName) throws WrapperCommandSyntaxException {
-		ChannelBase channel = mChannelsByName.get(channelName);
+		ChannelBase channel = getChannel(channelName);
 		if (channel == null) {
 			CommandAPI.fail("Channel " + channelName + " does not exist!");
 		}
@@ -144,12 +210,38 @@ public class ChannelManager {
 		}
 
 		mChannels.remove(channelId);
-		mChannelsByName.remove(channelName);
 
 		// TODO Broadcast the change to other shards
 
-		RedisAPI.getInstance().async().hdel(REDIS_CHANNELS_PATH, channelId.toString());
-		RedisAPI.getInstance().async().hdel(REDIS_CHANNEL_PARTICIPANTS_PATH, channelId.toString());
+		RedisAsyncCommands<String, String> redisAsync = RedisAPI.getInstance().async();
+		redisAsync.hdel(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName);
+		redisAsync.hdel(REDIS_CHANNELS_PATH, channelId.toString());
+		redisAsync.hdel(REDIS_CHANNEL_PARTICIPANTS_PATH, channelId.toString());
+	}
+
+	public static int forceLoadChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
+		UUID channelId = mChannelIdsByName.get(channelName);
+		if (channelId == null) {
+			CommandAPI.fail("Channel " + channelName + " does not exist!");
+		}
+
+		loadChannel(channelId, (PlayerState) null);
+		mForceLoadedChannels.add(channelId);
+		saveConfig();
+		sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
+		return 1;
+	}
+
+	public static int unforceLoadChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
+		UUID channelId = mChannelIdsByName.get(channelName);
+		if (channelId == null) {
+			CommandAPI.fail("Channel " + channelName + " does not exist!");
+		}
+
+		mForceLoadedChannels.remove(channelId);
+		saveConfig();
+		sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
+		return 1;
 	}
 
 	public static void loadChannel(UUID channelId, PlayerState playerState) {
@@ -165,6 +257,7 @@ public class ChannelManager {
 		ChannelBase channel = null;
 
 		// Mark the channel as loading
+		mPlugin.getLogger().info("Attempting to load channel " + channelId.toString() + ".");
 		ChannelLoading loadingChannel = new ChannelLoading(channelId);
 		mChannels.put(channelId, loadingChannel);
 		loadingChannel.addWaitingPlayerState(playerState);
@@ -192,6 +285,7 @@ public class ChannelManager {
 		ChannelBase channel = null;
 
 		// Mark the channel as loading
+		mPlugin.getLogger().info("Attempting to load channel " + channelId.toString() + ".");
 		ChannelLoading loadingChannel = new ChannelLoading(channelId);
 		mChannels.put(channelId, loadingChannel);
 		loadingChannel.addMessage(message);
@@ -217,6 +311,7 @@ public class ChannelManager {
 		ChannelLoading loadingChannel = (ChannelLoading) channel;
 		if (channelData == null) {
 			// No channel was found, alert the player it was deleted.
+			mPlugin.getLogger().warning("Channel " + channelId.toString() + " was not found.");
 			PlayerStateManager.unregisterChannel(channelId);
 			mChannels.remove(channelId);
 			loadingChannel.finishLoading();
@@ -226,12 +321,14 @@ public class ChannelManager {
 			JsonObject channelJson = gson.fromJson(channelData, JsonObject.class);
 			try {
 				channel = ChannelBase.fromJson(channelJson);
+				mPlugin.getLogger().info("Channel " + channelId.toString() + " loaded, registering...");
 			} catch (Exception e) {
 				mPlugin.getLogger().severe("Caught exception trying to load channel " + channelId.toString() + ": " + e);
 				return;
 			}
 			registerLoadedChannel(channel);
 			loadingChannel.finishLoading();
+			saveConfig();
 		}
 	}
 
@@ -241,8 +338,13 @@ public class ChannelManager {
 		}
 
 		String channelIdStr = channel.getUniqueId().toString();
+		String channelName = channel.getName();
 		String channelJsonStr = channel.toJson().toString();
-		RedisAPI.getInstance().async().hset(REDIS_CHANNELS_PATH, channelIdStr, channelJsonStr);
+
+		mPlugin.getLogger().info("Saving channel " + channelIdStr + ".");
+		RedisAsyncCommands<String, String> redisAsync = RedisAPI.getInstance().async();
+		redisAsync.hset(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName, channelIdStr);
+		redisAsync.hset(REDIS_CHANNELS_PATH, channelIdStr, channelJsonStr);
 	}
 
 	public static void unloadChannel(ChannelBase channel) {
@@ -257,7 +359,6 @@ public class ChannelManager {
 		}
 
 		mChannels.remove(channelId);
-		mChannelsByName.remove(channelName);
 		saveChannel(channel);
 
 		// No announcements or deletion to do.
@@ -277,5 +378,11 @@ public class ChannelManager {
 			}
 			return channelStrIdsByName;
 		});
+	}
+
+	protected static void resetAll() {
+		RedisAPI.getInstance().async().del(REDIS_CHANNEL_NAME_TO_UUID_PATH);
+		RedisAPI.getInstance().async().del(REDIS_CHANNELS_PATH);
+		RedisAPI.getInstance().async().del(REDIS_CHANNEL_PARTICIPANTS_PATH);
 	}
 }

@@ -71,11 +71,17 @@ public class PlayerStateManager implements Listener {
 		if (data == null) {
 			playerState = new PlayerState(player);
 			mPlayerStates.put(player.getUniqueId(), playerState);
-			mPlugin.getLogger().info("No data for for player " + player.getName());
+			mPlugin.getLogger().info("No chat state for for player " + player.getName());
 		} else {
-			playerState = PlayerState.fromJson(player, data);
-			mPlayerStates.put(player.getUniqueId(), playerState);
-			mPlugin.getLogger().info("Loaded data for player " + player.getName());
+			try {
+				playerState = PlayerState.fromJson(player, data);
+				mPlayerStates.put(player.getUniqueId(), playerState);
+				mPlugin.getLogger().info("Loaded chat state for player " + player.getName());
+			} catch (Exception e) {
+				playerState = new PlayerState(player);
+				mPlayerStates.put(player.getUniqueId(), playerState);
+				mPlugin.getLogger().warning("Player's chat state could not be loaded and was reset " + player.getName());
+			}
 		}
 
 		for (UUID channelId : playerState.getWatchedChannelIds()) {
@@ -85,9 +91,6 @@ public class PlayerStateManager implements Listener {
 			ChannelManager.loadChannel(channelId, playerState);
 		}
 		UUID activeChannelId = playerState.getActiveChannelId();
-		if (activeChannelId != null) {
-			ChannelManager.loadChannel(activeChannelId, playerState);
-		}
 
 		// TODO Send login messages here (once implemented)
 	}

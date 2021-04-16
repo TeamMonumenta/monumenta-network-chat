@@ -34,9 +34,9 @@ public class ChannelLocal extends ChannelBase {
 	private String mShardName;
 	private String mName;
 
-	private ChannelLocal(UUID channelId, String shardName, String name) {
+	private ChannelLocal(UUID channelId, String name) throws Exception {
 		mId = channelId;
-		mShardName = shardName;
+		mShardName = NetworkRelayAPI.getShardName();
 		mName = name;
 	}
 
@@ -53,9 +53,8 @@ public class ChannelLocal extends ChannelBase {
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
-		String shardName = channelJson.getAsJsonPrimitive("shardName").getAsString();
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
-		return new ChannelLocal(channelId, shardName, name);
+		return new ChannelLocal(channelId, name);
 	}
 
 	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
@@ -89,7 +88,6 @@ public class ChannelLocal extends ChannelBase {
 		JsonObject result = new JsonObject();
 		result.addProperty("type", CHANNEL_CLASS_ID);
 		result.addProperty("uuid", mId.toString());
-		result.addProperty("shardName", mShardName);
 		result.addProperty("name", mName);
 		return result;
 	}
@@ -116,6 +114,8 @@ public class ChannelLocal extends ChannelBase {
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		// TODO Add permission check for local chat.
+
+		// TODO Permissions for allowed chat transformations?
 		Set<TransformationType> allowedTransforms = new HashSet<>();
 		allowedTransforms.add(TransformationType.COLOR);
 		allowedTransforms.add(TransformationType.DECORATION);
@@ -123,7 +123,11 @@ public class ChannelLocal extends ChannelBase {
 		allowedTransforms.add(TransformationType.FONT);
 		allowedTransforms.add(TransformationType.GRADIENT);
 		allowedTransforms.add(TransformationType.RAINBOW);
-		Message message = Message.createMessage(this, sender, null, messageText, true, allowedTransforms);
+
+		JsonObject extraData = new JsonObject();
+		extraData.addProperty("fromShard", mShardName);
+
+		Message message = Message.createMessage(this, sender, extraData, messageText, true, allowedTransforms);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -135,15 +139,12 @@ public class ChannelLocal extends ChannelBase {
 
 	public void distributeMessage(Message message) {
 		// TODO Check permission to see the message.
-		ChannelBase messageChannel = message.getChannel();
-		try {
-			if (!(messageChannel instanceof ChannelLocal) ||
-				!(((ChannelLocal) messageChannel).mShardName.equals(NetworkRelayAPI.getShardName()))) {
-				// TODO: Command spy goes here-ish
-				return;
-			}
-		} catch (Exception e) {
-			// Not connected to RabbitMQ - if this happens, this function doesn't get called anyways.
+		JsonObject extraData = message.getExtraData();
+		if (extraData == null
+		    || extraData.getAsJsonPrimitive("fromShard") == null
+		    || !extraData.getAsJsonPrimitive("fromShard").isString()
+		    || !mShardName.equals(extraData.getAsJsonPrimitive("fromShard").getAsString())) {
+			// TODO Chat spy here
 			return;
 		}
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
@@ -151,6 +152,7 @@ public class ChannelLocal extends ChannelBase {
 			PlayerState state = playerStateEntry.getValue();
 
 			if (state.isListening(this)) {
+				// This accounts for players who have paused their chat
 				state.receiveMessage(message);
 			}
 		}
@@ -165,8 +167,7 @@ public class ChannelLocal extends ChannelBase {
 			.build();
 
 		// TODO Use configurable formatting, not hard-coded formatting.
-		// "§7<§f" + mName + " (l)§7> §f" + message.getSender() + " §7» §f" + message.getMessage()
-		String prefix = "<gray>\\<<white><channelName> (l)<gray>> <white><sender> <gray>» <white>";
+		String prefix = "<gray><hover:show_text:\"<yellow>Local Channel\">\\<<yellow><channelName><gray>></hover> <white><sender> <gray>» ";
 		String suffix = "<hover:show_text:\"Moderator thingy?\">    </hover>";
 		// TODO We should use templates to insert these and related formatting.
 		prefix = prefix.replace("<channelName>", mName)
@@ -182,7 +183,7 @@ public class ChannelLocal extends ChannelBase {
 
 		Component fullMessage = Component.empty()
 		    .append(minimessage.parse(prefix))
-		    .append(message.getMessage())
+		    .append(Component.empty().color(NamedTextColor.YELLOW).append(message.getMessage()))
 		    .append(minimessage.parse(suffix));
 		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
 	}

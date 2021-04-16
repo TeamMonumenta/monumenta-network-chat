@@ -3,8 +3,10 @@ package com.playmonumenta.networkchat;
 import java.lang.NumberFormatException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -12,6 +14,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 import org.bukkit.entity.Player;
 
@@ -24,9 +29,9 @@ public class PlayerState {
 	private boolean mChatPaused;
 	private UUID mActiveChannelId;
 
-	// Channels not in these sets will use the default channel watch status.
-	private Set<UUID> mWatchedChannelIds;
-	private Set<UUID> mUnwatchedChannelIds;
+	// Channels not in these maps will use the default channel watch status.
+	private Map<UUID, String> mWatchedChannelIds;
+	private Map<UUID, String> mUnwatchedChannelIds;
 
 	private List<Message> mSeenMessages;
 	private List<Message> mUnseenMessages;
@@ -35,8 +40,8 @@ public class PlayerState {
 		mPlayer = player;
 		mChatPaused = false;
 
-		mWatchedChannelIds = new HashSet<UUID>();
-		mUnwatchedChannelIds = new HashSet<UUID>();
+		mWatchedChannelIds = new HashMap<>();
+		mUnwatchedChannelIds = new HashMap<>();
 
 		// TODO Get default channel here
 		unsetActiveChannel();
@@ -71,22 +76,26 @@ public class PlayerState {
 			state.mActiveChannelId = UUID.fromString(activeChannelJson.getAsString());
 		}
 
-		JsonArray watchedChannelsJson = obj.getAsJsonArray("watchedChannels");
+		JsonObject watchedChannelsJson = obj.getAsJsonObject("watchedChannels");
 		if (watchedChannelsJson != null) {
-			for (JsonElement channelIdElement : watchedChannelsJson) {
+			for (Map.Entry<String, JsonElement> channelIdEntry : watchedChannelsJson.entrySet()) {
+				String channelId = channelIdEntry.getKey();
+				JsonElement lastKnownChannelName = channelIdEntry.getValue();
 				try {
-					state.mWatchedChannelIds.add(UUID.fromString(channelIdElement.getAsString()));
+					state.mWatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
 					;
 				}
 			}
 		}
 
-		JsonArray unwatchedChannelsJson = obj.getAsJsonArray("unwatchedChannels");
+		JsonObject unwatchedChannelsJson = obj.getAsJsonObject("unwatchedChannels");
 		if (unwatchedChannelsJson != null) {
-			for (JsonElement channelIdElement : unwatchedChannelsJson) {
+			for (Map.Entry<String, JsonElement> channelIdEntry : unwatchedChannelsJson.entrySet()) {
+				String channelId = channelIdEntry.getKey();
+				JsonElement lastKnownChannelName = channelIdEntry.getValue();
 				try {
-					state.mUnwatchedChannelIds.add(UUID.fromString(channelIdElement.getAsString()));
+					state.mUnwatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
 					;
 				}
@@ -97,14 +106,18 @@ public class PlayerState {
 	}
 
 	public JsonObject toJson() {
-		JsonArray watchedChannels = new JsonArray();
-		for (UUID channelId : mWatchedChannelIds) {
-			watchedChannels.add(channelId.toString());
+		JsonObject watchedChannels = new JsonObject();
+		for (Map.Entry<UUID, String> channelEntry : mWatchedChannelIds.entrySet()) {
+			UUID channelId = channelEntry.getKey();
+			String channelName = channelEntry.getValue();
+			watchedChannels.addProperty(channelId.toString(), channelName);
 		}
 
-		JsonArray unwatchedChannels = new JsonArray();
-		for (UUID channelId : mUnwatchedChannelIds) {
-			unwatchedChannels.add(channelId.toString());
+		JsonObject unwatchedChannels = new JsonObject();
+		for (Map.Entry<UUID, String> channelEntry : mUnwatchedChannelIds.entrySet()) {
+			UUID channelId = channelEntry.getKey();
+			String channelName = channelEntry.getValue();
+			unwatchedChannels.addProperty(channelId.toString(), channelName);
 		}
 
 		JsonObject result = new JsonObject();
@@ -143,7 +156,7 @@ public class PlayerState {
 	public void refreshChat() {
 		int blank_messages = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
 		for (int i = 0; i < blank_messages; ++i) {
-			mPlayer.sendMessage("");
+			mPlayer.sendMessage(Component.empty());
 		}
 
 		for (Message message : mSeenMessages) {
@@ -187,20 +200,21 @@ public class PlayerState {
 	}
 
 	public Set<UUID> getWatchedChannelIds() {
-		return new HashSet<>(mWatchedChannelIds);
+		return new HashSet<>(mWatchedChannelIds.keySet());
 	}
 
 	public Set<UUID> getUnwatchedChannelIds() {
-		return new HashSet<>(mUnwatchedChannelIds);
+		return new HashSet<>(mUnwatchedChannelIds.keySet());
 	}
 
 	public boolean isWatchingChannelId(UUID channelId) {
-		return mWatchedChannelIds.contains(channelId);
+		return mWatchedChannelIds.containsKey(channelId);
 	}
 
 	public void joinChannel(ChannelBase channel) {
 		UUID channelId = channel.getUniqueId();
-		mWatchedChannelIds.add(channelId);
+		String channelName = channel.getName();
+		mWatchedChannelIds.put(channelId, channelName);
 		mUnwatchedChannelIds.remove(channelId);
 		if (mActiveChannelId == null) {
 			mActiveChannelId = channelId;
@@ -209,11 +223,12 @@ public class PlayerState {
 
 	public void leaveChannel(ChannelBase channel) {
 		UUID channelId = channel.getUniqueId();
+		String channelName = channel.getName();
 		if (channelId == mActiveChannelId) {
 			unsetActiveChannel();
 		}
 		mWatchedChannelIds.remove(channelId);
-		mUnwatchedChannelIds.add(channelId);
+		mUnwatchedChannelIds.put(channelId, channelName);
 	}
 
 	// For channel deletion
@@ -235,9 +250,9 @@ public class PlayerState {
 
 	public boolean isListening(ChannelBase channel) {
 		UUID channelId = channel.getUniqueId();
-		if (mUnwatchedChannelIds.contains(channelId)) {
+		if (mUnwatchedChannelIds.containsKey(channelId)) {
 			return false;
-		} else if (mWatchedChannelIds.contains(channelId)) {
+		} else if (mWatchedChannelIds.containsKey(channelId)) {
 			return true;
 		} else {
 			// TODO Use channel's settings, NYI
@@ -247,7 +262,7 @@ public class PlayerState {
 
 	public Set<ChannelBase> getMutedChannels() {
 		Set<ChannelBase> channels = new HashSet<ChannelBase>();
-		for (UUID channelId : mUnwatchedChannelIds) {
+		for (UUID channelId : mUnwatchedChannelIds.keySet()) {
 			channels.add(ChannelManager.getChannel(channelId));
 		}
 		return channels;
@@ -255,11 +270,20 @@ public class PlayerState {
 
 	protected void channelLoaded(UUID channelId) {
 		ChannelBase loadedChannel = ChannelManager.getChannel(channelId);
+		String lastKnownName = mWatchedChannelIds.get(channelId);
+		if (lastKnownName == null) {
+			lastKnownName = mUnwatchedChannelIds.get(channelId);
+		}
 		if (loadedChannel == null) {
 			// Channel was deleted
 			unregisterChannel(channelId);
 			// TODO Group deleted channel messages together.
-			mPlayer.sendMessage("Channel UUID " + channelId.toString() + " is no longer available.");
-		} // TODO Consider handling ChannelFuture, or properly loaded channels.
+			mPlayer.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is no longer available.", NamedTextColor.RED));
+		} else {
+			String newName = loadedChannel.getName();
+			if (!newName.equals(lastKnownName)) {
+				mPlayer.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newName + ".", NamedTextColor.GRAY));
+			}
+		}
 	}
 }

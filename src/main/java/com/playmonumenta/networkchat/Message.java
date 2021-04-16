@@ -113,6 +113,10 @@ public class Message {
 		return ChannelManager.getChannel(mChannelId);
 	}
 
+	public JsonObject getExtraData() {
+		return mExtraData;
+	}
+
 	public UUID getSenderId() {
 		return mSenderId;
 	}

@@ -15,6 +15,9 @@ import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+
 import com.playmonumenta.networkchat.utils.CommandUtils;
 
 public class ChatCommand {
@@ -31,6 +34,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("rename"));
 			arguments.add(new TextArgument("Old Channel ID").overrideSuggestions((sender) -> {
+				// TODO Only suggest channels players have access to (same with other suggestions)
 				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			arguments.add(new TextArgument("New Channel ID"));
@@ -38,6 +42,18 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					return renameChannel(sender, (String)args[1], (String)args[2]);
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("forceload"));
+			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChannelManager.getChannelNames().toArray(new String[0]);
+			}));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return ChannelManager.forceLoadChannel(sender, (String)args[1]);
 				})
 				.register();
 
@@ -50,6 +66,15 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					return deleteChannel(sender, (String)args[1]);
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("resetall"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return resetAll(sender);
 				})
 				.register();
 
@@ -116,6 +141,7 @@ public class ChatCommand {
 
 		// May call CommandAPI.fail()
 		ChannelManager.renameChannel(oldChannelId, newChannelId);
+		sender.sendMessage(Component.text("Channel " + oldChannelId + " renamed to " + newChannelId + ".", NamedTextColor.GRAY));
 		return 1;
 	}
 
@@ -124,6 +150,15 @@ public class ChatCommand {
 
 		// May call CommandAPI.fail()
 		ChannelManager.deleteChannel(channelId);
+		sender.sendMessage(Component.text("Channel " + channelId + " deleted.", NamedTextColor.GRAY));
+		return 1;
+	}
+
+	private static int resetAll(CommandSender sender) throws WrapperCommandSyntaxException {
+		// TODO REALLY IMPORTANT PERMS CHECK
+
+		ChannelManager.resetAll();
+		sender.sendMessage(Component.text("You did the bad thing! All things reset.", NamedTextColor.RED));
 		return 1;
 	}
 
@@ -145,6 +180,7 @@ public class ChatCommand {
 		}
 
 		playerState.joinChannel(channel);
+		target.sendMessage(Component.text("Joined channel " + channelId + ".", NamedTextColor.GRAY));
 		return 1;
 	}
 
@@ -166,6 +202,7 @@ public class ChatCommand {
 		}
 
 		playerState.leaveChannel(channel);
+		target.sendMessage(Component.text("Left channel " + channelId + ".", NamedTextColor.GRAY));
 		return 1;
 	}
 
@@ -197,6 +234,7 @@ public class ChatCommand {
 		}
 
 		playerState.pauseChat();
+		target.sendMessage(Component.text("Chat paused.", NamedTextColor.GRAY));
 		return 1;
 	}
 
@@ -212,6 +250,7 @@ public class ChatCommand {
 			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
 		}
 
+		target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
 		playerState.unpauseChat();
 		return 1;
 	}
