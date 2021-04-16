@@ -10,7 +10,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 // A channel that is from a future plugin version. This may not be saved.
-public class ChannelFuture extends ChannelBase {
+public class ChannelFuture extends Channel {
 	public static final String CHANNEL_CLASS_ID = "future";
 
 	private String mType;
@@ -23,7 +23,7 @@ public class ChannelFuture extends ChannelBase {
 		mName = name;
 	}
 
-	protected static ChannelBase fromJsonInternal(JsonObject channelJson) {
+	protected static Channel fromJsonInternal(JsonObject channelJson) {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);

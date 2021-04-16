@@ -174,7 +174,7 @@ public class ChatCommand {
 			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
 		}
 
-		ChannelBase channel = ChannelManager.getChannel(channelId);
+		Channel channel = ChannelManager.getChannel(channelId);
 		if (channel == null) {
 			CommandAPI.fail("No such channel " + channelId + ".");
 		}
@@ -196,7 +196,7 @@ public class ChatCommand {
 			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
 		}
 
-		ChannelBase channel = ChannelManager.getChannel(channelId);
+		Channel channel = ChannelManager.getChannel(channelId);
 		if (channel == null) {
 			CommandAPI.fail("No such channel " + channelId + ".");
 		}
@@ -212,7 +212,7 @@ public class ChatCommand {
 			CommandAPI.fail("Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
 
-		ChannelBase channel = ChannelManager.getChannel(channelId);
+		Channel channel = ChannelManager.getChannel(channelId);
 		if (channel == null) {
 			CommandAPI.fail("No such channel " + channelId + ".");
 		}

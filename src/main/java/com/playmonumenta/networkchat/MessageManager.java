@@ -62,7 +62,7 @@ public class MessageManager implements Listener {
 			return;
 		}
 
-		ChannelBase channel = message.getChannel();
+		Channel channel = message.getChannel();
 		if (channel == null) {
 			ChannelManager.loadChannel(message.getChannelUniqueId(), message);
 		} else {

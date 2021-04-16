@@ -36,7 +36,7 @@ public class ChannelManager {
 	private static File mForceLoadedFile;
 	private static Set<UUID> mForceLoadedChannels = new HashSet<>();
 	private static Map<String, UUID> mChannelIdsByName = null;
-	private static Map<UUID, ChannelBase> mChannels = new HashMap<>();
+	private static Map<UUID, Channel> mChannels = new HashMap<>();
 
 	private ChannelManager(Plugin plugin) {
 		INSTANCE = this;
@@ -87,7 +87,7 @@ public class ChannelManager {
 	public static void saveConfig() {
 		JsonObject forceLoadJson = new JsonObject();
 		for (UUID channelId : mForceLoadedChannels) {
-			ChannelBase channel = mChannels.get(channelId);
+			Channel channel = mChannels.get(channelId);
 			if (channel == null) {
 				continue;
 			}
@@ -110,7 +110,7 @@ public class ChannelManager {
 	}
 
 	// Used for new channels
-	public static void registerNewChannel(ChannelBase channel) throws WrapperCommandSyntaxException {
+	public static void registerNewChannel(Channel channel) throws WrapperCommandSyntaxException {
 		if (channel == null) {
 			return;
 		}
@@ -128,7 +128,7 @@ public class ChannelManager {
 	}
 
 	// Used for channels that are done loading from Redis
-	public static void registerLoadedChannel(ChannelBase channel) {
+	public static void registerLoadedChannel(Channel channel) {
 		if (channel == null) {
 			return;
 		}
@@ -136,7 +136,7 @@ public class ChannelManager {
 		UUID channelId = channel.getUniqueId();
 
 		// Unregister any old channels as needed.
-		ChannelBase oldChannel = mChannels.get(channelId);
+		Channel oldChannel = mChannels.get(channelId);
 		boolean sendQueuedMessages = false;
 		if (oldChannel != null) {
 			if (oldChannel instanceof ChannelLoading) {
@@ -159,11 +159,11 @@ public class ChannelManager {
 		}
 	}
 
-	public static ChannelBase getChannel(UUID channelId) {
+	public static Channel getChannel(UUID channelId) {
 		return mChannels.get(channelId);
 	}
 
-	public static ChannelBase getChannel(String channelName) {
+	public static Channel getChannel(String channelName) {
 		UUID channelId = mChannelIdsByName.get(channelName);
 		if (channelId == null) {
 			return null;
@@ -176,7 +176,7 @@ public class ChannelManager {
 		if (oldChannelId == null) {
 			CommandAPI.fail("Channel " + oldName + " does not exist!");
 		}
-		ChannelBase channel = mChannels.get(oldChannelId);
+		Channel channel = mChannels.get(oldChannelId);
 		if (channel == null || channel instanceof ChannelLoading) {
 			loadChannel(oldChannelId, (PlayerState) null);
 			CommandAPI.fail("Channel " + oldName + " not yet loaded, try again.");
@@ -199,7 +199,7 @@ public class ChannelManager {
 	}
 
 	public static void deleteChannel(String channelName) throws WrapperCommandSyntaxException {
-		ChannelBase channel = getChannel(channelName);
+		Channel channel = getChannel(channelName);
 		if (channel == null) {
 			CommandAPI.fail("Channel " + channelName + " does not exist!");
 		}
@@ -247,14 +247,14 @@ public class ChannelManager {
 	public static void loadChannel(UUID channelId, PlayerState playerState) {
 		/* Note that mChannels containing the channel ID means
 		 * either the channel is loaded, or is being loaded. */
-		ChannelBase preloadedChannel = mChannels.get(channelId);
+		Channel preloadedChannel = mChannels.get(channelId);
 		if (preloadedChannel != null) {
 			if (preloadedChannel instanceof ChannelLoading && playerState != null) {
 				((ChannelLoading) preloadedChannel).addWaitingPlayerState(playerState);
 			}
 			return;
 		}
-		ChannelBase channel = null;
+		Channel channel = null;
 
 		// Mark the channel as loading
 		mPlugin.getLogger().info("Attempting to load channel " + channelId.toString() + ".");
@@ -275,14 +275,14 @@ public class ChannelManager {
 	public static void loadChannel(UUID channelId, Message message) {
 		/* Note that mChannels containing the channel ID means
 		 * either the channel is loaded, or is being loaded. */
-		ChannelBase preloadedChannel = mChannels.get(channelId);
+		Channel preloadedChannel = mChannels.get(channelId);
 		if (preloadedChannel != null) {
 			if (preloadedChannel instanceof ChannelLoading && message != null) {
 				((ChannelLoading) preloadedChannel).addMessage(message);
 			}
 			return;
 		}
-		ChannelBase channel = null;
+		Channel channel = null;
 
 		// Mark the channel as loading
 		mPlugin.getLogger().info("Attempting to load channel " + channelId.toString() + ".");
@@ -301,7 +301,7 @@ public class ChannelManager {
 	}
 
 	private static void loadChannelApply(UUID channelId, String channelData) {
-		ChannelBase channel = mChannels.get(channelId);
+		Channel channel = mChannels.get(channelId);
 		if (!(channel instanceof ChannelLoading)) {
 			// Channel already finished loading.
 			return;
@@ -320,7 +320,7 @@ public class ChannelManager {
 			// Channel was found. Attempt to register it.
 			JsonObject channelJson = gson.fromJson(channelData, JsonObject.class);
 			try {
-				channel = ChannelBase.fromJson(channelJson);
+				channel = Channel.fromJson(channelJson);
 				mPlugin.getLogger().info("Channel " + channelId.toString() + " loaded, registering...");
 			} catch (Exception e) {
 				mPlugin.getLogger().severe("Caught exception trying to load channel " + channelId.toString() + ": " + e);
@@ -332,7 +332,7 @@ public class ChannelManager {
 		}
 	}
 
-	public static void saveChannel(ChannelBase channel) {
+	public static void saveChannel(Channel channel) {
 		if (channel == null || channel instanceof ChannelLoading || channel instanceof ChannelFuture) {
 			return;
 		}
@@ -347,7 +347,7 @@ public class ChannelManager {
 		redisAsync.hset(REDIS_CHANNELS_PATH, channelIdStr, channelJsonStr);
 	}
 
-	public static void unloadChannel(ChannelBase channel) {
+	public static void unloadChannel(Channel channel) {
 		UUID channelId = channel.getUniqueId();
 		String channelName = channel.getName();
 

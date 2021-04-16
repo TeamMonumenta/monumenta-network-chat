@@ -189,7 +189,7 @@ public class PlayerState {
 		mChatPaused = false;
 	}
 
-	public void setActiveChannel(ChannelBase channel) {
+	public void setActiveChannel(Channel channel) {
 		joinChannel(channel);
 		mActiveChannelId = channel.getUniqueId();
 	}
@@ -211,7 +211,7 @@ public class PlayerState {
 		return mWatchedChannelIds.containsKey(channelId);
 	}
 
-	public void joinChannel(ChannelBase channel) {
+	public void joinChannel(Channel channel) {
 		UUID channelId = channel.getUniqueId();
 		String channelName = channel.getName();
 		mWatchedChannelIds.put(channelId, channelName);
@@ -221,7 +221,7 @@ public class PlayerState {
 		}
 	}
 
-	public void leaveChannel(ChannelBase channel) {
+	public void leaveChannel(Channel channel) {
 		UUID channelId = channel.getUniqueId();
 		String channelName = channel.getName();
 		if (channelId == mActiveChannelId) {
@@ -244,11 +244,11 @@ public class PlayerState {
 		return mActiveChannelId;
 	}
 
-	public ChannelBase getActiveChannel() {
+	public Channel getActiveChannel() {
 		return ChannelManager.getChannel(mActiveChannelId);
 	}
 
-	public boolean isListening(ChannelBase channel) {
+	public boolean isListening(Channel channel) {
 		UUID channelId = channel.getUniqueId();
 		if (mUnwatchedChannelIds.containsKey(channelId)) {
 			return false;
@@ -260,8 +260,8 @@ public class PlayerState {
 		}
 	}
 
-	public Set<ChannelBase> getMutedChannels() {
-		Set<ChannelBase> channels = new HashSet<ChannelBase>();
+	public Set<Channel> getMutedChannels() {
+		Set<Channel> channels = new HashSet<Channel>();
 		for (UUID channelId : mUnwatchedChannelIds.keySet()) {
 			channels.add(ChannelManager.getChannel(channelId));
 		}
@@ -269,7 +269,7 @@ public class PlayerState {
 	}
 
 	protected void channelLoaded(UUID channelId) {
-		ChannelBase loadedChannel = ChannelManager.getChannel(channelId);
+		Channel loadedChannel = ChannelManager.getChannel(channelId);
 		String lastKnownName = mWatchedChannelIds.get(channelId);
 		if (lastKnownName == null) {
 			lastKnownName = mUnwatchedChannelIds.get(channelId);

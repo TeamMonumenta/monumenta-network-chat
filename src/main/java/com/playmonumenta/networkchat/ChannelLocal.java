@@ -27,7 +27,7 @@ import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 // A channel visible only to this shard (and moderators who opt in from elsewhere)
-public class ChannelLocal extends ChannelBase {
+public class ChannelLocal extends Channel {
 	public static final String CHANNEL_CLASS_ID = "local";
 
 	private UUID mId;
@@ -46,7 +46,7 @@ public class ChannelLocal extends ChannelBase {
 		mName = name;
 	}
 
-	protected static ChannelBase fromJsonInternal(JsonObject channelJson) throws Exception {
+	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
 			throw new Exception("Cannot create ChannelLocal from channel ID " + channelClassId);

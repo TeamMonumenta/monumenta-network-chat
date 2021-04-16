@@ -10,8 +10,8 @@ import org.bukkit.command.CommandSender;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
-public abstract class ChannelBase {
-	public static ChannelBase fromJson(JsonObject channelJson) throws Exception {
+public abstract class Channel {
+	public static Channel fromJson(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 
 		if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
@@ -22,7 +22,7 @@ public abstract class ChannelBase {
 	}
 
 	// OVERRIDE ME - Load a channel from json, allowing messages in that channel to be received
-	protected static ChannelBase fromJsonInternal(JsonObject channelJson) throws Exception {
+	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		throw new Exception("Channel has no fromJsonInternal() method!");
 	}
 

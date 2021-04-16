@@ -38,7 +38,7 @@ public class Message {
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(ChannelBase channel, CommandSender sender, JsonObject extraData, Component message) {
+	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, Component message) {
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
 		UUID senderId = null;
@@ -53,7 +53,7 @@ public class Message {
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(ChannelBase channel, CommandSender sender, JsonObject extraData, String message, boolean markdown, Set<TransformationType> textTransformations) {
+	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, String message, boolean markdown, Set<TransformationType> textTransformations) {
 		MiniMessage.Builder minimessageBuilder = MiniMessage.builder()
 		    .removeDefaultTransformations();
 
@@ -109,7 +109,7 @@ public class Message {
 		return mChannelId;
 	}
 
-	public ChannelBase getChannel() {
+	public Channel getChannel() {
 		return ChannelManager.getChannel(mChannelId);
 	}
 
@@ -143,7 +143,7 @@ public class Message {
 		if (mIsDeleted) {
 			return true;
 		}
-		ChannelBase channel = ChannelManager.getChannel(mChannelId);
+		Channel channel = ChannelManager.getChannel(mChannelId);
 		if (channel == null) {
 			return false;
 		}

@@ -14,7 +14,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 // A channel that has not finished loading. This may not be saved.
-public class ChannelLoading extends ChannelBase {
+public class ChannelLoading extends Channel {
 	public static final String CHANNEL_CLASS_ID = "loading";
 
 	private UUID mId;
@@ -82,7 +82,7 @@ public class ChannelLoading extends ChannelBase {
 		}
 
 		// If the newly loaded channel is valid, distribute messages that were missed
-		ChannelBase channel = ChannelManager.getChannel(mId);
+		Channel channel = ChannelManager.getChannel(mId);
 		if (channel == null
 		    || channel instanceof ChannelFuture) {
 			return;
