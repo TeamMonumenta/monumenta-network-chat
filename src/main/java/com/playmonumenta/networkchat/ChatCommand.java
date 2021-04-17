@@ -84,6 +84,19 @@ public class ChatCommand {
 			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
 				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					setActiveChannel(sender, (String)args[1]);
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("say"));
+			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChannelManager.getChannelNames().toArray(new String[0]);
+			}));
 			arguments.add(new GreedyStringArgument("Message"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -180,7 +193,7 @@ public class ChatCommand {
 			CommandAPI.fail("No such channel " + channelId + ".");
 		}
 
-		playerState.joinChannel(channel);
+		playerState.setActiveChannel(channel);
 		target.sendMessage(Component.text("Joined channel " + channelId + ".", NamedTextColor.GRAY));
 		return 1;
 	}
@@ -204,6 +217,28 @@ public class ChatCommand {
 
 		playerState.leaveChannel(channel);
 		target.sendMessage(Component.text("Left channel " + channelId + ".", NamedTextColor.GRAY));
+		return 1;
+	}
+
+	private static int setActiveChannel(CommandSender sender, String channelId) throws WrapperCommandSyntaxException {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player)) {
+			CommandAPI.fail("Only players have an active channel.");
+		}
+		Player player = (Player) callee;
+
+		PlayerState playerState = PlayerStateManager.getPlayerState(player);
+		if (playerState == null) {
+			CommandAPI.fail("That player has no chat state. Please report this bug.");
+		}
+
+		Channel channel = ChannelManager.getChannel(channelId);
+		if (channel == null) {
+			CommandAPI.fail("No such channel " + channelId + ".");
+		}
+
+		playerState.setActiveChannel(channel);
+		player.sendMessage(Component.text("You are now typing in " + channelId + ".", NamedTextColor.GRAY));
 		return 1;
 	}
 

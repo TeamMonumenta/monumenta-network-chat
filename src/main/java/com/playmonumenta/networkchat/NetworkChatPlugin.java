@@ -40,13 +40,16 @@ public class NetworkChatPlugin extends JavaPlugin {
 		YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
 		boolean joinMessagesEnabled = config.getBoolean("join-messages-enabled", true);
+		boolean isDefaultChat = config.getBoolean("is-default-chat", true);
 
 		/* Echo config */
 		getLogger().info("join-messages-enabled=" + joinMessagesEnabled);
+		getLogger().info("is-default-chat=" + isDefaultChat);
 
 		mChannelManager = ChannelManager.getInstance(this);
 		mMessageManager = MessageManager.getInstance(this);
 		mPlayerStateManager = PlayerStateManager.getInstance(this);
+		mPlayerStateManager.isDefaultChat(isDefaultChat);
 
 		getServer().getPluginManager().registerEvents(mMessageManager, this);
 		getServer().getPluginManager().registerEvents(mPlayerStateManager, this);

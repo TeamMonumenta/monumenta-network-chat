@@ -10,6 +10,12 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
 
+import io.papermc.paper.event.player.AsyncChatEvent;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,6 +31,7 @@ public class PlayerStateManager implements Listener {
 	private static PlayerStateManager INSTANCE = null;
 	private static Plugin mPlugin = null;
 	private static Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
+	private static boolean mIsDefaultChat = true;
 
 	private PlayerStateManager(Plugin plugin) {
 		INSTANCE = this;
@@ -40,6 +47,14 @@ public class PlayerStateManager implements Listener {
 			INSTANCE = new PlayerStateManager(plugin);
 		}
 		return INSTANCE;
+	}
+
+	public static boolean isDefaultChat() {
+		return mIsDefaultChat;
+	}
+
+	public static void isDefaultChat(boolean value) {
+		mIsDefaultChat = value;
 	}
 
 	public static Map<UUID, PlayerState> getPlayerStates() {
@@ -115,5 +130,34 @@ public class PlayerStateManager implements Listener {
 				mPlayerStates.remove(player.getUniqueId());
 			}
 		}, 100);
+	}
+
+	@EventHandler(priority = EventPriority.LOW)
+	public void asyncChatEvent(AsyncChatEvent event) throws Exception {
+		if (event.isCancelled()) {
+			return;
+		}
+		if (!mIsDefaultChat) {
+			return;
+		}
+
+		Player player = event.getPlayer();
+		PlayerState playerState = mPlayerStates.get(player.getUniqueId());
+		if (playerState == null) {
+			player.sendMessage(Component.text("You have no chat state and cannot talk. Please report this bug.", NamedTextColor.RED));
+			return;
+		}
+
+		Component message = event.message();
+		String messageStr = PlainComponentSerializer.plain().serialize(message);
+
+		Channel channel = playerState.getActiveChannel();
+		if (channel == null) {
+			player.sendMessage(Component.text("You have no active channel. Please set one with /chattest and try again.", NamedTextColor.RED));
+			return;
+		}
+		channel.sendMessage(player, messageStr);
+
+		event.setCancelled(true);
 	}
 }
