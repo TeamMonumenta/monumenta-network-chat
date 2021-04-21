@@ -47,6 +47,18 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
+			arguments.add(new MultiLiteralArgument("setdefaultchannel"));
+			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChannelManager.getChannelNames().toArray(new String[0]);
+			}));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return ChannelManager.setDefaultChannel(sender, (String)args[1]);
+				})
+				.register();
+
+			arguments.clear();
 			arguments.add(new MultiLiteralArgument("forceload"));
 			arguments.add(new TextArgument("Channel ID").overrideSuggestions((sender) -> {
 				return ChannelManager.getChannelNames().toArray(new String[0]);

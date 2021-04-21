@@ -5,7 +5,9 @@ import java.util.UUID;
 
 import com.google.gson.JsonObject;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
@@ -50,6 +52,26 @@ public abstract class Channel {
 
 	// Return this channel's name
 	public abstract String getName();
+
+	public ChannelSettings channelSettings() {
+		return null;
+	}
+
+	public ChannelSettings playerSettings(Player player) {
+		return null;
+	}
+
+	public ChannelPerms channelPerms() {
+		return null;
+	}
+
+	public ChannelPerms playerPerms(OfflinePlayer player) {
+		return null;
+	}
+
+	public void clearPlayerPerms(OfflinePlayer player) {
+		return;
+	}
 
 	// Check for access, then send a message to the network.
 	// This broadcasts the message without displaying for network messages.

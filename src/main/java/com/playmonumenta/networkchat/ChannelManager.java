@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.redissync.RedisAPI;
 
@@ -33,7 +34,8 @@ public class ChannelManager {
 
 	private static ChannelManager INSTANCE = null;
 	private static Plugin mPlugin = null;
-	private static File mForceLoadedFile;
+	private static File mServerChannelConfigFile;
+	private static UUID mDefaultChannel;
 	private static Set<UUID> mForceLoadedChannels = new HashSet<>();
 	private static Map<String, UUID> mChannelIdsByName = null;
 	private static Map<UUID, Channel> mChannels = new HashMap<>();
@@ -41,7 +43,7 @@ public class ChannelManager {
 	private ChannelManager(Plugin plugin) {
 		INSTANCE = this;
 		mPlugin = plugin;
-		mForceLoadedFile = new File(plugin.getDataFolder(), "forceLoadedChannels.json");
+		mServerChannelConfigFile = new File(plugin.getDataFolder(), "serverChannelConfig.json");
 		reload();
 		loadAllChannelNames();
 	}
@@ -59,25 +61,39 @@ public class ChannelManager {
 
 	public static void reload() {
 		// Load the list of forceloaded channels
-		JsonObject forceLoadJson;
+		JsonObject serverChannelConfigJson;
 		try {
-			forceLoadJson = FileUtils.readJson(mForceLoadedFile.getPath());
+			serverChannelConfigJson = FileUtils.readJson(mServerChannelConfigFile.getPath());
 		} catch (Exception e) {
-			mPlugin.getLogger().warning("Could not load force load config; assuming file does not exist yet.");
+			mPlugin.getLogger().warning("Could not load server channel config; assuming file does not exist yet.");
 			return;
 		}
 
 		Set<UUID> previouslyForceLoaded = mForceLoadedChannels;
 		mForceLoadedChannels = new HashSet<>();
 
-		for (Map.Entry<String, JsonElement> forceLoadEntry : forceLoadJson.entrySet()) {
-			String channelIdStr = forceLoadEntry.getKey();
-			try {
-				UUID channelId = UUID.fromString(channelIdStr);
-				mForceLoadedChannels.add(channelId);
-				loadChannel(channelId, (PlayerState) null);
-			} catch (Exception e) {
-				continue;
+		mDefaultChannel = null;
+		JsonPrimitive defaultChannelJson = serverChannelConfigJson.getAsJsonPrimitive("defaultChannel");
+		try {
+			mDefaultChannel = UUID.fromString(defaultChannelJson.getAsString());
+			mForceLoadedChannels.add(mDefaultChannel);
+			loadChannel(mDefaultChannel, (PlayerState) null);
+		} catch (Exception e) {
+			mPlugin.getLogger().warning("Could not get default channel. Configure with /chattest.");
+		}
+
+		JsonObject forceLoadJson = serverChannelConfigJson.getAsJsonObject("forceLoadedChannels");
+		if (forceLoadJson != null) {
+			for (Map.Entry<String, JsonElement> forceLoadEntry : forceLoadJson.entrySet()) {
+				String channelIdStr = forceLoadEntry.getKey();
+				try {
+					UUID channelId = UUID.fromString(channelIdStr);
+					mForceLoadedChannels.add(channelId);
+					loadChannel(channelId, (PlayerState) null);
+				} catch (Exception e) {
+					mPlugin.getLogger().warning("Could not force-load channel ID " + channelIdStr + ".");
+					continue;
+				}
 			}
 		}
 
@@ -94,10 +110,15 @@ public class ChannelManager {
 			String channelName = channel.getName();
 			forceLoadJson.addProperty(channelId.toString(), channelName);
 		}
+
+		JsonObject serverChannelConfigJson = new JsonObject();
+		serverChannelConfigJson.addProperty("defaultChannel", mDefaultChannel.toString());
+		serverChannelConfigJson.add("forceLoadedChannels", forceLoadJson);
+
 		try {
-			FileUtils.writeJson(mForceLoadedFile.getPath(), forceLoadJson);
+			FileUtils.writeJson(mServerChannelConfigFile.getPath(), serverChannelConfigJson);
 		} catch (Exception e) {
-			mPlugin.getLogger().warning("Could not save force load config.");
+			mPlugin.getLogger().warning("Could not save server channel config.");
 		}
 	}
 
@@ -159,6 +180,10 @@ public class ChannelManager {
 		}
 	}
 
+	public static Channel getDefaultChannel() {
+		return mChannels.get(mDefaultChannel);
+	}
+
 	public static Channel getChannel(UUID channelId) {
 		return mChannels.get(channelId);
 	}
@@ -217,6 +242,20 @@ public class ChannelManager {
 		redisAsync.hdel(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName);
 		redisAsync.hdel(REDIS_CHANNELS_PATH, channelId.toString());
 		redisAsync.hdel(REDIS_CHANNEL_PARTICIPANTS_PATH, channelId.toString());
+	}
+
+	public static int setDefaultChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
+		UUID channelId = mChannelIdsByName.get(channelName);
+		if (channelId == null) {
+			CommandAPI.fail("Channel " + channelName + " does not exist!");
+		}
+
+		loadChannel(channelId, (PlayerState) null);
+		mDefaultChannel = channelId;
+		mForceLoadedChannels.add(channelId);
+		saveConfig();
+		sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
+		return 1;
 	}
 
 	public static int forceLoadChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {

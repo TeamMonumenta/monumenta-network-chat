@@ -18,6 +18,9 @@ import com.google.gson.JsonPrimitive;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 
 // TODO Track how many players are in a channel on this server/overall
@@ -25,9 +28,11 @@ public class PlayerState {
 	// From vanilla client limits
 	public static final int MAX_DISPLAYED_MESSAGES = 100;
 
-	private Player mPlayer;
+	private UUID mPlayerId;
 	private boolean mChatPaused;
 	private UUID mActiveChannelId;
+	private ChannelSettings mDefaultChannelSettings;
+	private Map<UUID, ChannelSettings> mChannelSettings;
 
 	// Channels not in these maps will use the default channel watch status.
 	private Map<UUID, String> mWatchedChannelIds;
@@ -37,8 +42,10 @@ public class PlayerState {
 	private List<Message> mUnseenMessages;
 
 	public PlayerState(Player player) {
-		mPlayer = player;
+		mPlayerId = player.getUniqueId();
 		mChatPaused = false;
+		mDefaultChannelSettings = new ChannelSettings();
+		mChannelSettings = new HashMap<>();
 
 		mWatchedChannelIds = new HashMap<>();
 		mUnwatchedChannelIds = new HashMap<>();
@@ -84,7 +91,8 @@ public class PlayerState {
 				try {
 					state.mWatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					;
+					// TODO Log the error
+					continue;
 				}
 			}
 		}
@@ -97,7 +105,23 @@ public class PlayerState {
 				try {
 					state.mUnwatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					;
+					// TODO Log the error
+					continue;
+				}
+			}
+		}
+
+		JsonObject allChannelSettingsJson = obj.getAsJsonObject("channelSettings");
+		if (allChannelSettingsJson != null) {
+			for (Map.Entry<String, JsonElement> channelSettingEntry : allChannelSettingsJson.entrySet()) {
+				String channelId = channelSettingEntry.getKey();
+				JsonElement channelSettingJson = channelSettingEntry.getValue();
+				try {
+					ChannelSettings channelSettings = ChannelSettings.fromJson(channelSettingJson.getAsJsonObject());
+					state.mChannelSettings.put(UUID.fromString(channelId), channelSettings);
+				} catch (Exception e) {
+					// TODO Log the error
+					continue;
 				}
 			}
 		}
@@ -120,6 +144,13 @@ public class PlayerState {
 			unwatchedChannels.addProperty(channelId.toString(), channelName);
 		}
 
+		JsonObject allChannelSettings = new JsonObject();
+		for (Map.Entry<UUID, ChannelSettings> channelSettingsEntry : mChannelSettings.entrySet()) {
+			UUID channelId = channelSettingsEntry.getKey();
+			ChannelSettings channelSettings = channelSettingsEntry.getValue();
+			allChannelSettings.add(channelId.toString(), channelSettings.toJson());
+		}
+
 		JsonObject result = new JsonObject();
 		result.addProperty("lastSaved", Instant.now().toEpochMilli());
 		result.addProperty("isPaused", mChatPaused);
@@ -128,8 +159,22 @@ public class PlayerState {
 		}
 		result.add("watchedChannels", watchedChannels);
 		result.add("unwatchedChannels", unwatchedChannels);
+		result.add("channelSettings", allChannelSettings);
 
 		return result;
+	}
+
+	public Player getPlayer() {
+		return Bukkit.getPlayer(mPlayerId);
+	}
+
+	public ChannelSettings channelSettings(UUID channelId) {
+		ChannelSettings channelSettings = mChannelSettings.get(channelId);
+		if (channelSettings == null) {
+			channelSettings = new ChannelSettings();
+			mChannelSettings.put(channelId, channelSettings);
+		}
+		return channelSettings;
 	}
 
 	public void receiveMessage(Message message) {
@@ -147,7 +192,7 @@ public class PlayerState {
 			if (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
 				mSeenMessages.remove(0);
 			}
-			message.showMessage(mPlayer);
+			message.showMessage(getPlayer());
 			mSeenMessages.add(message);
 		}
 	}
@@ -156,11 +201,11 @@ public class PlayerState {
 	public void refreshChat() {
 		int blank_messages = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
 		for (int i = 0; i < blank_messages; ++i) {
-			mPlayer.sendMessage(Component.empty());
+			getPlayer().sendMessage(Component.empty());
 		}
 
 		for (Message message : mSeenMessages) {
-			message.showMessage(mPlayer);
+			message.showMessage(getPlayer());
 		}
 	}
 
@@ -181,7 +226,7 @@ public class PlayerState {
 
 		// Show all unseen messages
 		for (Message message : mUnseenMessages) {
-			message.showMessage(mPlayer);
+			message.showMessage(getPlayer());
 		}
 		mSeenMessages.addAll(mUnseenMessages);
 		mUnseenMessages.clear();
@@ -195,7 +240,6 @@ public class PlayerState {
 	}
 
 	public void unsetActiveChannel() {
-		// TODO Consider setting a default channel?
 		mActiveChannelId = null;
 	}
 
@@ -216,9 +260,6 @@ public class PlayerState {
 		String channelName = channel.getName();
 		mWatchedChannelIds.put(channelId, channelName);
 		mUnwatchedChannelIds.remove(channelId);
-		if (mActiveChannelId == null) {
-			mActiveChannelId = channelId;
-		}
 	}
 
 	public void leaveChannel(Channel channel) {
@@ -238,14 +279,21 @@ public class PlayerState {
 		}
 		mWatchedChannelIds.remove(channelId);
 		mUnwatchedChannelIds.remove(channelId);
+		mChannelSettings.remove(channelId);
 	}
 
 	public UUID getActiveChannelId() {
-		return mActiveChannelId;
+		if (mActiveChannelId != null) {
+			return mActiveChannelId;
+		}
+		return ChannelManager.getDefaultChannel().getUniqueId();
 	}
 
 	public Channel getActiveChannel() {
-		return ChannelManager.getChannel(mActiveChannelId);
+		if (mActiveChannelId != null) {
+			return ChannelManager.getChannel(mActiveChannelId);
+		}
+		return ChannelManager.getDefaultChannel();
 	}
 
 	public boolean isListening(Channel channel) {
@@ -254,9 +302,38 @@ public class PlayerState {
 			return false;
 		} else if (mWatchedChannelIds.containsKey(channelId)) {
 			return true;
-		} else {
-			// TODO Use channel's settings, NYI
-			return true;
+		}
+
+		ChannelSettings channelSettings = mChannelSettings.get(channelId);
+		if (channelSettings != null && channelSettings.isListening() != null) {
+			return channelSettings.isListening();
+		}
+
+		if (mDefaultChannelSettings != null && mDefaultChannelSettings.isListening() != null) {
+			return mDefaultChannelSettings.isListening();
+		}
+
+		// TODO Player default
+
+		return true;
+	}
+
+	public void playMessageSound(Channel channel) {
+		boolean shouldPlaySound = false;
+
+		UUID channelId = channel.getUniqueId();
+		ChannelSettings channelSettings = mChannelSettings.get(channelId);
+		if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
+			shouldPlaySound = channelSettings.messagesPlaySound();
+		} else if (mDefaultChannelSettings != null && mDefaultChannelSettings.messagesPlaySound() != null) {
+			shouldPlaySound = mDefaultChannelSettings.messagesPlaySound();
+		}
+		// TODO Player default
+
+		if (shouldPlaySound) {
+			Player player = getPlayer();
+			// TODO Customize sound
+			player.playSound​(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 2.0f);
 		}
 	}
 
@@ -278,11 +355,11 @@ public class PlayerState {
 			// Channel was deleted
 			unregisterChannel(channelId);
 			// TODO Group deleted channel messages together.
-			mPlayer.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is no longer available.", NamedTextColor.RED));
+			getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is no longer available.", NamedTextColor.RED));
 		} else {
 			String newName = loadedChannel.getName();
 			if (!newName.equals(lastKnownName)) {
-				mPlayer.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newName + ".", NamedTextColor.GRAY));
+				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newName + ".", NamedTextColor.GRAY));
 			}
 		}
 	}
