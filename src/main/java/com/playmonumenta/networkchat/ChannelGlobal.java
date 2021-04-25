@@ -46,7 +46,6 @@ public class ChannelGlobal extends Channel {
 
 		mDefaultSettings = new ChannelSettings();
 		mDefaultSettings.isListening(true);
-		mDefaultSettings.messagesPlaySound(true);
 
 		mDefaultPerms = new ChannelPerms();
 		mDefaultPerms.mayChat(true);
@@ -61,7 +60,6 @@ public class ChannelGlobal extends Channel {
 
 		mDefaultSettings = new ChannelSettings();
 		mDefaultSettings.isListening(true);
-		mDefaultSettings.messagesPlaySound(true);
 
 		mDefaultPerms = new ChannelPerms();
 		mDefaultPerms.mayChat(true);
@@ -116,7 +114,9 @@ public class ChannelGlobal extends Channel {
 		for (Map.Entry<UUID, ChannelPerms> playerPermEntry : mPlayerPerms.entrySet()) {
 			UUID channelId = playerPermEntry.getKey();
 			ChannelPerms channelPerms = playerPermEntry.getValue();
-			allPlayerPermsJson.add(channelId.toString(), channelPerms.toJson());
+			if (!channelPerms.isDefault()) {
+				allPlayerPermsJson.add(channelId.toString(), channelPerms.toJson());
+			}
 		}
 
 		JsonObject result = new JsonObject();
@@ -150,7 +150,7 @@ public class ChannelGlobal extends Channel {
 						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(newChannel);
+					ChannelManager.registerNewChannel(sender, newChannel);
 				})
 				.register();
 		}
@@ -174,7 +174,7 @@ public class ChannelGlobal extends Channel {
 		}
 		PlayerState playerState = PlayerStateManager.getPlayerState(player);
 		if (playerState != null) {
-			return playerState.channelSettings(mId);
+			return playerState.channelSettings(this);
 		}
 		return null;
 	}
@@ -277,8 +277,7 @@ public class ChannelGlobal extends Channel {
 			.build();
 
 		// TODO Use configurable formatting, not hard-coded formatting.
-		String prefix = "<gray><hover:show_text:\"<white>Global Channel\">\\<<white><channelName><gray>></hover> <white><sender> <gray>» ";
-		String suffix = "<hover:show_text:\"Moderator thingy?\">    </hover>";
+		String prefix = "<gray><hover:show_text:\"<white>Global Channel\n<red>TODO Click for gui on channel/message?\">\\<<white><channelName><gray>></hover> <white><sender> <gray>» ";
 		// TODO We should use templates to insert these and related formatting.
 		prefix = prefix.replace("<channelName>", mName)
 		    .replace("<sender>", message.getSenderName());
@@ -293,10 +292,9 @@ public class ChannelGlobal extends Channel {
 
 		Component fullMessage = Component.empty()
 		    .append(minimessage.parse(prefix))
-		    .append(Component.empty().color(NamedTextColor.WHITE).append(message.getMessage()))
-		    .append(minimessage.parse(suffix));
+		    .append(Component.empty().color(NamedTextColor.WHITE).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
-		if (recipient instanceof Player) {
+		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
 	}

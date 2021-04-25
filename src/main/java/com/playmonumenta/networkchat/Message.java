@@ -23,16 +23,18 @@ public class Message {
 	private final UUID mSenderId;
 	private final String mSenderName;
 	private final NamespacedKey mSenderType;
+	private final boolean mSenderIsPlayer;
 	private final JsonObject mExtraData;
 	private final Component mMessage;
 	private boolean mIsDeleted = false;
 
-	private Message(Instant instant, UUID channelId, UUID senderId, String senderName, NamespacedKey senderType, JsonObject extraData, Component message) {
+	private Message(Instant instant, UUID channelId, UUID senderId, String senderName, NamespacedKey senderType, boolean senderIsPlayer, JsonObject extraData, Component message) {
 		mInstant = instant;
 		mChannelId = channelId;
 		mSenderId = senderId;
 		mSenderName = senderName;
 		mSenderType = senderType;
+		mSenderIsPlayer = senderIsPlayer;
 		mExtraData = extraData;
 		mMessage = message;
 	}
@@ -42,14 +44,13 @@ public class Message {
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
 		UUID senderId = null;
-		if (sender instanceof Player) {
-			senderId = ((Player) sender).getUniqueId();
-		}
 		NamespacedKey senderType = null;
 		if (sender instanceof Entity) {
+			senderId = ((Player) sender).getUniqueId();
 			senderType = ((Entity) sender).getType().getKey();
 		}
-		return new Message(instant, channelId, senderId, sender.getName(), senderType, extraData, message);
+		boolean senderIsPlayer = sender instanceof Player;
+		return new Message(instant, channelId, senderId, sender.getName(), senderType, senderIsPlayer, extraData, message);
 	}
 
 	// Normally called through a channel
@@ -78,13 +79,14 @@ public class Message {
 		UUID senderId = UUID.fromString(object.get("senderId").getAsString());
 		String senderName = object.get("senderName").getAsString();
 		NamespacedKey senderType = NamespacedKey.fromString(object.get("senderType").getAsString());
+		Boolean senderIsPlayer = object.get("senderIsPlayer").getAsBoolean();
 		JsonObject extraData = null;
 		if (object.get("extra") != null) {
 			extraData = object.get("extra").getAsJsonObject();
 		}
 		Component message = GsonComponentSerializer.gson().deserializeFromTree(object.get("message"));
 
-		return new Message(instant, channelId, senderId, senderName, senderType, extraData, message);
+		return new Message(instant, channelId, senderId, senderName, senderType, senderIsPlayer, extraData, message);
 	}
 
 	protected JsonObject toJson() {
@@ -95,6 +97,7 @@ public class Message {
 		object.addProperty("senderId", mSenderId.toString());
 		object.addProperty("senderName", mSenderName);
 		object.addProperty("senderType", mSenderType.toString());
+		object.addProperty("senderIsPlayer", mSenderIsPlayer);
 		object.add("extra", mExtraData);
 		object.add("message", GsonComponentSerializer.gson().serializeToTree(mMessage));
 
@@ -127,6 +130,10 @@ public class Message {
 
 	public NamespacedKey getSenderType() {
 		return mSenderType;
+	}
+
+	public boolean senderIsPlayer() {
+		return mSenderIsPlayer;
 	}
 
 	public Component getMessage() {

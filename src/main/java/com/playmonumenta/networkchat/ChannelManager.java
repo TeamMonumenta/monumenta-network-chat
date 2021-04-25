@@ -131,7 +131,7 @@ public class ChannelManager {
 	}
 
 	// Used for new channels
-	public static void registerNewChannel(Channel channel) throws WrapperCommandSyntaxException {
+	public static void registerNewChannel(CommandSender sender, Channel channel) throws WrapperCommandSyntaxException {
 		if (channel == null) {
 			return;
 		}
@@ -254,7 +254,7 @@ public class ChannelManager {
 		mDefaultChannel = channelId;
 		mForceLoadedChannels.add(channelId);
 		saveConfig();
-		sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
+		sender.sendMessage(Component.text("Channel " + channelName + " is now the default channel.", NamedTextColor.GRAY));
 		return 1;
 	}
 
@@ -279,7 +279,7 @@ public class ChannelManager {
 
 		mForceLoadedChannels.remove(channelId);
 		saveConfig();
-		sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
+		sender.sendMessage(Component.text("Channel " + channelName + " is no longer force loaded.", NamedTextColor.GRAY));
 		return 1;
 	}
 

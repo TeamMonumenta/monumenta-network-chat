@@ -31,7 +31,7 @@ public class PlayerState {
 	private UUID mPlayerId;
 	private boolean mChatPaused;
 	private UUID mActiveChannelId;
-	private ChannelSettings mDefaultChannelSettings;
+	private ChannelSettings mDefaultChannelSettings = new ChannelSettings();
 	private Map<UUID, ChannelSettings> mChannelSettings;
 
 	// Channels not in these maps will use the default channel watch status.
@@ -44,7 +44,6 @@ public class PlayerState {
 	public PlayerState(Player player) {
 		mPlayerId = player.getUniqueId();
 		mChatPaused = false;
-		mDefaultChannelSettings = new ChannelSettings();
 		mChannelSettings = new HashMap<>();
 
 		mWatchedChannelIds = new HashMap<>();
@@ -111,6 +110,11 @@ public class PlayerState {
 			}
 		}
 
+		JsonObject defaultChannelSettingsJson = obj.getAsJsonObject("defaultChannelSettings");
+		if (defaultChannelSettingsJson != null) {
+			state.mDefaultChannelSettings = ChannelSettings.fromJson(defaultChannelSettingsJson);
+		}
+
 		JsonObject allChannelSettingsJson = obj.getAsJsonObject("channelSettings");
 		if (allChannelSettingsJson != null) {
 			for (Map.Entry<String, JsonElement> channelSettingEntry : allChannelSettingsJson.entrySet()) {
@@ -148,7 +152,9 @@ public class PlayerState {
 		for (Map.Entry<UUID, ChannelSettings> channelSettingsEntry : mChannelSettings.entrySet()) {
 			UUID channelId = channelSettingsEntry.getKey();
 			ChannelSettings channelSettings = channelSettingsEntry.getValue();
-			allChannelSettings.add(channelId.toString(), channelSettings.toJson());
+			if (!channelSettings.isDefault()) {
+				allChannelSettings.add(channelId.toString(), channelSettings.toJson());
+			}
 		}
 
 		JsonObject result = new JsonObject();
@@ -159,6 +165,7 @@ public class PlayerState {
 		}
 		result.add("watchedChannels", watchedChannels);
 		result.add("unwatchedChannels", unwatchedChannels);
+		result.add("defaultChannelSettings", mDefaultChannelSettings.toJson());
 		result.add("channelSettings", allChannelSettings);
 
 		return result;
@@ -168,7 +175,12 @@ public class PlayerState {
 		return Bukkit.getPlayer(mPlayerId);
 	}
 
-	public ChannelSettings channelSettings(UUID channelId) {
+	public ChannelSettings channelSettings() {
+		return mDefaultChannelSettings;
+	}
+
+	public ChannelSettings channelSettings(Channel channel) {
+		UUID channelId = channel.getUniqueId();
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
 		if (channelSettings == null) {
 			channelSettings = new ChannelSettings();
@@ -298,22 +310,21 @@ public class PlayerState {
 
 	public boolean isListening(Channel channel) {
 		UUID channelId = channel.getUniqueId();
-		if (mUnwatchedChannelIds.containsKey(channelId)) {
-			return false;
-		} else if (mWatchedChannelIds.containsKey(channelId)) {
-			return true;
-		}
 
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
 		if (channelSettings != null && channelSettings.isListening() != null) {
 			return channelSettings.isListening();
 		}
 
-		if (mDefaultChannelSettings != null && mDefaultChannelSettings.isListening() != null) {
+		if (mDefaultChannelSettings.isListening() != null) {
 			return mDefaultChannelSettings.isListening();
 		}
 
-		// TODO Player default
+		if (mUnwatchedChannelIds.containsKey(channelId)) {
+			return false;
+		} else if (mWatchedChannelIds.containsKey(channelId)) {
+			return true;
+		}
 
 		return true;
 	}
@@ -325,7 +336,7 @@ public class PlayerState {
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
 		if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
 			shouldPlaySound = channelSettings.messagesPlaySound();
-		} else if (mDefaultChannelSettings != null && mDefaultChannelSettings.messagesPlaySound() != null) {
+		} else if (mDefaultChannelSettings.messagesPlaySound() != null) {
 			shouldPlaySound = mDefaultChannelSettings.messagesPlaySound();
 		}
 		// TODO Player default
@@ -333,7 +344,7 @@ public class PlayerState {
 		if (shouldPlaySound) {
 			Player player = getPlayer();
 			// TODO Customize sound
-			player.playSound​(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 2.0f);
+			player.playSound​(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 0.5f);
 		}
 	}
 
