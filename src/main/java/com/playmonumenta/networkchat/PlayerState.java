@@ -336,6 +336,8 @@ public class PlayerState {
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
 		if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
 			shouldPlaySound = channelSettings.messagesPlaySound();
+		} else if (channel.channelSettings() != null && channel.channelSettings().messagesPlaySound() != null) {
+			shouldPlaySound = channel.channelSettings().messagesPlaySound();
 		} else if (mDefaultChannelSettings.messagesPlaySound() != null) {
 			shouldPlaySound = mDefaultChannelSettings.messagesPlaySound();
 		}
@@ -361,6 +363,9 @@ public class PlayerState {
 		String lastKnownName = mWatchedChannelIds.get(channelId);
 		if (lastKnownName == null) {
 			lastKnownName = mUnwatchedChannelIds.get(channelId);
+		}
+		if (lastKnownName == null) {
+			lastKnownName = "...something?...";
 		}
 		if (loadedChannel == null) {
 			// Channel was deleted

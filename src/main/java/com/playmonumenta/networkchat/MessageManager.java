@@ -10,7 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
 public class MessageManager implements Listener {
-	public static final String NETWORK_CHAT_MESSAGE = "Monumenta.Broadcast.ChatMessage";
+	public static final String NETWORK_CHAT_MESSAGE = "com.playmonumenta.networkchat.Message";
 
 	private static MessageManager INSTANCE = null;
 	private static Plugin mPlugin = null;
@@ -32,7 +32,6 @@ public class MessageManager implements Listener {
 	}
 
 	public void broadcastMessage(Message message) throws Exception {
-		String shardName = NetworkRelayAPI.getShardName();
 		NetworkRelayAPI.sendBroadcastMessage(NETWORK_CHAT_MESSAGE, message.toJson());
 	}
 

@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,10 +17,12 @@ public abstract class Channel {
 	public static Channel fromJson(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 
-		if (channelClassId.equals(ChannelGlobal.CHANNEL_CLASS_ID)) {
-			return ChannelGlobal.fromJsonInternal(channelJson);
+		if (channelClassId.equals(ChannelAnnouncement.CHANNEL_CLASS_ID)) {
+			return ChannelAnnouncement.fromJsonInternal(channelJson);
 		} else if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
 			return ChannelLocal.fromJsonInternal(channelJson);
+		} else if (channelClassId.equals(ChannelGlobal.CHANNEL_CLASS_ID)) {
+			return ChannelGlobal.fromJsonInternal(channelJson);
 		} else {
 			return ChannelFuture.fromJsonInternal(channelJson);
 		}
@@ -45,6 +48,15 @@ public abstract class Channel {
 
 	// Return this channel's UUID
 	public abstract UUID getUniqueId();
+
+	public void markModified() {
+		;
+	}
+
+	// Used to make sure this is the latest version
+	public Instant lastModified() {
+		return Instant.MIN;
+	}
 
 	// Set this channel's name (MUST ONLY be called from ChannelManager).
 	// May call CommandAPI.fail() to cancel, ie for direct messages or insufficient permissions.

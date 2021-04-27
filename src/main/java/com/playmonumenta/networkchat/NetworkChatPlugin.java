@@ -10,6 +10,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class NetworkChatPlugin extends JavaPlugin {
+	private static NetworkChatPlugin INSTANCE = null;
 	public ChannelManager mChannelManager = null;
 	public MessageManager mMessageManager = null;
 	public PlayerStateManager mPlayerStateManager = null;
@@ -21,6 +22,7 @@ public class NetworkChatPlugin extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
+		INSTANCE = this;
 		File configFile = new File(getDataFolder(), "config.yml");
 
 		/* Create the config file & directories if it does not exist */
@@ -51,12 +53,18 @@ public class NetworkChatPlugin extends JavaPlugin {
 		mPlayerStateManager = PlayerStateManager.getInstance(this);
 		mPlayerStateManager.isDefaultChat(isDefaultChat);
 
+		getServer().getPluginManager().registerEvents(mChannelManager, this);
 		getServer().getPluginManager().registerEvents(mMessageManager, this);
 		getServer().getPluginManager().registerEvents(mPlayerStateManager, this);
 	}
 
 	@Override
 	public void onDisable() {
+		INSTANCE = null;
 		getServer().getScheduler().cancelTasks(this);
+	}
+
+	public static NetworkChatPlugin getInstance() {
+		return INSTANCE;
 	}
 }

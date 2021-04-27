@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
@@ -15,11 +16,13 @@ public class ChannelFuture extends Channel {
 
 	private String mType;
 	private UUID mId;
+	private Instant mLastUpdate;
 	private String mName;
 
-	private ChannelFuture(String type, UUID channelId, String name) {
+	private ChannelFuture(String type, UUID channelId, Instant lastUpdate, String name) {
 		mType = type;
 		mId = channelId;
+		mLastUpdate = lastUpdate;
 		mName = name;
 	}
 
@@ -27,8 +30,12 @@ public class ChannelFuture extends Channel {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
+		Instant lastUpdate = Instant.now();
+		if (channelJson.get("lastUpdate") != null) {
+			lastUpdate = Instant.ofEpochMilli(channelJson.get("lastUpdate").getAsLong());
+		}
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
-		return new ChannelFuture(channelClassId, channelId, name);
+		return new ChannelFuture(channelClassId, channelId, lastUpdate, name);
 	}
 
 	// NOTE: This channel type should never be saved, as it will overwrite a real channel.
@@ -44,6 +51,14 @@ public class ChannelFuture extends Channel {
 
 	public UUID getUniqueId() {
 		return mId;
+	}
+
+	public void markModified() {
+		mLastUpdate = Instant.now();
+	}
+
+	public Instant lastModified() {
+		return mLastUpdate;
 	}
 
 	protected void setName(String name) throws WrapperCommandSyntaxException {

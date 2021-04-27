@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,6 +19,7 @@ import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -35,13 +37,15 @@ public class ChannelGlobal extends Channel {
 	public static final String CHANNEL_CLASS_ID = "global";
 
 	private UUID mId;
+	private Instant mLastUpdate;
 	private String mName;
 	private ChannelSettings mDefaultSettings;
 	private ChannelPerms mDefaultPerms;
 	private Map<UUID, ChannelPerms> mPlayerPerms;
 
-	private ChannelGlobal(UUID channelId, String name) {
+	private ChannelGlobal(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
+		mLastUpdate = lastUpdate;
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
@@ -55,6 +59,7 @@ public class ChannelGlobal extends Channel {
 	}
 
 	public ChannelGlobal(String name) {
+		mLastUpdate = Instant.now();
 		mId = UUID.randomUUID();
 		mName = name;
 
@@ -75,9 +80,13 @@ public class ChannelGlobal extends Channel {
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
+		Instant lastUpdate = Instant.now();
+		if (channelJson.get("lastUpdate") != null) {
+			lastUpdate = Instant.ofEpochMilli(channelJson.get("lastUpdate").getAsLong());
+		}
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
-		ChannelGlobal channel = new ChannelGlobal(channelId, name);
+		ChannelGlobal channel = new ChannelGlobal(channelId, lastUpdate, name);
 
 		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
 		if (defaultSettingsJson != null) {
@@ -122,6 +131,7 @@ public class ChannelGlobal extends Channel {
 		JsonObject result = new JsonObject();
 		result.addProperty("type", CHANNEL_CLASS_ID);
 		result.addProperty("uuid", mId.toString());
+		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
 		result.add("defaultSettings", mDefaultSettings.toJson());
 		result.add("defaultPerms", mDefaultPerms.toJson());
@@ -164,6 +174,22 @@ public class ChannelGlobal extends Channel {
 		return mId;
 	}
 
+	public void markModified() {
+		mLastUpdate = Instant.now();
+	}
+
+	public Instant lastModified() {
+		return mLastUpdate;
+	}
+
+	protected void setName(String name) throws WrapperCommandSyntaxException {
+		mName = name;
+	}
+
+	public String getName() {
+		return mName;
+	}
+
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
@@ -203,24 +229,16 @@ public class ChannelGlobal extends Channel {
 		mPlayerPerms.remove(player.getUniqueId());
 	}
 
-	protected void setName(String name) throws WrapperCommandSyntaxException {
-		mName = name;
-	}
-
-	public String getName() {
-		return mName;
-	}
-
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		// TODO Add permission check for global chat.
 
 		if (sender instanceof Player) {
 			ChannelPerms playerPerms = mPlayerPerms.get(((Player) sender).getUniqueId());
 			if (playerPerms == null) {
-				if (!mDefaultPerms.mayChat()) {
+				if (mDefaultPerms.mayChat() != null && !mDefaultPerms.mayChat()) {
 					CommandAPI.fail("You do not have permission to chat in this channel.");
 				}
-			} else if (!playerPerms.mayChat()) {
+			} else if (playerPerms.mayChat() != null && !playerPerms.mayChat()) {
 				CommandAPI.fail("You do not have permission to chat in this channel.");
 			}
 		}
@@ -246,16 +264,17 @@ public class ChannelGlobal extends Channel {
 	}
 
 	public void distributeMessage(Message message) {
+		showMessage(Bukkit.getConsoleSender(), message);
 		// TODO Check permission to see the message.
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			UUID playerId = playerStateEntry.getKey();
 
 			ChannelPerms playerPerms = mPlayerPerms.get(playerId);
 			if (playerPerms == null) {
-				if (!mDefaultPerms.mayListen()) {
+				if (mDefaultPerms.mayListen() != null && !mDefaultPerms.mayListen()) {
 					continue;
 				}
-			} else if (!playerPerms.mayListen()) {
+			} else if (playerPerms.mayListen() != null && !playerPerms.mayListen()) {
 				continue;
 			}
 

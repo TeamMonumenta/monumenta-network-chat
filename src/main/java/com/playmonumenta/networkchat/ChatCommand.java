@@ -28,8 +28,9 @@ public class ChatCommand {
 
 		arguments.add(new MultiLiteralArgument("new"));
 		arguments.add(new TextArgument("Channel ID"));
-		ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+		ChannelAnnouncement.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+		ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 
 		for (String baseCommand : COMMANDS) {
 			arguments.clear();
@@ -313,7 +314,9 @@ public class ChatCommand {
 					}
 
 					ChannelSettings settings = channel.channelSettings();
-					return settings.commandFlag(sender, (String) args[3], (String) args[4]);
+					int result = settings.commandFlag(sender, (String) args[3], (String) args[4]);
+					ChannelManager.saveChannel(channel);
+					return result;
 				})
 				.register();
 
@@ -356,7 +359,9 @@ public class ChatCommand {
 					}
 
 					ChannelPerms perms = channel.channelPerms();
-					return perms.commandFlag(sender, (String) args[3], (String) args[4]);
+					int result = perms.commandFlag(sender, (String) args[3], (String) args[4]);
+					ChannelManager.saveChannel(channel);
+					return result;
 				})
 				.register();
 		}

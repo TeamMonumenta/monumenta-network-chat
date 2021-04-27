@@ -76,9 +76,15 @@ public class Message {
 	protected static Message fromJson(JsonObject object) {
 		Instant instant = Instant.ofEpochMilli(object.get("instant").getAsLong());;
 		UUID channelId = UUID.fromString(object.get("channelId").getAsString());
-		UUID senderId = UUID.fromString(object.get("senderId").getAsString());
+		UUID senderId = null;
+		if (object.get("senderId") != null) {
+			senderId = UUID.fromString(object.get("senderId").getAsString());
+		}
 		String senderName = object.get("senderName").getAsString();
-		NamespacedKey senderType = NamespacedKey.fromString(object.get("senderType").getAsString());
+		NamespacedKey senderType = null;
+		if (object.get("senderType") != null) {
+			senderType = NamespacedKey.fromString(object.get("senderType").getAsString());
+		}
 		Boolean senderIsPlayer = object.get("senderIsPlayer").getAsBoolean();
 		JsonObject extraData = null;
 		if (object.get("extra") != null) {
@@ -94,11 +100,17 @@ public class Message {
 
 		object.addProperty("instant", mInstant.toEpochMilli());
 		object.addProperty("channelId", mChannelId.toString());
-		object.addProperty("senderId", mSenderId.toString());
+		if (mSenderId != null) {
+			object.addProperty("senderId", mSenderId.toString());
+		}
 		object.addProperty("senderName", mSenderName);
-		object.addProperty("senderType", mSenderType.toString());
+		if (mSenderType != null) {
+			object.addProperty("senderType", mSenderType.toString());
+		}
 		object.addProperty("senderIsPlayer", mSenderIsPlayer);
-		object.add("extra", mExtraData);
+		if (mExtraData != null) {
+			object.add("extra", mExtraData);
+		}
 		object.add("message", GsonComponentSerializer.gson().serializeToTree(mMessage));
 
 		return object;

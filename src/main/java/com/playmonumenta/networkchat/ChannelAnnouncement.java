@@ -32,26 +32,30 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
-// A channel visible only to this shard (and moderators who opt in from elsewhere)
-public class ChannelLocal extends Channel {
-	public static final String CHANNEL_CLASS_ID = "local";
+// DEBUG REMOVE WHEN DONE
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+
+// A channel visible only to all shards
+public class ChannelAnnouncement extends Channel {
+	public static final String CHANNEL_CLASS_ID = "announcement";
 
 	private UUID mId;
 	private Instant mLastUpdate;
-	private String mShardName;
 	private String mName;
 	private ChannelSettings mDefaultSettings;
 	private ChannelPerms mDefaultPerms;
 	private Map<UUID, ChannelPerms> mPlayerPerms;
 
-	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) throws Exception {
+	private ChannelAnnouncement(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
-		mShardName = NetworkRelayAPI.getShardName();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
 		mDefaultSettings.isListening(true);
+		mDefaultSettings.messagesPlaySound(true);
 
 		mDefaultPerms = new ChannelPerms();
 		mDefaultPerms.mayChat(true);
@@ -60,14 +64,14 @@ public class ChannelLocal extends Channel {
 		mPlayerPerms = new HashMap<>();
 	}
 
-	public ChannelLocal(String name) throws Exception {
+	public ChannelAnnouncement(String name) {
 		mLastUpdate = Instant.now();
 		mId = UUID.randomUUID();
-		mShardName = NetworkRelayAPI.getShardName();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
 		mDefaultSettings.isListening(true);
+		mDefaultSettings.messagesPlaySound(true);
 
 		mDefaultPerms = new ChannelPerms();
 		mDefaultPerms.mayChat(true);
@@ -79,7 +83,7 @@ public class ChannelLocal extends Channel {
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
-			throw new Exception("Cannot create ChannelLocal from channel ID " + channelClassId);
+			throw new Exception("Cannot create ChannelAnnouncement from channel ID " + channelClassId);
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
@@ -89,7 +93,7 @@ public class ChannelLocal extends Channel {
 		}
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
-		ChannelLocal channel = new ChannelLocal(channelId, lastUpdate, name);
+		ChannelAnnouncement channel = new ChannelAnnouncement(channelId, lastUpdate, name);
 
 		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
 		if (defaultSettingsJson != null) {
@@ -153,12 +157,12 @@ public class ChannelLocal extends Channel {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size()-1];
-					ChannelLocal newChannel = null;
+					ChannelAnnouncement newChannel = null;
 					// TODO Perms check
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
-						newChannel = new ChannelLocal(channelName);
+						newChannel = new ChannelAnnouncement(channelName);
 					} catch (Exception e) {
 						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
@@ -232,12 +236,8 @@ public class ChannelLocal extends Channel {
 		mPlayerPerms.remove(player.getUniqueId());
 	}
 
-	public String getShardName() {
-		return mShardName;
-	}
-
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		// TODO Add permission check for local chat.
+		// TODO Add permission check for announcement chat.
 
 		if (sender instanceof Player) {
 			ChannelPerms playerPerms = mPlayerPerms.get(((Player) sender).getUniqueId());
@@ -250,7 +250,6 @@ public class ChannelLocal extends Channel {
 			}
 		}
 
-		// TODO Permissions for allowed chat transformations?
 		Set<TransformationType> allowedTransforms = new HashSet<>();
 		allowedTransforms.add(TransformationType.COLOR);
 		allowedTransforms.add(TransformationType.DECORATION);
@@ -259,30 +258,27 @@ public class ChannelLocal extends Channel {
 		allowedTransforms.add(TransformationType.GRADIENT);
 		allowedTransforms.add(TransformationType.RAINBOW);
 
-		JsonObject extraData = new JsonObject();
-		extraData.addProperty("fromShard", mShardName);
-
-		Message message = Message.createMessage(this, sender, extraData, messageText, true, allowedTransforms);
+		Message message = Message.createMessage(this, sender, null, messageText, true, allowedTransforms);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
+
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			String sStackTrace = sw.toString();
+			NetworkChatPlugin.getInstance().getLogger().warning(sStackTrace);
+
+			CommandAPI.fail("Could not send message.");
 		}
 	}
 
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
 		// TODO Check permission to see the message.
-		JsonObject extraData = message.getExtraData();
-		if (extraData == null
-		    || extraData.getAsJsonPrimitive("fromShard") == null
-		    || !extraData.getAsJsonPrimitive("fromShard").isString()
-		    || !mShardName.equals(extraData.getAsJsonPrimitive("fromShard").getAsString())) {
-			// TODO Chat spy here
-			return;
-		}
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			UUID playerId = playerStateEntry.getKey();
 
@@ -313,24 +309,15 @@ public class ChannelLocal extends Channel {
 			.build();
 
 		// TODO Use configurable formatting, not hard-coded formatting.
-		String prefix = "<gray><hover:show_text:\"<yellow>Local Channel\n<red>TODO Click for gui on channel/message?\">\\<<yellow><channelName><gray>></hover> <white><sender> <gray>» ";
+		String prefix = "<gray><hover:show_text:\"<red>Announcement Channel\n<red>TODO Click for gui on channel/message?\">\\<<red><channelName><gray>></hover> ";
 		// TODO We should use templates to insert these and related formatting.
-		prefix = prefix.replace("<channelName>", mName)
-		    .replace("<sender>", message.getSenderName());
-
-		UUID senderUuid = message.getSenderId();
-		Identity senderIdentity;
-		if (senderUuid == null) {
-			senderIdentity = Identity.nil();
-		} else {
-			senderIdentity = Identity.identity(senderUuid);
-		}
+		prefix = prefix.replace("<channelName>", mName);
 
 		Component fullMessage = Component.empty()
 		    .append(minimessage.parse(prefix))
-		    .append(Component.empty().color(NamedTextColor.YELLOW).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
-		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
+		    .append(Component.empty().color(NamedTextColor.RED).append(message.getMessage()));
+		recipient.sendMessage(Identity.nil(), fullMessage, MessageType.SYSTEM);
+		if (recipient instanceof Player) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
 	}
