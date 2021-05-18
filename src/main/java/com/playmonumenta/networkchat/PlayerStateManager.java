@@ -31,7 +31,7 @@ public class PlayerStateManager implements Listener {
 	private static PlayerStateManager INSTANCE = null;
 	private static Plugin mPlugin = null;
 	private static Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
-	private static boolean mIsDefaultChat = true;
+	private static boolean mIsDefaultChatPlugin = true;
 
 	private PlayerStateManager(Plugin plugin) {
 		INSTANCE = this;
@@ -50,11 +50,11 @@ public class PlayerStateManager implements Listener {
 	}
 
 	public static boolean isDefaultChat() {
-		return mIsDefaultChat;
+		return mIsDefaultChatPlugin;
 	}
 
 	public static void isDefaultChat(boolean value) {
-		mIsDefaultChat = value;
+		mIsDefaultChatPlugin = value;
 	}
 
 	public static Map<UUID, PlayerState> getPlayerStates() {
@@ -146,7 +146,7 @@ public class PlayerStateManager implements Listener {
 		if (event.isCancelled()) {
 			return;
 		}
-		if (!mIsDefaultChat) {
+		if (!mIsDefaultChatPlugin) {
 			return;
 		}
 

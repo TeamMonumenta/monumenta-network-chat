@@ -37,7 +37,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 
-// A channel visible only to all shards
+// A channel for server announcements
 public class ChannelAnnouncement extends Channel {
 	public static final String CHANNEL_CLASS_ID = "announcement";
 
