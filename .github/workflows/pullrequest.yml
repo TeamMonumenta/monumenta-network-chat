@@ -13,8 +13,7 @@ jobs:
       with:
         java-version: 1.8
 
-    - name: Setup reviewdog
-      uses: reviewdog/action-setup@v1
+    - uses: reviewdog/action-setup@v1
       with:
         reviewdog_version: latest
 
@@ -33,11 +32,33 @@ jobs:
         # Create the key based on runner os, cache name, and a hash of all the pom.xml files
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
 
+    - name: Build Paper
+      run: |
+        if [[ ! -d ~/.m2/repository/com/destroystokyo/paper ]]; then
+          git clone https://github.com/TeamMonumenta/Paper.git
+          cd Paper
+          git checkout 1.16
+          ./paper jar
+        fi
+
     - name: Build and report style/pmd/warnings
       env:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -o pipefail
+
+        cd paper
+        mvn checkstyle:checkstyle --batch-mode --no-snapshot-updates
+        cat target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (paper)" -reporter=github-pr-check
+        mvn pmd:pmd --batch-mode
+
+        cd ../bungee
+        mvn checkstyle:checkstyle --batch-mode --no-snapshot-updates
+        cat target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (bungee)" -reporter=github-pr-check
+        mvn pmd:pmd --batch-mode
+
+        cd ..
+        cat bungee/target/pmd.txt paper/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
         ./compile.sh --batch-mode --no-snapshot-updates | tee compile.log
         set +o pipefail
         cat compile.log | grep '^\[WARNING\].*\.java' | reviewdog -efm="[WARNING] %f:[%l,%c] %m" -name="compiler-warnings" -reporter=github-pr-check
