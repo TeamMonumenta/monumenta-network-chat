@@ -46,18 +46,6 @@ jobs:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -o pipefail
-
-        cd paper
-        mvn checkstyle:checkstyle --batch-mode --no-snapshot-updates
-        cat target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (paper)" -reporter=github-pr-check
-        mvn pmd:pmd --batch-mode
-
-        cd ../bungee
-        mvn checkstyle:checkstyle --batch-mode --no-snapshot-updates
-        cat target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (bungee)" -reporter=github-pr-check
-        mvn pmd:pmd --batch-mode
-
-        cd ..
         ./compile.sh --batch-mode --no-snapshot-updates | tee compile.log
         set +o pipefail
         cat compile.log | grep '^\[WARNING\].*\.java' | reviewdog -efm="[WARNING] %f:[%l,%c] %m" -name="compiler-warnings" -reporter=github-pr-check
