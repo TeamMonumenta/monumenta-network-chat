@@ -164,7 +164,9 @@ public class ChannelManager implements Listener {
 		mChannelIdsByName.put(channelName, channelId);
 		mChannels.put(channelId, channel);
 		saveChannel(channel);
-		sender.sendMessage(Component.text("Created channel " + channelName + ".", NamedTextColor.GRAY));
+		if (!(channel instanceof ChannelWhisper)) {
+			sender.sendMessage(Component.text("Created channel " + channelName + ".", NamedTextColor.GRAY));
+		}
 	}
 
 	// Used for channels that are done loading from Redis

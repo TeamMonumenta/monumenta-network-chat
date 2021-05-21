@@ -14,6 +14,7 @@ public class NetworkChatPlugin extends JavaPlugin {
 	public ChannelManager mChannelManager = null;
 	public MessageManager mMessageManager = null;
 	public PlayerStateManager mPlayerStateManager = null;
+	public RemotePlayerManager mRemotePlayerManager = null;
 
 	@Override
 	public void onLoad() {
@@ -52,10 +53,12 @@ public class NetworkChatPlugin extends JavaPlugin {
 		mMessageManager = MessageManager.getInstance(this);
 		mPlayerStateManager = PlayerStateManager.getInstance(this);
 		mPlayerStateManager.isDefaultChat(isDefaultChat);
+		mRemotePlayerManager = RemotePlayerManager.getInstance(this);
 
 		getServer().getPluginManager().registerEvents(mChannelManager, this);
 		getServer().getPluginManager().registerEvents(mMessageManager, this);
 		getServer().getPluginManager().registerEvents(mPlayerStateManager, this);
+		getServer().getPluginManager().registerEvents(mRemotePlayerManager, this);
 	}
 
 	@Override
