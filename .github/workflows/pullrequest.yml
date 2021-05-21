@@ -58,7 +58,6 @@ jobs:
         mvn pmd:pmd --batch-mode
 
         cd ..
-        cat bungee/target/pmd.txt paper/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
         ./compile.sh --batch-mode --no-snapshot-updates | tee compile.log
         set +o pipefail
         cat compile.log | grep '^\[WARNING\].*\.java' | reviewdog -efm="[WARNING] %f:[%l,%c] %m" -name="compiler-warnings" -reporter=github-pr-check
