@@ -20,19 +20,17 @@ import org.bukkit.command.CommandSender;
 
 // Settings for a given channel, same structure for channel default and player preference
 public class ChannelSettings {
-	public final static String IS_LISTENING = "is_listening";
+	public static final String IS_LISTENING = "is_listening";
 	// TODO Allow specifying a sound.
-	public final static String MESSAGES_PLAY_SOUND = "messages_play_sound";
+	public static final String MESSAGES_PLAY_SOUND = "messages_play_sound";
 
 	// For value suggestions
-	public final static String FLAG_STR_DEFAULT = "default";
-	public final static String FLAG_STR_FALSE = "false";
-	public final static String FLAG_STR_TRUE = "true";
+	public static final String FLAG_STR_DEFAULT = "default";
+	public static final String FLAG_STR_FALSE = "false";
+	public static final String FLAG_STR_TRUE = "true";
 
-	public final static Set<String> mFlagKeys = Collections.unmodifiableSet(
-		Set.of(IS_LISTENING, MESSAGES_PLAY_SOUND));
-	public final static Set<String> mFlagValues = Collections.unmodifiableSet(
-		Set.of(FLAG_STR_DEFAULT, FLAG_STR_FALSE, FLAG_STR_TRUE));
+	public static final Set<String> mFlagKeys = Set.of(IS_LISTENING, MESSAGES_PLAY_SOUND);
+	public static final Set<String> mFlagValues = Set.of(FLAG_STR_DEFAULT, FLAG_STR_FALSE, FLAG_STR_TRUE);
 	private Map<String, Boolean> mFlags = new HashMap<>();
 
 	public static ChannelSettings fromJson(JsonObject object) {

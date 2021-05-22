@@ -29,6 +29,7 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
@@ -152,7 +153,7 @@ public class ChannelLocal extends Channel {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					String channelName = (String)args[prefixArguments.size()-1];
+					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
 					// TODO Perms check
 
@@ -251,7 +252,7 @@ public class ChannelLocal extends Channel {
 		}
 
 		// TODO Permissions for allowed chat transformations?
-		Set<TransformationType> allowedTransforms = new HashSet<>();
+		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
 		allowedTransforms.add(TransformationType.COLOR);
 		allowedTransforms.add(TransformationType.DECORATION);
 		allowedTransforms.add(TransformationType.KEYBIND);

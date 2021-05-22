@@ -49,6 +49,10 @@ public class ChannelFuture extends Channel {
 		return CHANNEL_CLASS_ID;
 	}
 
+	public String getFutureClassId() {
+		return mType;
+	}
+
 	public UUID getUniqueId() {
 		return mId;
 	}

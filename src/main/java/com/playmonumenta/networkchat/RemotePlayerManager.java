@@ -136,16 +136,16 @@ public class RemotePlayerManager implements Listener {
 
 	private void remotePlayerChange(JsonObject data) {
 		// A refresh does not trigger player join/leave messages; it's for shards coming online
-		boolean isRefresh = true;
-		boolean isHidden = false;
+		//boolean isRefresh = true;
+		//boolean isHidden = false;
 		boolean isOnline = false;
 		String remoteShardName;
 		String playerName;
 		UUID playerUuid;
 
 		try {
-			isRefresh = data.get("isRefresh").getAsBoolean();
-			isHidden = data.get("isHidden").getAsBoolean();
+			//isRefresh = data.get("isRefresh").getAsBoolean();
+			//isHidden = data.get("isHidden").getAsBoolean();
 			isOnline = data.get("isOnline").getAsBoolean();
 			remoteShardName = data.get("shard").getAsString();
 			playerName = data.get("playerName").getAsString();

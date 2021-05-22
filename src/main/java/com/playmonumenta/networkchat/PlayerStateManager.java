@@ -1,9 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
@@ -108,7 +106,6 @@ public class PlayerStateManager implements Listener {
 		for (UUID channelId : playerState.getWhisperChannelIds()) {
 			ChannelManager.loadChannel(channelId, playerState);
 		}
-		UUID activeChannelId = playerState.getActiveChannelId();
 
 		// TODO Send login messages here (once implemented)
 	}

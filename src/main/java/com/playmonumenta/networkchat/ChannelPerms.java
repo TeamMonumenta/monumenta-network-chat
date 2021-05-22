@@ -20,22 +20,17 @@ import org.bukkit.command.CommandSender;
 
 // Permissions to listen or talk in a channel
 public class ChannelPerms {
-	public final static String MAY_CHAT = "may_chat";
-	public final static String MAY_LISTEN = "may_listen";
+	public static final String MAY_CHAT = "may_chat";
+	public static final String MAY_LISTEN = "may_listen";
 
 	// For value suggestions
-	public final static String FLAG_STR_DEFAULT = "default";
-	public final static String FLAG_STR_FALSE = "false";
-	public final static String FLAG_STR_TRUE = "true";
+	public static final String FLAG_STR_DEFAULT = "default";
+	public static final String FLAG_STR_FALSE = "false";
+	public static final String FLAG_STR_TRUE = "true";
 
-	public final static Set<String> mFlagKeys = Collections.unmodifiableSet(
-		Set.of(MAY_CHAT, MAY_LISTEN));
-	public final static Set<String> mFlagValues = Collections.unmodifiableSet(
-		Set.of(FLAG_STR_DEFAULT, FLAG_STR_FALSE, FLAG_STR_TRUE));
+	public static final Set<String> mFlagKeys = Set.of(MAY_CHAT, MAY_LISTEN);
+	public static final Set<String> mFlagValues = Set.of(FLAG_STR_DEFAULT, FLAG_STR_FALSE, FLAG_STR_TRUE);
 	private Map<String, Boolean> mFlags = new HashMap<>();
-
-	private Boolean mMayChat = null;
-	private Boolean mMayListen = null;
 
 	public static ChannelPerms fromJson(JsonObject object) {
 		ChannelPerms perms = new ChannelPerms();

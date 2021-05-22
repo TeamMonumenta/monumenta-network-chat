@@ -11,7 +11,6 @@ import java.util.UUID;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -29,6 +28,7 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
@@ -149,7 +149,7 @@ public class ChannelGlobal extends Channel {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					String channelName = (String)args[prefixArguments.size()-1];
+					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelGlobal newChannel = null;
 					// TODO Perms check
 
@@ -244,7 +244,7 @@ public class ChannelGlobal extends Channel {
 		}
 
 		// TODO Permissions for allowed chat transformations?
-		Set<TransformationType> allowedTransforms = new HashSet<>();
+		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
 		allowedTransforms.add(TransformationType.COLOR);
 		allowedTransforms.add(TransformationType.DECORATION);
 		allowedTransforms.add(TransformationType.KEYBIND);

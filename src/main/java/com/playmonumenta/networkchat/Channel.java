@@ -84,7 +84,7 @@ public abstract class Channel {
 	}
 
 	public void clearPlayerPerms(OfflinePlayer player) {
-		return;
+		;
 	}
 
 	// Check for access, then send a message to the network.

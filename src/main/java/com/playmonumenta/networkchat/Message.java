@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -54,7 +55,7 @@ public class Message {
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, String message, boolean markdown, Set<TransformationType> textTransformations) {
+	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, String message, boolean markdown, Set<TransformationType<? extends Transformation>> textTransformations) {
 		MiniMessage.Builder minimessageBuilder = MiniMessage.builder()
 		    .removeDefaultTransformations();
 
@@ -63,7 +64,7 @@ public class Message {
 			    .markdownFlavor(DiscordFlavor.get());
 		}
 
-		for (TransformationType transform : textTransformations) {
+		for (TransformationType<? extends Transformation> transform : textTransformations) {
 			minimessageBuilder.transformation(transform);
 		}
 
@@ -74,7 +75,7 @@ public class Message {
 
 	// For when receiving remote messages
 	protected static Message fromJson(JsonObject object) {
-		Instant instant = Instant.ofEpochMilli(object.get("instant").getAsLong());;
+		Instant instant = Instant.ofEpochMilli(object.get("instant").getAsLong());
 		UUID channelId = UUID.fromString(object.get("channelId").getAsString());
 		UUID senderId = null;
 		if (object.get("senderId") != null) {
