@@ -237,18 +237,49 @@ public class ChannelLocal extends Channel {
 		return mShardName;
 	}
 
-	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
+	public boolean mayChat(CommandSender sender) {
 		// TODO Add permission check for local chat.
 
-		if (sender instanceof Player) {
-			ChannelPerms playerPerms = mPlayerPerms.get(((Player) sender).getUniqueId());
-			if (playerPerms == null) {
-				if (mDefaultPerms.mayChat() != null && !mDefaultPerms.mayChat()) {
-					CommandAPI.fail("You do not have permission to chat in this channel.");
-				}
-			} else if (playerPerms.mayChat() != null && !playerPerms.mayChat()) {
-				CommandAPI.fail("You do not have permission to chat in this channel.");
+		if (!(sender instanceof Player)) {
+			return true;
+		}
+
+		ChannelPerms playerPerms = mPlayerPerms.get(((Player) sender).getUniqueId());
+		if (playerPerms == null) {
+			if (mDefaultPerms.mayChat() != null && !mDefaultPerms.mayChat()) {
+				return false;
 			}
+		} else if (playerPerms.mayChat() != null && !playerPerms.mayChat()) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public boolean mayListen(CommandSender sender) {
+		// TODO Check permission to see the message.
+
+		if (!(sender instanceof Player)) {
+			return true;
+		}
+
+		UUID playerId = ((Player) sender).getUniqueId();
+
+		ChannelPerms playerPerms = mPlayerPerms.get(playerId);
+		if (playerPerms == null) {
+			if (mDefaultPerms.mayListen() != null && !mDefaultPerms.mayListen()) {
+				return false;
+			}
+		} else if (playerPerms.mayListen() != null && !playerPerms.mayListen()) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
+		if (!mayChat(sender)) {
+			CommandAPI.fail("You do not have permission to chat in this channel.");
 		}
 
 		// TODO Permissions for allowed chat transformations?
@@ -285,18 +316,10 @@ public class ChannelLocal extends Channel {
 			return;
 		}
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
-			UUID playerId = playerStateEntry.getKey();
-
-			ChannelPerms playerPerms = mPlayerPerms.get(playerId);
-			if (playerPerms == null) {
-				if (mDefaultPerms.mayListen() != null && !mDefaultPerms.mayListen()) {
-					continue;
-				}
-			} else if (playerPerms.mayListen() != null && !playerPerms.mayListen()) {
+			PlayerState state = playerStateEntry.getValue();
+			if (!mayListen(state.getPlayer())) {
 				continue;
 			}
-
-			PlayerState state = playerStateEntry.getValue();
 
 			if (state.isListening(this)) {
 				// This accounts for players who have paused their chat

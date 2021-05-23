@@ -379,6 +379,49 @@ public class ChannelWhisper extends Channel {
 		mPlayerPerms.remove(player.getUniqueId());
 	}
 
+	public boolean mayChat(CommandSender sender) {
+		if (!mayChat(sender)) {
+			return false;
+		}
+
+		if (!(sender instanceof Player)) {
+			return false;
+		}
+
+		Player player = (Player) sender;
+		ChannelPerms playerPerms = mPlayerPerms.get(player.getUniqueId());
+		if (playerPerms == null) {
+			if (mDefaultPerms.mayChat() != null && !mDefaultPerms.mayChat()) {
+				return false;
+			}
+		} else if (playerPerms.mayChat() != null && !playerPerms.mayChat()) {
+			return false;
+		}
+
+		return mParticipants.contains(player);
+	}
+
+	public boolean mayListen(CommandSender sender) {
+		// TODO Check permission to see the message.
+
+		if (!(sender instanceof Player)) {
+			return false;
+		}
+
+		UUID playerId = ((Player) sender).getUniqueId();
+
+		ChannelPerms playerPerms = mPlayerPerms.get(playerId);
+		if (playerPerms == null) {
+			if (mDefaultPerms.mayListen() != null && !mDefaultPerms.mayListen()) {
+				return false;
+			}
+		} else if (playerPerms.mayListen() != null && !playerPerms.mayListen()) {
+			return false;
+		}
+
+		return mParticipants.contains(playerId);
+	}
+
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		// TODO Add permission check for whisper chat.
 
@@ -386,20 +429,12 @@ public class ChannelWhisper extends Channel {
 			CommandAPI.fail("Only players may whisper.");
 		}
 
-		UUID senderId = ((Player) sender).getUniqueId();
-		if (!mParticipants.contains(senderId)) {
+		if (!mayChat(sender)) {
 			CommandAPI.fail("You do not have permission to chat in this channel.");
 		}
-		UUID receiverId = getOtherParticipant(senderId);
 
-		ChannelPerms playerPerms = mPlayerPerms.get(((Player) sender).getUniqueId());
-		if (playerPerms == null) {
-			if (mDefaultPerms.mayChat() != null && !mDefaultPerms.mayChat()) {
-				CommandAPI.fail("You do not have permission to chat in this channel.");
-			}
-		} else if (playerPerms.mayChat() != null && !playerPerms.mayChat()) {
-			CommandAPI.fail("You do not have permission to chat in this channel.");
-		}
+		UUID senderId = ((Player) sender).getUniqueId();
+		UUID receiverId = getOtherParticipant(senderId);
 
 		if (RemotePlayerManager.getPlayerName(receiverId) == null) {
 			CommandAPI.fail("That player is not online.");

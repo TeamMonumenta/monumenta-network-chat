@@ -39,7 +39,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("rename"));
 			arguments.add(new StringArgument("Old Channel ID").overrideSuggestions((sender) -> {
 				// TODO Only suggest channels players have access to (same with other suggestions)
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new StringArgument("New Channel ID"));
 			new CommandAPICommand(baseCommand)
@@ -52,7 +52,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("setdefaultchannel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -64,7 +64,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("forceload"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -76,7 +76,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -97,7 +97,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("say"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -110,7 +110,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("say"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new GreedyStringArgument("Message"));
 			new CommandAPICommand(baseCommand)
@@ -124,7 +124,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("join"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -136,7 +136,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("leave"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -225,7 +225,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("my"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
 			new CommandAPICommand(baseCommand)
@@ -258,7 +258,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("my"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagValues.stream().toArray(String[]::new)));
@@ -291,7 +291,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("settings"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
 			new CommandAPICommand(baseCommand)
@@ -312,7 +312,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("settings"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagValues.stream().toArray(String[]::new)));
@@ -336,7 +336,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("permissions"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
 			new CommandAPICommand(baseCommand)
@@ -357,7 +357,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("permissions"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
+				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
 			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagValues.stream().toArray(String[]::new)));

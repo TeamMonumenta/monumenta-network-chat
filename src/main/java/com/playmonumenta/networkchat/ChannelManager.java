@@ -148,6 +148,38 @@ public class ChannelManager implements Listener {
 		return new HashSet<>(mChannelIdsByName.keySet());
 	}
 
+	public static Set<String> getChatableChannelNames(CommandSender sender) {
+		Set<String> channels = new HashSet<>();
+		for (Map.Entry<UUID, Channel> channelEntry : mChannels.entrySet()) {
+			Channel channel = channelEntry.getValue();
+
+			if (channel instanceof ChannelWhisper) {
+				continue;
+			}
+
+			if (channel.mayChat(sender)) {
+				channels.add(channel.getName());
+			}
+		}
+		return channels;
+	}
+
+	public static Set<String> getListenableChannelNames(CommandSender sender) {
+		Set<String> channels = new HashSet<>();
+		for (Map.Entry<UUID, Channel> channelEntry : mChannels.entrySet()) {
+			Channel channel = channelEntry.getValue();
+
+			if (channel instanceof ChannelWhisper) {
+				continue;
+			}
+
+			if (channel.mayListen(sender)) {
+				channels.add(channel.getName());
+			}
+		}
+		return channels;
+	}
+
 	// Used for new channels
 	public static void registerNewChannel(CommandSender sender, Channel channel) throws WrapperCommandSyntaxException {
 		if (channel == null) {

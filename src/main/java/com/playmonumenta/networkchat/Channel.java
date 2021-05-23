@@ -87,6 +87,14 @@ public abstract class Channel {
 		;
 	}
 
+	public boolean mayChat(CommandSender sender) {
+		return false;
+	}
+
+	public boolean mayListen(CommandSender sender) {
+		return false;
+	}
+
 	// Check for access, then send a message to the network.
 	// This broadcasts the message without displaying for network messages.
 	public abstract void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException;
