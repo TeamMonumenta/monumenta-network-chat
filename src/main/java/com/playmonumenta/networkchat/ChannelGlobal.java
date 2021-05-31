@@ -140,9 +140,6 @@ public class ChannelGlobal extends Channel {
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelGlobal newChannel = null;
-					if (!sender.hasPermission("networkchat.new")) {
-						CommandAPI.fail("You do not have permission to make new channels.");
-					}
 					if (!sender.hasPermission("networkchat.new.global")) {
 						CommandAPI.fail("You do not have permission to make new global channels.");
 					}

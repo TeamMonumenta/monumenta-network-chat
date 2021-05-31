@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -16,6 +18,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import org.bukkit.Bukkit;
@@ -31,38 +34,37 @@ import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
-// DEBUG REMOVE WHEN DONE
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
-
-// A channel for server announcements
-public class ChannelAnnouncement extends Channel {
-	public static final String CHANNEL_CLASS_ID = "announcement";
+// A channel visible to all shards
+public class ChannelParty extends Channel {
+	public static final String CHANNEL_CLASS_ID = "party";
 
 	private UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
+	private Set<UUID> mParticipants;
 	private ChannelSettings mDefaultSettings;
 	private ChannelPerms mDefaultPerms;
 	private Map<UUID, ChannelPerms> mPlayerPerms;
 
-	private ChannelAnnouncement(UUID channelId, Instant lastUpdate, String name) {
+	private ChannelParty(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
 		mName = name;
+		mParticipants = new HashSet<>();
 
 		mDefaultSettings = new ChannelSettings();
-		mDefaultSettings.messagesPlaySound(true);
-
 		mDefaultPerms = new ChannelPerms();
 		mPlayerPerms = new HashMap<>();
 	}
 
-	public ChannelAnnouncement(String name) {
+	public ChannelParty(String name) {
 		mLastUpdate = Instant.now();
 		mId = UUID.randomUUID();
 		mName = name;
+		mParticipants = new HashSet<>();
 
 		mDefaultSettings = new ChannelSettings();
 		mDefaultPerms = new ChannelPerms();
@@ -72,7 +74,7 @@ public class ChannelAnnouncement extends Channel {
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
-			throw new Exception("Cannot create ChannelAnnouncement from channel ID " + channelClassId);
+			throw new Exception("Cannot create ChannelParty from channel ID " + channelClassId);
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
@@ -82,7 +84,13 @@ public class ChannelAnnouncement extends Channel {
 		}
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
-		ChannelAnnouncement channel = new ChannelAnnouncement(channelId, lastUpdate, name);
+		ChannelParty channel = new ChannelParty(channelId, lastUpdate, name);
+
+		JsonArray participantsJson = channelJson.getAsJsonArray("participants");
+		Set<UUID> participants = new HashSet<>();
+		for (JsonElement participantJson : participantsJson) {
+			channel.addPlayer(UUID.fromString(participantJson.getAsString()), false);
+		}
 
 		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
 		if (defaultSettingsJson != null) {
@@ -124,11 +132,17 @@ public class ChannelAnnouncement extends Channel {
 			}
 		}
 
+		JsonArray participantsJson = new JsonArray();
+		for (UUID playerId : mParticipants) {
+			participantsJson.add(playerId.toString());
+		}
+
 		JsonObject result = new JsonObject();
 		result.addProperty("type", CHANNEL_CLASS_ID);
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
+		result.add("participants", participantsJson);
 		result.add("defaultSettings", mDefaultSettings.toJson());
 		result.add("defaultPerms", mDefaultPerms.toJson());
 		result.add("playerPerms", allPlayerPermsJson);
@@ -146,19 +160,132 @@ public class ChannelAnnouncement extends Channel {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelAnnouncement newChannel = null;
-					if (!sender.hasPermission("networkchat.new.announcement")) {
-						CommandAPI.fail("You do not have permission to make new announcement channels.");
+					ChannelParty newChannel = null;
+					if (!sender.hasPermission("networkchat.new.party")) {
+						CommandAPI.fail("You do not have permission to make new party channels.");
 					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
-						newChannel = new ChannelAnnouncement(channelName);
+						newChannel = new ChannelParty(channelName);
 					} catch (Exception e) {
 						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
+					// Add the sender to the party if they're a player
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (callee instanceof Player) {
+						newChannel.addPlayer(((Player) callee).getUniqueId(), false);
+					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
+				})
+				.register();
+
+			arguments.clear();
+			// last element of prefixArguments is channel ID
+			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
+			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChannelManager.getPartyChannelNames(sender).toArray(new String[0]);
+			}));
+			arguments.add(new MultiLiteralArgument("invite"));
+			arguments.add(new StringArgument("Player").overrideSuggestions((sender) -> {
+				return RemotePlayerManager.onlinePlayerNames().toArray(new String[0]);
+			}));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelId = (String)args[1];
+					Channel ch = ChannelManager.getChannel(channelId);
+					if (ch == null) {
+						CommandAPI.fail("No such channel " + channelId + ".");
+					}
+					if (!(ch instanceof ChannelParty)) {
+						CommandAPI.fail("Channel " + channelId + " is not a party channel.");
+					}
+					ChannelParty channel = (ChannelParty) ch;
+
+					if (!channel.isParticipant(sender)) {
+						CommandAPI.fail("You are not a participant of " + channelId + ".");
+					}
+
+					String playerName = (String)args[3];
+					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+					if (playerId == null) {
+						CommandAPI.fail("No such player " + playerName + ".");
+					}
+
+					sender.sendMessage(Component.text("Added " + playerName + " to " + channelId + ".", NamedTextColor.GRAY));
+					channel.addPlayer(playerId);
+				})
+				.register();
+
+			arguments.clear();
+			// last element of prefixArguments is channel ID
+			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
+			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChannelManager.getPartyChannelNames(sender).toArray(new String[0]);
+			}));
+			arguments.add(new MultiLiteralArgument("kick"));
+			arguments.add(new StringArgument("Player").overrideSuggestions((sender) -> {
+				return RemotePlayerManager.onlinePlayerNames().toArray(new String[0]);
+			}));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelId = (String)args[1];
+					Channel ch = ChannelManager.getChannel(channelId);
+					if (ch == null) {
+						CommandAPI.fail("No such channel " + channelId + ".");
+					}
+					if (!(ch instanceof ChannelParty)) {
+						CommandAPI.fail("Channel " + channelId + " is not a party channel.");
+					}
+					ChannelParty channel = (ChannelParty) ch;
+
+					if (!channel.isParticipant(sender)) {
+						CommandAPI.fail("You are not a participant of " + channelId + ".");
+					}
+
+					String playerName = (String)args[3];
+					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+					if (playerId == null) {
+						CommandAPI.fail("No such player " + playerName + ".");
+					}
+
+					// TODO Display message and make player unwatch channel.
+					channel.removePlayer(playerId);
+					sender.sendMessage(Component.text("Kicked " + playerName + " from " + channelId + ".", NamedTextColor.GRAY));
+				})
+				.register();
+
+			arguments.clear();
+			// last element of prefixArguments is channel ID
+			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
+			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChannelManager.getPartyChannelNames(sender).toArray(new String[0]);
+			}));
+			arguments.add(new MultiLiteralArgument("leave"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelId = (String)args[1];
+					Channel ch = ChannelManager.getChannel(channelId);
+					if (ch == null) {
+						CommandAPI.fail("No such channel " + channelId + ".");
+					}
+					if (!(ch instanceof ChannelParty)) {
+						CommandAPI.fail("Channel " + channelId + " is not a party channel.");
+					}
+					ChannelParty channel = (ChannelParty) ch;
+
+					if (!channel.isParticipant(sender)) {
+						CommandAPI.fail("You are not a participant of " + channelId + ".");
+					}
+					Player player = (Player) sender;
+
+					// TODO Make player unwatch channel
+					channel.removePlayer(player.getUniqueId());
+					sender.sendMessage(Component.text("You have left " + channelId + ".", NamedTextColor.GRAY));
 				})
 				.register();
 		}
@@ -186,6 +313,61 @@ public class ChannelAnnouncement extends Channel {
 
 	public String getName() {
 		return mName;
+	}
+
+	public void addPlayer(UUID playerId) {
+		addPlayer(playerId, true);
+	}
+
+	public void addPlayer(UUID playerId, boolean save) {
+		mParticipants.add(playerId);
+		if (save) {
+			// TODO Make player watch the party chat so it loads when they log in
+			ChannelManager.saveChannel(this);
+		}
+	}
+
+	public void removePlayer(UUID playerId) {
+		mParticipants.remove(playerId);
+		if (mParticipants.isEmpty()) {
+			try {
+				ChannelManager.deleteChannel(getName());
+			} catch (Exception e) {
+				NetworkChatPlugin.getInstance().getLogger().info("Failed to delete empty channel " + getName());
+			}
+		} else {
+			ChannelManager.saveChannel(this);
+		}
+	}
+
+	public boolean isParticipant(CommandSender sender) {
+		if (!(sender instanceof Player)) {
+			return false;
+		}
+		return isParticipant((Player) sender);
+	}
+
+	public boolean isParticipant(Player player) {
+		return isParticipant(player.getUniqueId());
+	}
+
+	public boolean isParticipant(UUID playerId) {
+		return mParticipants.contains(playerId);
+	}
+
+	public Set<UUID> getParticipantIds() {
+		return new HashSet<>(mParticipants);
+	}
+
+	public Set<String> getParticipantNames() {
+		Set<String> names = new HashSet<>();
+		for (UUID playerId : mParticipants) {
+			String name = MonumentaRedisSyncAPI.cachedUuidToName(playerId);
+			if (name != null) {
+				names.add(name);
+			}
+		}
+		return names;
 	}
 
 	public ChannelSettings channelSettings() {
@@ -226,35 +408,53 @@ public class ChannelAnnouncement extends Channel {
 		mPlayerPerms.remove(playerId);
 	}
 
+	public boolean mayManage(CommandSender sender) {
+		if (sender.hasPermission("networkchat.moderator")) {
+			return true;
+		}
+
+		if (!(sender instanceof Player)) {
+			return false;
+		}
+		Player player = (Player) sender;
+		UUID playerId = player.getUniqueId();
+		return mParticipants.contains(playerId);
+	}
+
 	public boolean mayChat(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.say")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.say.announcement")) {
+		if (!sender.hasPermission("networkchat.say.party")) {
 			return false;
 		}
 
 		if (!(sender instanceof Player)) {
-			return true;
+			return false;
 		}
 
-		ChannelPerms playerPerms = mPlayerPerms.get(((Player) sender).getUniqueId());
+		Player player = (Player) sender;
+		UUID playerId = player.getUniqueId();
+		if (!mParticipants.contains(playerId)) {
+			return false;
+		}
+		ChannelPerms playerPerms = mPlayerPerms.get(playerId);
 		if (playerPerms == null) {
-			if (mDefaultPerms.mayChat() != null && mDefaultPerms.mayChat()) {
-				return true;
+			if (mDefaultPerms.mayChat() != null && !mDefaultPerms.mayChat()) {
+				return false;
 			}
-		} else if (playerPerms.mayChat() != null && playerPerms.mayChat()) {
-			return true;
+		} else if (playerPerms.mayChat() != null && !playerPerms.mayChat()) {
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
 	public boolean mayListen(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.see")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.see.announcement")) {
+		if (!sender.hasPermission("networkchat.see.party")) {
 			return false;
 		}
 
@@ -263,6 +463,9 @@ public class ChannelAnnouncement extends Channel {
 		}
 
 		UUID playerId = ((Player) sender).getUniqueId();
+		if (!mParticipants.contains(playerId)) {
+			return false;
+		}
 
 		ChannelPerms playerPerms = mPlayerPerms.get(playerId);
 		if (playerPerms == null) {
@@ -280,8 +483,8 @@ public class ChannelAnnouncement extends Channel {
 		if (!sender.hasPermission("networkchat.say")) {
 			CommandAPI.fail("You do not have permission to chat.");
 		}
-		if (!sender.hasPermission("networkchat.say.announcement")) {
-			CommandAPI.fail("You do not have permission to make announcements.");
+		if (!sender.hasPermission("networkchat.say.party")) {
+			CommandAPI.fail("You do not have permission to talk in party chat.");
 		}
 
 		if (!mayChat(sender)) {
@@ -315,13 +518,6 @@ public class ChannelAnnouncement extends Channel {
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
-
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			e.printStackTrace(pw);
-			String sStackTrace = sw.toString();
-			NetworkChatPlugin.getInstance().getLogger().warning(sStackTrace);
-
 			CommandAPI.fail("Could not send message.");
 		}
 	}
@@ -350,15 +546,24 @@ public class ChannelAnnouncement extends Channel {
 			.build();
 
 		// TODO Use configurable formatting, not hard-coded formatting.
-		String prefix = "<gray><hover:show_text:\"<red>Announcement Channel\n<red>TODO Click for gui on channel/message?\">\\<<red><channelName><gray>></hover> ";
+		String prefix = "<gray><hover:show_text:\"<light_purple>Party Channel\n<red>TODO Click for gui on channel/message?\">\\<<light_purple><channelName><gray>></hover> <white><sender> <gray>» ";
 		// TODO We should use templates to insert these and related formatting.
-		prefix = prefix.replace("<channelName>", mName);
+		prefix = prefix.replace("<channelName>", mName)
+		    .replace("<sender>", message.getSenderName());
+
+		UUID senderUuid = message.getSenderId();
+		Identity senderIdentity;
+		if (senderUuid == null) {
+			senderIdentity = Identity.nil();
+		} else {
+			senderIdentity = Identity.identity(senderUuid);
+		}
 
 		Component fullMessage = Component.empty()
 		    .append(minimessage.parse(prefix))
-		    .append(Component.empty().color(NamedTextColor.RED).append(message.getMessage()));
-		recipient.sendMessage(Identity.nil(), fullMessage, MessageType.SYSTEM);
-		if (recipient instanceof Player) {
+		    .append(Component.empty().color(NamedTextColor.LIGHT_PURPLE).append(message.getMessage()));
+		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
+		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
 	}

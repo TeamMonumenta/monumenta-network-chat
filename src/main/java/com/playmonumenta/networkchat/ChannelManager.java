@@ -150,9 +150,7 @@ public class ChannelManager implements Listener {
 
 	public static Set<String> getManageableChannelNames(CommandSender sender) {
 		Set<String> channels = new HashSet<>();
-		for (Map.Entry<UUID, Channel> channelEntry : mChannels.entrySet()) {
-			Channel channel = channelEntry.getValue();
-
+		for (Channel channel : mChannels.values()) {
 			if (channel instanceof ChannelWhisper) {
 				continue;
 			}
@@ -166,9 +164,7 @@ public class ChannelManager implements Listener {
 
 	public static Set<String> getChatableChannelNames(CommandSender sender) {
 		Set<String> channels = new HashSet<>();
-		for (Map.Entry<UUID, Channel> channelEntry : mChannels.entrySet()) {
-			Channel channel = channelEntry.getValue();
-
+		for (Channel channel : mChannels.values()) {
 			if (channel instanceof ChannelWhisper) {
 				continue;
 			}
@@ -182,14 +178,26 @@ public class ChannelManager implements Listener {
 
 	public static Set<String> getListenableChannelNames(CommandSender sender) {
 		Set<String> channels = new HashSet<>();
-		for (Map.Entry<UUID, Channel> channelEntry : mChannels.entrySet()) {
-			Channel channel = channelEntry.getValue();
-
+		for (Channel channel : mChannels.values()) {
 			if (channel instanceof ChannelWhisper) {
 				continue;
 			}
 
 			if (channel.mayListen(sender)) {
+				channels.add(channel.getName());
+			}
+		}
+		return channels;
+	}
+
+	public static Set<String> getPartyChannelNames(CommandSender sender) {
+		Set<String> channels = new HashSet<>();
+		for (Channel channel : mChannels.values()) {
+			if (!(channel instanceof ChannelParty)) {
+				continue;
+			}
+
+			if (channel.mayManage(sender)) {
 				channels.add(channel.getName());
 			}
 		}
