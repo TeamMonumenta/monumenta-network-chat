@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import com.google.gson.JsonObject;
 
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -79,12 +78,16 @@ public abstract class Channel {
 		return null;
 	}
 
-	public ChannelPerms playerPerms(OfflinePlayer player) {
+	public ChannelPerms playerPerms(UUID playerId) {
 		return null;
 	}
 
-	public void clearPlayerPerms(OfflinePlayer player) {
+	public void clearPlayerPerms(UUID playerId) {
 		;
+	}
+
+	public boolean mayManage(CommandSender sender) {
+		return sender.hasPermission("networkchat.moderator");
 	}
 
 	public boolean mayChat(CommandSender sender) {

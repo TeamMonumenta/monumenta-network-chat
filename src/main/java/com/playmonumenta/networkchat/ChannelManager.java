@@ -148,6 +148,22 @@ public class ChannelManager implements Listener {
 		return new HashSet<>(mChannelIdsByName.keySet());
 	}
 
+	public static Set<String> getManageableChannelNames(CommandSender sender) {
+		Set<String> channels = new HashSet<>();
+		for (Map.Entry<UUID, Channel> channelEntry : mChannels.entrySet()) {
+			Channel channel = channelEntry.getValue();
+
+			if (channel instanceof ChannelWhisper) {
+				continue;
+			}
+
+			if (channel.mayManage(sender)) {
+				channels.add(channel.getName());
+			}
+		}
+		return channels;
+	}
+
 	public static Set<String> getChatableChannelNames(CommandSender sender) {
 		Set<String> channels = new HashSet<>();
 		for (Map.Entry<UUID, Channel> channelEntry : mChannels.entrySet()) {
@@ -276,7 +292,6 @@ public class ChannelManager implements Listener {
 	}
 
 	public static void deleteChannel(String channelName) throws WrapperCommandSyntaxException {
-		// TODO Permissions check
 		Channel channel = getChannel(channelName);
 		if (channel == null) {
 			CommandAPI.fail("Channel " + channelName + " does not exist!");

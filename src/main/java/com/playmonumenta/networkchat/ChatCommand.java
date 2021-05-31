@@ -2,6 +2,7 @@ package com.playmonumenta.networkchat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;
@@ -20,6 +21,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 public class ChatCommand {
 	public static final String[] COMMANDS = new String[]{"chat", "ch", "chattest"};
@@ -38,7 +40,6 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("rename"));
 			arguments.add(new StringArgument("Old Channel ID").overrideSuggestions((sender) -> {
-				// TODO Only suggest channels players have access to (same with other suggestions)
 				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new StringArgument("New Channel ID"));
@@ -169,6 +170,23 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					RemotePlayerManager.showOnlinePlayers((Audience) CommandUtils.getCallee(sender));
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("resetnick"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandAPI.fail("This command can only be run as a player.");
+					}
+
+					Player target = (Player) callee;
+					target.displayName(null);
+					target.playerListName(null);
 					return 1;
 				})
 				.register();
@@ -336,8 +354,9 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("permissions"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
+				return ChannelManager.getManageableChannelNames(sender).toArray(new String[0]);
 			}));
+			arguments.add(new MultiLiteralArgument("default"));
 			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -349,7 +368,7 @@ public class ChatCommand {
 					}
 
 					ChannelPerms perms = channel.channelPerms();
-					return perms.commandFlag(sender, (String) args[3]);
+					return perms.commandFlag(sender, (String) args[4]);
 				})
 				.register();
 
@@ -357,8 +376,9 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("permissions"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
+				return ChannelManager.getManageableChannelNames(sender).toArray(new String[0]);
 			}));
+			arguments.add(new MultiLiteralArgument("default"));
 			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
 			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagValues.stream().toArray(String[]::new)));
 			new CommandAPICommand(baseCommand)
@@ -371,16 +391,96 @@ public class ChatCommand {
 					}
 
 					ChannelPerms perms = channel.channelPerms();
-					int result = perms.commandFlag(sender, (String) args[3], (String) args[4]);
+					int result = perms.commandFlag(sender, (String) args[4], (String) args[5]);
+					ChannelManager.saveChannel(channel);
+					return result;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("permissions"));
+			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChannelManager.getManageableChannelNames(sender).toArray(new String[0]);
+			}));
+			arguments.add(new MultiLiteralArgument("player"));
+			arguments.add(new StringArgument("name").overrideSuggestions((sender) -> {
+				return MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new);
+			}));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelId = (String) args[2];
+					Channel channel = ChannelManager.getChannel(channelId);
+					if (channel == null) {
+						CommandAPI.fail("No such channel " + channelId + ".");
+					}
+
+					String playerName = (String) args[4];
+					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+					if (playerId == null) {
+						CommandAPI.fail("No such player " + playerName + ".");
+					}
+					ChannelPerms perms = channel.playerPerms(playerId);
+					return perms.commandFlag(sender, (String) args[5]);
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("permissions"));
+			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
+				return ChannelManager.getManageableChannelNames(sender).toArray(new String[0]);
+			}));
+			arguments.add(new MultiLiteralArgument("player"));
+			arguments.add(new StringArgument("name").overrideSuggestions((sender) -> {
+				return MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new);
+			}));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagValues.stream().toArray(String[]::new)));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelId = (String) args[2];
+					Channel channel = ChannelManager.getChannel(channelId);
+					if (channel == null) {
+						CommandAPI.fail("No such channel " + channelId + ".");
+					}
+
+					String playerName = (String) args[4];
+					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+					if (playerId == null) {
+						CommandAPI.fail("No such player " + playerName + ".");
+					}
+					ChannelPerms perms = channel.playerPerms(playerId);
+					int result = perms.commandFlag(sender, (String) args[5], (String) args[6]);
+					if (perms.isDefault()) {
+						channel.clearPlayerPerms(playerId);
+					}
 					ChannelManager.saveChannel(channel);
 					return result;
 				})
 				.register();
 		}
+
+		new CommandAPICommand("pausechat")
+			.executes((sender, args) -> {
+				return togglePause(sender);
+			})
+			.register();
+
+		new CommandAPICommand("pc")
+			.executes((sender, args) -> {
+				return togglePause(sender);
+			})
+			.register();
 	}
 
 	private static int renameChannel(CommandSender sender, String oldChannelId, String newChannelId) throws WrapperCommandSyntaxException {
-		// TODO Perms check
+		if (!sender.hasPermission("networkchat.rename")) {
+			CommandAPI.fail("You do not have permission to rename channels.");
+		}
 
 		// May call CommandAPI.fail()
 		ChannelManager.renameChannel(oldChannelId, newChannelId);
@@ -389,7 +489,9 @@ public class ChatCommand {
 	}
 
 	private static int deleteChannel(CommandSender sender, String channelId) throws WrapperCommandSyntaxException {
-		// TODO Perms check
+		if (!sender.hasPermission("networkchat.delete")) {
+			CommandAPI.fail("You do not have permission to delete channels.");
+		}
 
 		// May call CommandAPI.fail()
 		ChannelManager.deleteChannel(channelId);
@@ -398,7 +500,9 @@ public class ChatCommand {
 	}
 
 	private static int resetAll(CommandSender sender) throws WrapperCommandSyntaxException {
-		// TODO REALLY IMPORTANT PERMS CHECK
+		if (!sender.hasPermission("networkchat.resetall")) {
+			CommandAPI.fail("You do not have permission to delete channels.");
+		}
 
 		ChannelManager.resetAll();
 		sender.sendMessage(Component.text("All things reset.", NamedTextColor.RED));
@@ -518,6 +622,28 @@ public class ChatCommand {
 
 		target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
 		playerState.unpauseChat();
+		return 1;
+	}
+
+	private static int togglePause(CommandSender sender) throws WrapperCommandSyntaxException {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player)) {
+			CommandAPI.fail("This command can only be run as a player.");
+		}
+
+		Player target = (Player) callee;
+		PlayerState playerState = PlayerStateManager.getPlayerState(target);
+		if (playerState == null) {
+			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+		}
+
+		if (playerState.isPaused()) {
+			target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
+			playerState.unpauseChat();
+		} else {
+			playerState.pauseChat();
+			target.sendMessage(Component.text("Chat paused.", NamedTextColor.GRAY));
+		}
 		return 1;
 	}
 }

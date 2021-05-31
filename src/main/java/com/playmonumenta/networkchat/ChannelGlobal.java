@@ -19,7 +19,6 @@ import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -49,12 +48,7 @@ public class ChannelGlobal extends Channel {
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
-		mDefaultSettings.isListening(true);
-
 		mDefaultPerms = new ChannelPerms();
-		mDefaultPerms.mayChat(true);
-		mDefaultPerms.mayListen(true);
-
 		mPlayerPerms = new HashMap<>();
 	}
 
@@ -64,12 +58,7 @@ public class ChannelGlobal extends Channel {
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
-		mDefaultSettings.isListening(true);
-
 		mDefaultPerms = new ChannelPerms();
-		mDefaultPerms.mayChat(true);
-		mDefaultPerms.mayListen(true);
-
 		mPlayerPerms = new HashMap<>();
 	}
 
@@ -151,7 +140,12 @@ public class ChannelGlobal extends Channel {
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelGlobal newChannel = null;
-					// TODO Perms check
+					if (!sender.hasPermission("networkchat.new")) {
+						CommandAPI.fail("You do not have permission to make new channels.");
+					}
+					if (!sender.hasPermission("networkchat.new.global")) {
+						CommandAPI.fail("You do not have permission to make new global channels.");
+					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -209,11 +203,10 @@ public class ChannelGlobal extends Channel {
 		return mDefaultPerms;
 	}
 
-	public ChannelPerms playerPerms(OfflinePlayer player) {
-		if (player == null) {
+	public ChannelPerms playerPerms(UUID playerId) {
+		if (playerId == null) {
 			return null;
 		}
-		UUID playerId = player.getUniqueId();
 		ChannelPerms perms = mPlayerPerms.get(playerId);
 		if (perms == null) {
 			perms = new ChannelPerms();
@@ -222,15 +215,20 @@ public class ChannelGlobal extends Channel {
 		return perms;
 	}
 
-	public void clearPlayerPerms(OfflinePlayer player) {
-		if (player == null) {
+	public void clearPlayerPerms(UUID playerId) {
+		if (playerId == null) {
 			return;
 		}
-		mPlayerPerms.remove(player.getUniqueId());
+		mPlayerPerms.remove(playerId);
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		// TODO Add permission check for global chat.
+		if (!sender.hasPermission("networkchat.say")) {
+			return false;
+		}
+		if (!sender.hasPermission("networkchat.say.global")) {
+			return false;
+		}
 
 		if (!(sender instanceof Player)) {
 			return true;
@@ -249,7 +247,12 @@ public class ChannelGlobal extends Channel {
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		// TODO Check permission to see the message.
+		if (!sender.hasPermission("networkchat.see")) {
+			return false;
+		}
+		if (!sender.hasPermission("networkchat.see.global")) {
+			return false;
+		}
 
 		if (!(sender instanceof Player)) {
 			return true;
@@ -270,18 +273,36 @@ public class ChannelGlobal extends Channel {
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
+		if (!sender.hasPermission("networkchat.say")) {
+			CommandAPI.fail("You do not have permission to chat.");
+		}
+		if (!sender.hasPermission("networkchat.say.global")) {
+			CommandAPI.fail("You do not have permission to talk in global chat.");
+		}
+
 		if (!mayChat(sender)) {
 			CommandAPI.fail("You do not have permission to chat in this channel.");
 		}
 
-		// TODO Permissions for allowed chat transformations?
 		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
-		allowedTransforms.add(TransformationType.COLOR);
-		allowedTransforms.add(TransformationType.DECORATION);
-		allowedTransforms.add(TransformationType.KEYBIND);
-		allowedTransforms.add(TransformationType.FONT);
-		allowedTransforms.add(TransformationType.GRADIENT);
-		allowedTransforms.add(TransformationType.RAINBOW);
+		if (sender.hasPermission("networkchat.transform.color")) {
+			allowedTransforms.add(TransformationType.COLOR);
+		}
+		if (sender.hasPermission("networkchat.transform.decoration")) {
+			allowedTransforms.add(TransformationType.DECORATION);
+		}
+		if (sender.hasPermission("networkchat.transform.keybind")) {
+			allowedTransforms.add(TransformationType.KEYBIND);
+		}
+		if (sender.hasPermission("networkchat.transform.font")) {
+			allowedTransforms.add(TransformationType.FONT);
+		}
+		if (sender.hasPermission("networkchat.transform.gradient")) {
+			allowedTransforms.add(TransformationType.GRADIENT);
+		}
+		if (sender.hasPermission("networkchat.transform.rainbow")) {
+			allowedTransforms.add(TransformationType.RAINBOW);
+		}
 
 		Message message = Message.createMessage(this, sender, null, messageText, true, allowedTransforms);
 
@@ -296,7 +317,6 @@ public class ChannelGlobal extends Channel {
 
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
-		// TODO Check permission to see the message.
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
 			if (!mayListen(state.getPlayer())) {

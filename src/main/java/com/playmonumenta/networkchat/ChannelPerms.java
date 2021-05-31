@@ -151,7 +151,7 @@ public class ChannelPerms {
 				    .append(Component.text(FLAG_STR_TRUE, NamedTextColor.GREEN, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 1;
-			} else {
+			} else if (FLAG_STR_DEFAULT.equals(value)) {
 				setFlag(permission, null);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
@@ -159,6 +159,12 @@ public class ChannelPerms {
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
 				    .append(Component.text(FLAG_STR_DEFAULT, NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
+				return 0;
+			} else {
+				sender.sendMessage(Component.empty()
+				    .append(Component.text("Invalid value ", NamedTextColor.RED))
+				    .append(Component.text(value, NamedTextColor.RED, TextDecoration.BOLD))
+				    .append(Component.text(".", NamedTextColor.RED)));
 				return 0;
 			}
 		}

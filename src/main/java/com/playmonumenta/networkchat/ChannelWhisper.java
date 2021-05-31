@@ -23,7 +23,6 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -55,12 +54,7 @@ public class ChannelWhisper extends Channel {
 		mParticipants = new ArrayList<>(participants);
 
 		mDefaultSettings = new ChannelSettings();
-		mDefaultSettings.isListening(true);
-
 		mDefaultPerms = new ChannelPerms();
-		mDefaultPerms.mayChat(true);
-		mDefaultPerms.mayListen(true);
-
 		mPlayerPerms = new HashMap<>();
 	}
 
@@ -74,12 +68,7 @@ public class ChannelWhisper extends Channel {
 		mParticipants = new ArrayList<>(participants);
 
 		mDefaultSettings = new ChannelSettings();
-		mDefaultSettings.isListening(true);
-
 		mDefaultPerms = new ChannelPerms();
-		mDefaultPerms.mayChat(true);
-		mDefaultPerms.mayListen(true);
-
 		mPlayerPerms = new HashMap<>();
 	}
 
@@ -359,11 +348,10 @@ public class ChannelWhisper extends Channel {
 		return mDefaultPerms;
 	}
 
-	public ChannelPerms playerPerms(OfflinePlayer player) {
-		if (player == null) {
+	public ChannelPerms playerPerms(UUID playerId) {
+		if (playerId == null) {
 			return null;
 		}
-		UUID playerId = player.getUniqueId();
 		ChannelPerms perms = mPlayerPerms.get(playerId);
 		if (perms == null) {
 			perms = new ChannelPerms();
@@ -372,15 +360,18 @@ public class ChannelWhisper extends Channel {
 		return perms;
 	}
 
-	public void clearPlayerPerms(OfflinePlayer player) {
-		if (player == null) {
+	public void clearPlayerPerms(UUID playerId) {
+		if (playerId == null) {
 			return;
 		}
-		mPlayerPerms.remove(player.getUniqueId());
+		mPlayerPerms.remove(playerId);
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!mayChat(sender)) {
+		if (!sender.hasPermission("networkchat.say")) {
+			return false;
+		}
+		if (!sender.hasPermission("networkchat.say.whisper")) {
 			return false;
 		}
 
@@ -402,7 +393,12 @@ public class ChannelWhisper extends Channel {
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		// TODO Check permission to see the message.
+		if (!sender.hasPermission("networkchat.see")) {
+			return false;
+		}
+		if (!sender.hasPermission("networkchat.see.whisper")) {
+			return false;
+		}
 
 		if (!(sender instanceof Player)) {
 			return false;
@@ -423,7 +419,12 @@ public class ChannelWhisper extends Channel {
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		// TODO Add permission check for whisper chat.
+		if (!sender.hasPermission("networkchat.say")) {
+			CommandAPI.fail("You do not have permission to chat.");
+		}
+		if (!sender.hasPermission("networkchat.say.whisper")) {
+			CommandAPI.fail("You do not have permission to whisper.");
+		}
 
 		if (!(sender instanceof Player)) {
 			CommandAPI.fail("Only players may whisper.");
@@ -443,14 +444,25 @@ public class ChannelWhisper extends Channel {
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("receiver", receiverId.toString());
 
-		// TODO Permissions for allowed chat transformations?
 		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
-		allowedTransforms.add(TransformationType.COLOR);
-		allowedTransforms.add(TransformationType.DECORATION);
-		allowedTransforms.add(TransformationType.KEYBIND);
-		allowedTransforms.add(TransformationType.FONT);
-		allowedTransforms.add(TransformationType.GRADIENT);
-		allowedTransforms.add(TransformationType.RAINBOW);
+		if (sender.hasPermission("networkchat.transform.color")) {
+			allowedTransforms.add(TransformationType.COLOR);
+		}
+		if (sender.hasPermission("networkchat.transform.decoration")) {
+			allowedTransforms.add(TransformationType.DECORATION);
+		}
+		if (sender.hasPermission("networkchat.transform.keybind")) {
+			allowedTransforms.add(TransformationType.KEYBIND);
+		}
+		if (sender.hasPermission("networkchat.transform.font")) {
+			allowedTransforms.add(TransformationType.FONT);
+		}
+		if (sender.hasPermission("networkchat.transform.gradient")) {
+			allowedTransforms.add(TransformationType.GRADIENT);
+		}
+		if (sender.hasPermission("networkchat.transform.rainbow")) {
+			allowedTransforms.add(TransformationType.RAINBOW);
+		}
 
 		Message message = Message.createMessage(this, sender, extraData, messageText, true, allowedTransforms);
 
@@ -466,7 +478,6 @@ public class ChannelWhisper extends Channel {
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
 
-		// TODO Check permission to see the message.
 		JsonObject extraData = message.getExtraData();
 		UUID receiverUuid;
 		try {
