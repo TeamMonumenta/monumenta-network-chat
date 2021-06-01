@@ -54,11 +54,14 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("setdefaultchannel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
+				return ChannelManager.getChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.setdefaultchannel")) {
+						CommandAPI.fail("You do not have permission to set the default channel.");
+					}
 					return ChannelManager.setDefaultChannel(sender, (String)args[1]);
 				})
 				.register();
@@ -66,11 +69,14 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("forceload"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
+				return ChannelManager.getChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.forceload")) {
+						CommandAPI.fail("You do not have permission to forceload channels.");
+					}
 					return ChannelManager.forceLoadChannel(sender, (String)args[1]);
 				})
 				.register();

@@ -89,7 +89,7 @@ public class ChannelManager implements Listener {
 		try {
 			mDefaultChannel = UUID.fromString(defaultChannelJson.getAsString());
 			mForceLoadedChannels.add(mDefaultChannel);
-			loadChannel(mDefaultChannel, (PlayerState) null);
+			loadChannel(mDefaultChannel);
 		} catch (Exception e) {
 			mPlugin.getLogger().warning("Could not get default channel. Configure with /chattest.");
 		}
@@ -101,7 +101,7 @@ public class ChannelManager implements Listener {
 				try {
 					UUID channelId = UUID.fromString(channelIdStr);
 					mForceLoadedChannels.add(channelId);
-					loadChannel(channelId, (PlayerState) null);
+					loadChannel(channelId);
 				} catch (Exception e) {
 					mPlugin.getLogger().warning("Could not force-load channel ID " + channelIdStr + ".");
 					continue;
@@ -280,7 +280,7 @@ public class ChannelManager implements Listener {
 		}
 		Channel channel = mChannels.get(oldChannelId);
 		if (channel == null || channel instanceof ChannelLoading) {
-			loadChannel(oldChannelId, (PlayerState) null);
+			loadChannel(oldChannelId);
 			CommandAPI.fail("Channel " + oldName + " not yet loaded, try again.");
 		}
 
@@ -339,7 +339,7 @@ public class ChannelManager implements Listener {
 			CommandAPI.fail("Channel " + channelName + " does not exist!");
 		}
 
-		loadChannel(channelId, (PlayerState) null);
+		loadChannel(channelId);
 		mDefaultChannel = channelId;
 		mForceLoadedChannels.add(channelId);
 		saveConfig();
@@ -353,7 +353,7 @@ public class ChannelManager implements Listener {
 			CommandAPI.fail("Channel " + channelName + " does not exist!");
 		}
 
-		loadChannel(channelId, (PlayerState) null);
+		loadChannel(channelId);
 		mForceLoadedChannels.add(channelId);
 		saveConfig();
 		sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
@@ -372,27 +372,21 @@ public class ChannelManager implements Listener {
 		return 1;
 	}
 
-	public static void loadChannel(UUID channelId, PlayerState playerState) {
+	public static Channel loadChannel(UUID channelId) {
 		/* Note that mChannels containing the channel ID means
 		 * either the channel is loaded, or is being loaded. */
 		Channel preloadedChannel = mChannels.get(channelId);
 		if (preloadedChannel != null) {
-			if (preloadedChannel instanceof ChannelLoading && playerState != null) {
-				((ChannelLoading) preloadedChannel).addWaitingPlayerState(playerState);
-			}
-			return;
+			return preloadedChannel;
 		}
-		Channel channel = null;
 
 		// Mark the channel as loading
 		mPlugin.getLogger().info("Attempting to load channel " + channelId.toString() + ".");
 		ChannelLoading loadingChannel = new ChannelLoading(channelId);
 		mChannels.put(channelId, loadingChannel);
-		loadingChannel.addWaitingPlayerState(playerState);
 
 		// Get the channel from Redis async
 		String channelIdStr = channelId.toString();
-		// TODO Consider returning RedisFuture so PlayerState can handle this directly?
 		RedisFuture<String> channelDataFuture = RedisAPI.getInstance().async().hget(REDIS_CHANNELS_PATH, channelIdStr);
 		channelDataFuture.thenApply(channelData -> {
 			loadChannelApply(channelId, channelData);
@@ -400,32 +394,22 @@ public class ChannelManager implements Listener {
 		});
 	}
 
-	public static void loadChannel(UUID channelId, Message message) {
-		/* Note that mChannels containing the channel ID means
-		 * either the channel is loaded, or is being loaded. */
-		Channel preloadedChannel = mChannels.get(channelId);
-		if (preloadedChannel != null) {
-			if (preloadedChannel instanceof ChannelLoading && message != null) {
-				((ChannelLoading) preloadedChannel).addMessage(message);
-			}
-			return;
+	public static void loadChannel(UUID channelId, PlayerState playerState) {
+		Channel channel = loadChannel(channelId);
+		if (channel instanceof ChannelLoading) {
+			((ChannelLoading) channel).addWaitingPlayerState(playerState);
+		} else if (!(channel instanceof ChannelFuture)) {
+			playerState.channelLoaded(channelId);
 		}
-		Channel channel = null;
+	}
 
-		// Mark the channel as loading
-		mPlugin.getLogger().info("Attempting to load channel " + channelId.toString() + ".");
-		ChannelLoading loadingChannel = new ChannelLoading(channelId);
-		mChannels.put(channelId, loadingChannel);
-		loadingChannel.addMessage(message);
-
-		// Get the channel from Redis async
-		String channelIdStr = channelId.toString();
-		// TODO Consider returning RedisFuture so Message can handle this directly?
-		RedisFuture<String> channelDataFuture = RedisAPI.getInstance().async().hget(REDIS_CHANNELS_PATH, channelIdStr);
-		channelDataFuture.thenApply(channelData -> {
-			loadChannelApply(channelId, channelData);
-			return channelData;
-		});
+	public static void loadChannel(UUID channelId, Message message) {
+		Channel channel = loadChannel(channelId);
+		if (channel instanceof ChannelLoading && message != null) {
+			((ChannelLoading) channel).addMessage(message);
+		} else if (!(channel instanceof ChannelFuture)) {
+			channel.distributeMessage(message);
+		}
 	}
 
 	private static void loadChannelApply(UUID channelId, String channelData) {
