@@ -392,6 +392,7 @@ public class ChannelManager implements Listener {
 			loadChannelApply(channelId, channelData);
 			return channelData;
 		});
+		return loadingChannel;
 	}
 
 	public static void loadChannel(UUID channelId, PlayerState playerState) {

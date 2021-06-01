@@ -54,7 +54,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("setdefaultchannel"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames(sender).toArray(new String[0]);
+				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -69,7 +69,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("forceload"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames(sender).toArray(new String[0]);
+				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
