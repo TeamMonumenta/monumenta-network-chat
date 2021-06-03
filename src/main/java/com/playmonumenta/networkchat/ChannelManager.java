@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -148,6 +149,10 @@ public class ChannelManager implements Listener {
 		return new HashSet<>(mChannelIdsByName.keySet());
 	}
 
+	public static List<Channel> getLoadedChannels() {
+		return new ArrayList<>(mChannels.values());
+	}
+
 	public static Set<String> getManageableChannelNames(CommandSender sender) {
 		Set<String> channels = new HashSet<>();
 		for (Channel channel : mChannels.values()) {
@@ -220,6 +225,26 @@ public class ChannelManager implements Listener {
 		mChannelIdsByName.put(channelName, channelId);
 		mChannels.put(channelId, channel);
 		saveChannel(channel);
+
+		if (!(channel instanceof ChannelInviteOnly)) {
+			for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
+				if (!state.hasSeenChannelId(channelId)) {
+					state.joinChannel(channel);
+				}
+			}
+		} else if (!(channel instanceof ChannelWhisper)) {
+			ChannelInviteOnly channelInvOnly = (ChannelInviteOnly) channel;
+			for (UUID participantId : channelInvOnly.getParticipantIds()) {
+				PlayerState state = PlayerStateManager.getPlayerState(participantId);
+				if (state == null) {
+					continue;
+				}
+				if (!state.hasSeenChannelId(channelId)) {
+					state.joinChannel(channel);
+				}
+			}
+		}
+
 		if (!(channel instanceof ChannelWhisper)) {
 			sender.sendMessage(Component.text("Created channel " + channelName + ".", NamedTextColor.GRAY));
 		}
@@ -251,9 +276,23 @@ public class ChannelManager implements Listener {
 		String channelName = channel.getName();
 		mChannels.put(channelId, channel);
 
-		if (sendQueuedMessages) {
-			// TODO Send queued messages to players waiting on them
-			;
+		if (!(channel instanceof ChannelInviteOnly)) {
+			for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
+				if (!state.hasSeenChannelId(channelId)) {
+					state.joinChannel(channel);
+				}
+			}
+		} else if (!(channel instanceof ChannelWhisper)) {
+			ChannelInviteOnly channelInvOnly = (ChannelInviteOnly) channel;
+			for (UUID participantId : channelInvOnly.getParticipantIds()) {
+				PlayerState state = PlayerStateManager.getPlayerState(participantId);
+				if (state == null) {
+					continue;
+				}
+				if (!state.hasSeenChannelId(channelId)) {
+					state.joinChannel(channel);
+				}
+			}
 		}
 	}
 
@@ -347,6 +386,11 @@ public class ChannelManager implements Listener {
 		return 1;
 	}
 
+	private static void forceLoadChannel(Channel channel) {
+		mForceLoadedChannels.add(channel.getUniqueId());
+		saveConfig();
+	}
+
 	public static int forceLoadChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		UUID channelId = mChannelIdsByName.get(channelName);
 		if (channelId == null) {
@@ -356,7 +400,9 @@ public class ChannelManager implements Listener {
 		loadChannel(channelId);
 		mForceLoadedChannels.add(channelId);
 		saveConfig();
-		sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
+		if (sender != null) {
+			sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
+		}
 		return 1;
 	}
 
@@ -368,7 +414,9 @@ public class ChannelManager implements Listener {
 
 		mForceLoadedChannels.remove(channelId);
 		saveConfig();
-		sender.sendMessage(Component.text("Channel " + channelName + " is no longer force loaded.", NamedTextColor.GRAY));
+		if (sender != null) {
+			sender.sendMessage(Component.text("Channel " + channelName + " is no longer force loaded.", NamedTextColor.GRAY));
+		}
 		return 1;
 	}
 
@@ -523,6 +571,9 @@ public class ChannelManager implements Listener {
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
 		}
+		if (!(channel instanceof ChannelInviteOnly)) {
+			forceLoadChannel(channel);
+		}
 	}
 
 	public static void unloadChannel(Channel channel) {
@@ -568,10 +619,19 @@ public class ChannelManager implements Listener {
 		UUID channelId = null;
 		Instant channelLastUpdate = null;
 		JsonObject channelData = null;
+		Set<UUID> participants = null;
+		boolean shouldLoad = true;
 		try {
 			channelId = UUID.fromString(data.get("channelId").getAsString());
 			channelLastUpdate = Instant.ofEpochMilli(data.get("channelLastUpdate").getAsLong());
 			channelData = data.getAsJsonObject("channelData");
+
+			JsonArray participantsJson = data.getAsJsonArray("participants");
+			if (participantsJson != null) {
+				for (JsonElement participantJson : participantsJson) {
+					participants.add(UUID.fromString(participantJson.getAsString()));
+				}
+			}
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with invalid data");
 			return;
@@ -594,7 +654,11 @@ public class ChannelManager implements Listener {
 			}
 		}
 
-		if (oldChannel == null) {
+		if (participants != null) {
+			shouldLoad = PlayerStateManager.isAnyParticipantLocal(participants);
+		}
+
+		if (oldChannel == null && !shouldLoad) {
 			// Channel wasn't loaded, and doesn't need to be loaded.
 
 			String newName = null;

@@ -340,6 +340,11 @@ public class PlayerState {
 		return (ChannelWhisper) channel;
 	}
 
+	public boolean hasSeenChannelId(UUID channelId) {
+		return mWatchedChannelIds.containsKey(channelId)
+		    || mUnwatchedChannelIds.containsKey(channelId);
+	}
+
 	public boolean isWatchingChannelId(UUID channelId) {
 		return mWatchedChannelIds.containsKey(channelId);
 	}

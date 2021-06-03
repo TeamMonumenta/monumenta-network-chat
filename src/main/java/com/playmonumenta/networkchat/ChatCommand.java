@@ -41,7 +41,7 @@ public class ChatCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("rename"));
 			arguments.add(new StringArgument("Old Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
+				return ChannelManager.getChannelNames().toArray(new String[0]);
 			}));
 			arguments.add(new StringArgument("New Channel ID"));
 			new CommandAPICommand(baseCommand)

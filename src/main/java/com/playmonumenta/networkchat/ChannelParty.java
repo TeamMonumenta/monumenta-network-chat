@@ -13,6 +13,8 @@ import java.util.UUID;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -34,11 +36,8 @@ import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
-import com.playmonumenta.networkchat.utils.CommandUtils;
-import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-
-// A channel visible to all shards
-public class ChannelParty extends Channel {
+// A channel for invited players
+public class ChannelParty extends Channel implements ChannelInviteOnly {
 	public static final String CHANNEL_CLASS_ID = "party";
 
 	private UUID mId;
@@ -321,8 +320,13 @@ public class ChannelParty extends Channel {
 
 	public void addPlayer(UUID playerId, boolean save) {
 		mParticipants.add(playerId);
+		PlayerState state = PlayerStateManager.getPlayerState(playerId);
+		if (state != null) {
+			if (!state.isWatchingChannelId(mId)) {
+				state.joinChannel(this);
+			}
+		}
 		if (save) {
-			// TODO Make player watch the party chat so it loads when they log in
 			ChannelManager.saveChannel(this);
 		}
 	}
@@ -355,12 +359,12 @@ public class ChannelParty extends Channel {
 		return mParticipants.contains(playerId);
 	}
 
-	public Set<UUID> getParticipantIds() {
-		return new HashSet<>(mParticipants);
+	public List<UUID> getParticipantIds() {
+		return new ArrayList<>(mParticipants);
 	}
 
-	public Set<String> getParticipantNames() {
-		Set<String> names = new HashSet<>();
+	public List<String> getParticipantNames() {
+		List<String> names = new ArrayList<>();
 		for (UUID playerId : mParticipants) {
 			String name = MonumentaRedisSyncAPI.cachedUuidToName(playerId);
 			if (name != null) {

@@ -1,7 +1,9 @@
 package com.playmonumenta.networkchat;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
@@ -60,7 +62,20 @@ public class PlayerStateManager implements Listener {
 	}
 
 	public static PlayerState getPlayerState(Player player) {
-		return mPlayerStates.get(player.getUniqueId());
+		return getPlayerState(player.getUniqueId());
+	}
+
+	public static PlayerState getPlayerState(UUID playerId) {
+		return mPlayerStates.get(playerId);
+	}
+
+	public static boolean isAnyParticipantLocal(Set<UUID> participants) {
+		if (participants == null) {
+			return true;
+		}
+		Set<UUID> onlineParticipants = new HashSet<>(mPlayerStates.keySet());
+		onlineParticipants.retainAll(participants);
+		return !onlineParticipants.isEmpty();
 	}
 
 	public static void unregisterChannel(UUID channelId) {
@@ -77,23 +92,40 @@ public class PlayerStateManager implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void playerJoinEvent(PlayerJoinEvent event) throws Exception {
 		Player player = event.getPlayer();
+		UUID playerId = player.getUniqueId();
 
 		// Load player chat state, if it exists.
-		JsonObject data = MonumentaRedisSyncAPI.getPlayerPluginData(player.getUniqueId(), IDENTIFIER);
+		JsonObject data = MonumentaRedisSyncAPI.getPlayerPluginData(playerId, IDENTIFIER);
 		PlayerState playerState;
 		if (data == null) {
 			playerState = new PlayerState(player);
-			mPlayerStates.put(player.getUniqueId(), playerState);
+			mPlayerStates.put(playerId, playerState);
 			mPlugin.getLogger().info("No chat state for for player " + player.getName());
 		} else {
 			try {
 				playerState = PlayerState.fromJson(player, data);
-				mPlayerStates.put(player.getUniqueId(), playerState);
+				mPlayerStates.put(playerId, playerState);
 				mPlugin.getLogger().info("Loaded chat state for player " + player.getName());
 			} catch (Exception e) {
 				playerState = new PlayerState(player);
-				mPlayerStates.put(player.getUniqueId(), playerState);
+				mPlayerStates.put(playerId, playerState);
 				mPlugin.getLogger().warning("Player's chat state could not be loaded and was reset " + player.getName());
+			}
+		}
+
+		for (Channel channel : ChannelManager.getLoadedChannels()) {
+			if (!(channel instanceof ChannelInviteOnly)) {
+				if (!playerState.hasSeenChannelId(channel.getUniqueId())) {
+					playerState.joinChannel(channel);
+				}
+			} else if (!(channel instanceof ChannelWhisper)) {
+				ChannelInviteOnly channelInvOnly = (ChannelInviteOnly) channel;
+				if (!channelInvOnly.isParticipant(player)) {
+					continue;
+				}
+				if (!playerState.hasSeenChannelId(channel.getUniqueId())) {
+					playerState.joinChannel(channel);
+				}
 			}
 		}
 

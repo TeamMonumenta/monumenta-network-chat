@@ -14,6 +14,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -36,7 +37,7 @@ import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 // A channel visible to all shards
-public class ChannelWhisper extends Channel {
+public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	public static final String CHANNEL_CLASS_ID = "whisper";
 	private static final String[] WHISPER_COMMANDS = {"msg", "tell", "w"};
 	private static final String REPLY_COMMAND = "r";
@@ -317,8 +318,34 @@ public class ChannelWhisper extends Channel {
 		return name;
 	}
 
-	public List<UUID> getParticipants() {
+	public boolean isParticipant(CommandSender sender) {
+		if (!(sender instanceof Player)) {
+			return false;
+		}
+		return isParticipant((Player) sender);
+	}
+
+	public boolean isParticipant(Player player) {
+		return isParticipant(player.getUniqueId());
+	}
+
+	public boolean isParticipant(UUID playerId) {
+		return mParticipants.contains(playerId);
+	}
+
+	public List<UUID> getParticipantIds() {
 		return new ArrayList<>(mParticipants);
+	}
+
+	public List<String> getParticipantNames() {
+		List<String> names = new ArrayList<>();
+		for (UUID playerId : mParticipants) {
+			String name = MonumentaRedisSyncAPI.cachedUuidToName(playerId);
+			if (name != null) {
+				names.add(name);
+			}
+		}
+		return names;
 	}
 
 	public UUID getOtherParticipant(UUID from) {
