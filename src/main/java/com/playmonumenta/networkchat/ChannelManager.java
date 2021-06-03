@@ -43,6 +43,7 @@ public class ChannelManager implements Listener {
 	private static final String REDIS_CHANNEL_NAME_TO_UUID_PATH = "networkchat:channel_name_to_uuids";
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
 	private static final String REDIS_CHANNEL_PARTICIPANTS_PATH = "networkchat:channel_participants";
+	private static final String REDIS_FORCELOADED_CHANNEL_PATH = "networkchat:forceloaded_channels";
 
 	private static ChannelManager INSTANCE = null;
 	private static Plugin mPlugin = null;
@@ -389,35 +390,6 @@ public class ChannelManager implements Listener {
 	private static void forceLoadChannel(Channel channel) {
 		mForceLoadedChannels.add(channel.getUniqueId());
 		saveConfig();
-	}
-
-	public static int forceLoadChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
-		UUID channelId = mChannelIdsByName.get(channelName);
-		if (channelId == null) {
-			CommandAPI.fail("Channel " + channelName + " does not exist!");
-		}
-
-		loadChannel(channelId);
-		mForceLoadedChannels.add(channelId);
-		saveConfig();
-		if (sender != null) {
-			sender.sendMessage(Component.text("Channel " + channelName + " has been force loaded.", NamedTextColor.GRAY));
-		}
-		return 1;
-	}
-
-	public static int unforceLoadChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
-		UUID channelId = mChannelIdsByName.get(channelName);
-		if (channelId == null) {
-			CommandAPI.fail("Channel " + channelName + " does not exist!");
-		}
-
-		mForceLoadedChannels.remove(channelId);
-		saveConfig();
-		if (sender != null) {
-			sender.sendMessage(Component.text("Channel " + channelName + " is no longer force loaded.", NamedTextColor.GRAY));
-		}
-		return 1;
 	}
 
 	public static Channel loadChannel(UUID channelId) {

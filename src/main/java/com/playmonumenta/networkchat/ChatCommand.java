@@ -67,21 +67,6 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("forceload"));
-			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getChannelNames().toArray(new String[0]);
-			}));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.forceload")) {
-						CommandAPI.fail("You do not have permission to forceload channels.");
-					}
-					return ChannelManager.forceLoadChannel(sender, (String)args[1]);
-				})
-				.register();
-
-			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
 			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
 				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
