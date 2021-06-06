@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -25,17 +26,19 @@ public class Message {
 	private final String mSenderName;
 	private final NamespacedKey mSenderType;
 	private final boolean mSenderIsPlayer;
+	private final Component mSenderComponent;
 	private final JsonObject mExtraData;
 	private final Component mMessage;
 	private boolean mIsDeleted = false;
 
-	private Message(Instant instant, UUID channelId, UUID senderId, String senderName, NamespacedKey senderType, boolean senderIsPlayer, JsonObject extraData, Component message) {
+	private Message(Instant instant, UUID channelId, UUID senderId, String senderName, NamespacedKey senderType, boolean senderIsPlayer, Component senderComponent, JsonObject extraData, Component message) {
 		mInstant = instant;
 		mChannelId = channelId;
 		mSenderId = senderId;
 		mSenderName = senderName;
 		mSenderType = senderType;
 		mSenderIsPlayer = senderIsPlayer;
+		mSenderComponent = senderComponent;
 		mExtraData = extraData;
 		mMessage = message;
 	}
@@ -47,11 +50,12 @@ public class Message {
 		UUID senderId = null;
 		NamespacedKey senderType = null;
 		if (sender instanceof Entity) {
-			senderId = ((Player) sender).getUniqueId();
+			senderId = ((Entity) sender).getUniqueId();
 			senderType = ((Entity) sender).getType().getKey();
 		}
 		boolean senderIsPlayer = sender instanceof Player;
-		return new Message(instant, channelId, senderId, sender.getName(), senderType, senderIsPlayer, extraData, message);
+		Component senderComponent = MessagingUtils.senderComponent(sender);
+		return new Message(instant, channelId, senderId, sender.getName(), senderType, senderIsPlayer, senderComponent, extraData, message);
 	}
 
 	// Normally called through a channel
@@ -87,13 +91,14 @@ public class Message {
 			senderType = NamespacedKey.fromString(object.get("senderType").getAsString());
 		}
 		Boolean senderIsPlayer = object.get("senderIsPlayer").getAsBoolean();
+		Component senderComponent = MessagingUtils.fromJson(object.get("senderComponent"));
 		JsonObject extraData = null;
 		if (object.get("extra") != null) {
 			extraData = object.get("extra").getAsJsonObject();
 		}
 		Component message = GsonComponentSerializer.gson().deserializeFromTree(object.get("message"));
 
-		return new Message(instant, channelId, senderId, senderName, senderType, senderIsPlayer, extraData, message);
+		return new Message(instant, channelId, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);
 	}
 
 	protected JsonObject toJson() {
@@ -109,6 +114,7 @@ public class Message {
 			object.addProperty("senderType", mSenderType.toString());
 		}
 		object.addProperty("senderIsPlayer", mSenderIsPlayer);
+		object.add("senderComponent", MessagingUtils.toJson(mSenderComponent));
 		if (mExtraData != null) {
 			object.add("extra", mExtraData);
 		}
@@ -139,6 +145,10 @@ public class Message {
 
 	public String getSenderName() {
 		return mSenderName;
+	}
+
+	public Component getSenderComponent() {
+		return mSenderComponent;
 	}
 
 	public NamespacedKey getSenderType() {

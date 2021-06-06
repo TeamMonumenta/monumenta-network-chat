@@ -32,6 +32,7 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
@@ -416,7 +417,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			return false;
 		}
 
-		return mParticipants.contains(player);
+		return mParticipants.contains(player.getUniqueId());
 	}
 
 	public boolean mayListen(CommandSender sender) {
@@ -545,12 +546,12 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 	protected void showMessage(CommandSender recipient, Message message) {
 		JsonObject extraData = message.getExtraData();
-		String receiverName;
+		Component receiverComp;
 		try {
 			UUID receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
-			receiverName = RemotePlayerManager.getPlayerName(receiverUuid);
+			receiverComp = RemotePlayerManager.getPlayerComponent(receiverUuid);
 		} catch (Exception e) {
-			receiverName = "ErrorLoadingName";
+			receiverComp = Component.text("ErrorLoadingName");
 		}
 
 		MiniMessage minimessage = MiniMessage.builder()
@@ -562,9 +563,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 		// TODO Use configurable formatting, not hard-coded formatting.
 		String prefix = "<gray><sender> whispers to <receiver> <gray>» ";
-		// TODO We should use templates to insert these and related formatting.
-		prefix = prefix.replace("<sender>", message.getSenderName())
-		    .replace("<receiver>", receiverName);
 
 		UUID senderUuid = message.getSenderId();
 		Identity senderIdentity;
@@ -575,7 +573,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		}
 
 		Component fullMessage = Component.empty()
-		    .append(minimessage.parse(prefix))
+		    .append(minimessage.parse(prefix, List.of(Template.of("sender", message.getSenderComponent()),
+		        Template.of("receiver", receiverComp))))
 		    .append(Component.empty().color(NamedTextColor.GRAY).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {

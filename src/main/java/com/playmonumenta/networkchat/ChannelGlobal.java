@@ -27,6 +27,7 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
@@ -336,21 +337,19 @@ public class ChannelGlobal extends Channel {
 			.build();
 
 		// TODO Use configurable formatting, not hard-coded formatting.
-		String prefix = "<gray><hover:show_text:\"<white>Global Channel\n<red>TODO Click for gui on channel/message?\">\\<<white><channelName><gray>></hover> <white><sender> <gray>» ";
-		// TODO We should use templates to insert these and related formatting.
-		prefix = prefix.replace("<channelName>", mName)
-		    .replace("<sender>", message.getSenderName());
+		String prefix = "<gray><hover:show_text:\"<white>Global Channel\">\\<<white><channel_name><gray>></hover> <white><sender> <gray>» ";
 
 		UUID senderUuid = message.getSenderId();
 		Identity senderIdentity;
-		if (senderUuid == null) {
-			senderIdentity = Identity.nil();
-		} else {
+		if (message.senderIsPlayer()) {
 			senderIdentity = Identity.identity(senderUuid);
+		} else {
+			senderIdentity = Identity.nil();
 		}
 
 		Component fullMessage = Component.empty()
-		    .append(minimessage.parse(prefix))
+		    .append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName),
+		        Template.of("sender", message.getSenderComponent()))))
 		    .append(Component.empty().color(NamedTextColor.WHITE).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {

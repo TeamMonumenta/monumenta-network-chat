@@ -2,13 +2,19 @@ package com.playmonumenta.networkchat.utils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Team;
+
+import com.playmonumenta.networkchat.RemotePlayerManager;
+
+import me.clip.placeholderapi.PlaceholderAPI;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -16,6 +22,11 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.transformation.Transformation;
+import net.kyori.adventure.text.minimessage.transformation.TransformationType;
+import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
@@ -26,20 +37,62 @@ public class MessagingUtils {
 	public static final GsonComponentSerializer GSON_SERIALIZER = GsonComponentSerializer.gson();
 	public static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 	public static final PlainComponentSerializer PLAIN_SERIALIZER = PlainComponentSerializer.plain();
+	private static final MiniMessage PLAYER_FMT_MINIMESSAGE = MiniMessage.builder()
+	    .removeDefaultTransformations()
+	    .markdownFlavor(DiscordFlavor.get())
+	    .transformation(TransformationType.COLOR)
+	    .transformation(TransformationType.DECORATION)
+	    .transformation(TransformationType.HOVER_EVENT)
+	    .transformation(TransformationType.CLICK_EVENT)
+	    .transformation(TransformationType.KEYBIND)
+	    .transformation(TransformationType.TRANSLATABLE)
+	    .transformation(TransformationType.INSERTION)
+	    .transformation(TransformationType.FONT)
+	    .transformation(TransformationType.GRADIENT)
+	    .transformation(TransformationType.RAINBOW)
+	    .transformation(TransformationType.RESET)
+	    .build();
+	private static final String DEFAULT_PLAYER_FMT = "<insert:%player_name%>"
+	    + "<click:suggest_command:/tell %player_name% >"
+	    + "<hover:show_entity:'minecraft:player':%player_uuid%:%player_name%>"
+	    + "<team_color><team_prefix>%player_name%<team_suffix>"
+	    + "</hover></click></insert>";
+
+	private static String mPlayerFormat = DEFAULT_PLAYER_FMT;
 
 	public static String translatePlayerName(Player player, String message) {
 		return (message.replaceAll("@S", player.getName()));
 	}
 
-	public static Component playerComponent(Player player) {
-		return playerComponent(player.getUniqueId(), player.getName());
+	public static Component senderComponent(CommandSender sender) {
+		if (sender instanceof Entity) {
+			return entityComponent((Entity) sender);
+		}
+		return Component.text(sender.getName());
 	}
 
-	public static Component playerComponent(UUID playerUuid, String playerName) {
-		Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(playerName);
+	public static Component entityComponent(Entity entity) {
+		return entityComponent(entity.getType().getKey(), entity.getUniqueId(), entity.customName());
+	}
+
+	public static Component entityComponent(NamespacedKey type, UUID id, Component name) {
+		if (type.toString().equals("minecraft:player")) {
+			return RemotePlayerManager.getPlayerComponent(id);
+		}
+
+		Component result = name;
+		if (name == null) {
+			result = Component.translatable("entity." + type.toString().replace(":", "."));
+		}
+
+		return result.insertion(id.toString())
+		    .hoverEvent(HoverEvent.showEntity(type, id, name));
+	}
+
+	public static Component playerComponent(Player player) {
+		Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(player.getName());
 		TextColor color;
 		Component teamPrefix;
-		Component basicPlayerName = Component.text(playerName);
 		Component teamSuffix;
 		try {
 			color = playerTeam.color();
@@ -51,21 +104,10 @@ public class MessagingUtils {
 			teamSuffix = Component.empty();
 		}
 
-		HoverEvent hoverEvent = HoverEvent.showEntity(NamespacedKey.fromString("minecraft:player"),
-		                                              playerUuid,
-		                                              basicPlayerName);
-
-		Component playerComponent = Component.empty()
-		    .insertion(playerName)
-		    .clickEvent(ClickEvent.suggestCommand("/tell " + playerName + " "))
-		    .hoverEvent(hoverEvent)
-		    .append(teamPrefix)
-		    .append(basicPlayerName)
-		    .append(teamSuffix);
-		if (color != null) {
-			playerComponent = playerComponent.color(color);
-		}
-		return playerComponent;
+		return PLAYER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(player, mPlayerFormat),
+		    List.of(Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+		        Template.of("team_prefix", teamPrefix),
+		        Template.of("team_suffix", teamSuffix)));
 	}
 
 	public static void sendStackTrace(CommandSender sender, Exception e) {

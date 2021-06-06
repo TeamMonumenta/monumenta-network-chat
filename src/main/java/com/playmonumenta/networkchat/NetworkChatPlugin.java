@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -25,6 +26,13 @@ public class NetworkChatPlugin extends JavaPlugin {
 	public void onEnable() {
 		INSTANCE = this;
 		File configFile = new File(getDataFolder(), "config.yml");
+
+		/* Check for Placeholder API */
+		if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+			getLogger().log(Level.SEVERE, "Could not find PlaceholderAPI! This plugin is required.");
+			Bukkit.getPluginManager().disablePlugin(this);
+			return;
+		}
 
 		/* Create the config file & directories if it does not exist */
 		if (!configFile.exists()) {

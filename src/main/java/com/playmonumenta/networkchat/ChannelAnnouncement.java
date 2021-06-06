@@ -27,14 +27,10 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
-
-// DEBUG REMOVE WHEN DONE
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 
 // A channel for server announcements
 public class ChannelAnnouncement extends Channel {
@@ -315,13 +311,6 @@ public class ChannelAnnouncement extends Channel {
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
-
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			e.printStackTrace(pw);
-			String sStackTrace = sw.toString();
-			NetworkChatPlugin.getInstance().getLogger().warning(sStackTrace);
-
 			CommandAPI.fail("Could not send message.");
 		}
 	}
@@ -350,12 +339,10 @@ public class ChannelAnnouncement extends Channel {
 			.build();
 
 		// TODO Use configurable formatting, not hard-coded formatting.
-		String prefix = "<gray><hover:show_text:\"<red>Announcement Channel\n<red>TODO Click for gui on channel/message?\">\\<<red><channelName><gray>></hover> ";
-		// TODO We should use templates to insert these and related formatting.
-		prefix = prefix.replace("<channelName>", mName);
+		String prefix = "<gray><hover:show_text:\"<red>Announcement Channel\">\\<<red><channel_name><gray>></hover> ";
 
 		Component fullMessage = Component.empty()
-		    .append(minimessage.parse(prefix))
+		    .append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName))))
 		    .append(Component.empty().color(NamedTextColor.RED).append(message.getMessage()));
 		recipient.sendMessage(Identity.nil(), fullMessage, MessageType.SYSTEM);
 		if (recipient instanceof Player) {
