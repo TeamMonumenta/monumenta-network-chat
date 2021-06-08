@@ -5,8 +5,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +27,7 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.async.RedisAsyncCommands;
+import io.lettuce.core.output.ValueStreamingChannel;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -49,10 +50,22 @@ public class ChannelManager implements Listener {
 	private static Plugin mPlugin = null;
 	private static File mServerChannelConfigFile;
 	private static UUID mDefaultChannel;
-	private static Set<UUID> mForceLoadedChannels = new HashSet<>();
-	private static Map<String, UUID> mChannelIdsByName = null;
-	private static Map<UUID, String> mChannelNames = null;
-	private static Map<UUID, Channel> mChannels = new HashMap<>();
+	private static Set<UUID> mForceLoadedChannels = new ConcurrentSkipListSet<>();
+	private static Map<String, UUID> mChannelIdsByName = new ConcurrentSkipListMap<>();
+	private static Map<UUID, String> mChannelNames = new ConcurrentSkipListMap<>();
+	private static Map<UUID, Channel> mChannels = new ConcurrentSkipListMap<>();
+
+	private static class ForceloadStreamingChannel implements ValueStreamingChannel<String> {
+		public void onValue(String value /*Channel UUID*/) {
+			try {
+				UUID channelId = UUID.fromString(value);
+				mForceLoadedChannels.add(channelId);
+				loadChannel(channelId);
+			} catch (Exception e) {
+				mPlugin.getLogger().warning("Could not force-load channel ID " + value + ".");
+			}
+		}
+	}
 
 	private ChannelManager(Plugin plugin) {
 		INSTANCE = this;
@@ -83,8 +96,7 @@ public class ChannelManager implements Listener {
 			return;
 		}
 
-		Set<UUID> previouslyForceLoaded = mForceLoadedChannels;
-		mForceLoadedChannels = new HashSet<>();
+		mForceLoadedChannels.clear();
 
 		mDefaultChannel = null;
 		JsonPrimitive defaultChannelJson = serverChannelConfigJson.getAsJsonPrimitive("defaultChannel");
@@ -96,44 +108,15 @@ public class ChannelManager implements Listener {
 			mPlugin.getLogger().warning("Could not get default channel. Configure with /chattest.");
 		}
 
-		JsonObject forceLoadJson = serverChannelConfigJson.getAsJsonObject("forceLoadedChannels");
-		if (forceLoadJson != null) {
-			for (Map.Entry<String, JsonElement> forceLoadEntry : forceLoadJson.entrySet()) {
-				String channelIdStr = forceLoadEntry.getKey();
-				try {
-					UUID channelId = UUID.fromString(channelIdStr);
-					mForceLoadedChannels.add(channelId);
-					loadChannel(channelId);
-				} catch (Exception e) {
-					mPlugin.getLogger().warning("Could not force-load channel ID " + channelIdStr + ".");
-					continue;
-				}
-			}
-		}
-
-		// Unload channels from previouslyForceLoaded if appropriate
-		for (UUID unForceLoadedId : previouslyForceLoaded) {
-			Channel unForceLoadedChannel = mChannels.get(unForceLoadedId);
-			unloadChannel(unForceLoadedChannel);
-		}
+		ValueStreamingChannel<String> forceloadStreamingChannel = new ForceloadStreamingChannel();
+		RedisAPI.getInstance().async().smembers(forceloadStreamingChannel, REDIS_FORCELOADED_CHANNEL_PATH);
 	}
 
 	public static void saveConfig() {
-		JsonObject forceLoadJson = new JsonObject();
-		for (UUID channelId : mForceLoadedChannels) {
-			Channel channel = mChannels.get(channelId);
-			if (channel == null) {
-				continue;
-			}
-			String channelName = channel.getName();
-			forceLoadJson.addProperty(channelId.toString(), channelName);
-		}
-
 		JsonObject serverChannelConfigJson = new JsonObject();
 		if (mDefaultChannel != null) {
 			serverChannelConfigJson.addProperty("defaultChannel", mDefaultChannel.toString());
 		}
-		serverChannelConfigJson.add("forceLoadedChannels", forceLoadJson);
 
 		try {
 			FileUtils.writeJson(mServerChannelConfigFile.getPath(), serverChannelConfigJson);
@@ -143,11 +126,11 @@ public class ChannelManager implements Listener {
 	}
 
 	public static Set<UUID> getLoadedChannelIds() {
-		return new HashSet<>(mChannels.keySet());
+		return new ConcurrentSkipListSet<>(mChannels.keySet());
 	}
 
 	public static Set<String> getChannelNames() {
-		return new HashSet<>(mChannelIdsByName.keySet());
+		return new ConcurrentSkipListSet<>(mChannelIdsByName.keySet());
 	}
 
 	public static List<Channel> getLoadedChannels() {
@@ -155,7 +138,7 @@ public class ChannelManager implements Listener {
 	}
 
 	public static Set<String> getManageableChannelNames(CommandSender sender) {
-		Set<String> channels = new HashSet<>();
+		Set<String> channels = new ConcurrentSkipListSet<>();
 		for (Channel channel : mChannels.values()) {
 			if (channel instanceof ChannelWhisper) {
 				continue;
@@ -169,7 +152,7 @@ public class ChannelManager implements Listener {
 	}
 
 	public static Set<String> getChatableChannelNames(CommandSender sender) {
-		Set<String> channels = new HashSet<>();
+		Set<String> channels = new ConcurrentSkipListSet<>();
 		for (Channel channel : mChannels.values()) {
 			if (channel instanceof ChannelWhisper) {
 				continue;
@@ -183,7 +166,7 @@ public class ChannelManager implements Listener {
 	}
 
 	public static Set<String> getListenableChannelNames(CommandSender sender) {
-		Set<String> channels = new HashSet<>();
+		Set<String> channels = new ConcurrentSkipListSet<>();
 		for (Channel channel : mChannels.values()) {
 			if (channel instanceof ChannelWhisper) {
 				continue;
@@ -197,7 +180,7 @@ public class ChannelManager implements Listener {
 	}
 
 	public static Set<String> getPartyChannelNames(CommandSender sender) {
-		Set<String> channels = new HashSet<>();
+		Set<String> channels = new ConcurrentSkipListSet<>();
 		for (Channel channel : mChannels.values()) {
 			if (!(channel instanceof ChannelParty)) {
 				continue;
@@ -360,6 +343,7 @@ public class ChannelManager implements Listener {
 		redisAsync.hdel(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName);
 		redisAsync.hdel(REDIS_CHANNELS_PATH, channelIdStr);
 		redisAsync.hdel(REDIS_CHANNEL_PARTICIPANTS_PATH, channelIdStr);
+		redisAsync.srem(REDIS_FORCELOADED_CHANNEL_PATH, channelIdStr);
 
 		// Broadcast to other shards
 		JsonObject wrappedChannelJson = new JsonObject();
@@ -381,6 +365,7 @@ public class ChannelManager implements Listener {
 
 		loadChannel(channelId);
 		mDefaultChannel = channelId;
+		RedisAPI.getInstance().async().sadd(REDIS_FORCELOADED_CHANNEL_PATH, channelId.toString());
 		mForceLoadedChannels.add(channelId);
 		saveConfig();
 		sender.sendMessage(Component.text("Channel " + channelName + " is now the default channel.", NamedTextColor.GRAY));
@@ -388,8 +373,8 @@ public class ChannelManager implements Listener {
 	}
 
 	private static void forceLoadChannel(Channel channel) {
+		RedisAPI.getInstance().async().sadd(REDIS_FORCELOADED_CHANNEL_PATH, channel.getUniqueId().toString());
 		mForceLoadedChannels.add(channel.getUniqueId());
-		saveConfig();
 	}
 
 	public static Channel loadChannel(UUID channelId) {
@@ -493,8 +478,6 @@ public class ChannelManager implements Listener {
 			mForceLoadedChannels.remove(channelId);
 		}
 
-		saveConfig();
-
 		for (PlayerState playerState : playersToNotify) {
 			playerState.channelLoaded(channelId);
 		}
@@ -572,8 +555,8 @@ public class ChannelManager implements Listener {
 	private static void loadAllChannelNames() {
 		RedisFuture<Map<String, String>> channelDataFuture = RedisAPI.getInstance().async().hgetall(REDIS_CHANNEL_NAME_TO_UUID_PATH);
 		channelDataFuture.thenApply(channelStrIdsByName -> {
-			mChannelIdsByName = new HashMap<>();
-			mChannelNames = new HashMap<>();
+			mChannelIdsByName.clear();
+			mChannelNames.clear();
 			if (channelStrIdsByName != null) {
 				for (Map.Entry<String, String> entry : channelStrIdsByName.entrySet()) {
 					String channelName = entry.getKey();
