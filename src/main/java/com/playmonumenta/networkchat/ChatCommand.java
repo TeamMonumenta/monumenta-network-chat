@@ -563,7 +563,9 @@ public class ChatCommand {
 					if (!sender.hasPermission("networkchat.visibility.default")) {
 						CommandAPI.fail("You do not have permission to change the default message visibility.");
 					}
-					return PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
+					int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
+					PlayerStateManager.savePlayerEventSettings();
+					return result;
 				})
 				.register();
 		}
