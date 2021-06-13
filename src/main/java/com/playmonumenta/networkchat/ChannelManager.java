@@ -649,10 +649,10 @@ public class ChannelManager implements Listener {
 		case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE:
 			data = event.getData();
 			if (data == null) {
-				mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with null data");
+				mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
 				return;
 			}
-			JsonObject defaultChannelsJson = data.getAsJsonObject("REDIS_DEFAULT_CHANNELS_KEY");
+			JsonObject defaultChannelsJson = data.getAsJsonObject(REDIS_DEFAULT_CHANNELS_KEY);
 			if (defaultChannelsJson != null) {
 				mDefaultChannels = DefaultChannels.fromJson(defaultChannelsJson);
 			}

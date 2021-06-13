@@ -81,6 +81,14 @@ public class RemotePlayerManager implements Listener {
 		return new ConcurrentSkipListSet<>(mPlayerIds.keySet());
 	}
 
+	public static boolean isPlayerOnline(UUID playerId) {
+		return mPlayerNames.containsKey(playerId);
+	}
+
+	public static boolean isPlayerOnline(String playerName) {
+		return mPlayerIds.containsKey(playerName);
+	}
+
 	public static String getPlayerName(UUID playerUuid) {
 		return mPlayerNames.get(playerUuid);
 	}

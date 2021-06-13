@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -20,18 +21,56 @@ import org.bukkit.command.CommandSender;
 
 // Settings for a given channel, same structure for channel default and player preference
 public class ChannelSettings {
-	public static final String IS_LISTENING = "is_listening";
+	public static enum FlagKey {
+		IS_LISTENING("is_listening"),
+		MESSAGES_PLAY_SOUND("messages_play_sound");
+
+		String mKey;
+
+		private FlagKey(String s) {
+			mKey = s;
+		}
+
+		public static FlagKey of(String s) {
+			try {
+				return valueOf(s.toUpperCase());
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
+		public String getKey() {
+			return mKey;
+		}
+	}
+
+	public static enum FlagValue {
+		DEFAULT("default"),
+		FALSE("false"),
+		TRUE("true");
+
+		String mValue;
+
+		private FlagValue(String s) {
+			mValue = s;
+		}
+
+		public static FlagValue of(String s) {
+			try {
+				return valueOf(s.toUpperCase());
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
+		public String getValue() {
+			return mValue;
+		}
+	}
+
 	// TODO Allow specifying a sound.
-	public static final String MESSAGES_PLAY_SOUND = "messages_play_sound";
 
-	// For value suggestions
-	public static final String FLAG_STR_DEFAULT = "default";
-	public static final String FLAG_STR_FALSE = "false";
-	public static final String FLAG_STR_TRUE = "true";
-
-	public static final Set<String> mFlagKeys = Set.of(IS_LISTENING, MESSAGES_PLAY_SOUND);
-	public static final Set<String> mFlagValues = Set.of(FLAG_STR_DEFAULT, FLAG_STR_FALSE, FLAG_STR_TRUE);
-	private Map<String, Boolean> mFlags = new HashMap<>();
+	private Map<FlagKey, Boolean> mFlags = new HashMap<>();
 
 	public static ChannelSettings fromJson(JsonObject object) {
 		ChannelSettings settings = new ChannelSettings();
@@ -40,10 +79,11 @@ public class ChannelSettings {
 				String key = settingsEntry.getKey();
 				JsonElement valueJson = settingsEntry.getValue();
 
-				if (mFlagKeys.contains(key) && valueJson.isJsonPrimitive()) {
+				FlagKey flagKey = FlagKey.of(key);
+				if (flagKey != null && valueJson.isJsonPrimitive()) {
 					JsonPrimitive valueJsonPrimitive = valueJson.getAsJsonPrimitive();
 					if (valueJsonPrimitive != null && valueJsonPrimitive.isBoolean()) {
-						settings.mFlags.put(key, valueJsonPrimitive.getAsBoolean());
+						settings.mFlags.put(flagKey, valueJsonPrimitive.getAsBoolean());
 					}
 				}
 			}
@@ -53,17 +93,18 @@ public class ChannelSettings {
 
 	public JsonObject toJson() {
 		JsonObject object = new JsonObject();
-		for (String key : mFlagKeys) {
-			Boolean value = getFlag(key);
+		for (Map.Entry<FlagKey, Boolean> entry : mFlags.entrySet()) {
+			String keyStr = entry.getKey().getKey();
+			Boolean value = entry.getValue();
 			if (value != null) {
-				object.addProperty(key, value);
+				object.addProperty(keyStr, value);
 			}
 		}
 		return object;
 	}
 
 	public boolean isDefault() {
-		for (Map.Entry<String, Boolean> entry : mFlags.entrySet()) {
+		for (Map.Entry<FlagKey, Boolean> entry : mFlags.entrySet()) {
 			if (entry.getValue() != null) {
 				return false;
 			}
@@ -71,58 +112,67 @@ public class ChannelSettings {
 		return true;
 	}
 
+	public static String[] getFlagKeys() {
+		return Stream.of(FlagKey.values()).map(FlagKey::getKey).toArray(String[]::new);
+	}
+
+	public static String[] getFlagValues() {
+		return Stream.of(FlagValue.values()).map(FlagValue::getValue).toArray(String[]::new);
+	}
+
 	public Boolean getFlag(String key) {
-		return mFlags.get(key);
+		return mFlags.get(FlagKey.of(key));
 	}
 
 	public void setFlag(String key, Boolean value) {
-		if (mFlagKeys.contains(key)) {
+		FlagKey flagKey = FlagKey.of(key);
+		if (flagKey != null) {
 			if (value == null) {
-				mFlags.remove(key);
+				mFlags.remove(flagKey);
 			} else {
-				mFlags.put(key, value);
+				mFlags.put(flagKey, value);
 			}
 		}
 	}
 
 	public Boolean isListening() {
-		return getFlag(IS_LISTENING);
+		return getFlag(FlagKey.IS_LISTENING.getKey());
 	}
 
 	public void isListening(Boolean value) {
-		setFlag(IS_LISTENING, value);
+		setFlag(FlagKey.IS_LISTENING.getKey(), value);
 	}
 
 	public Boolean messagesPlaySound() {
-		return getFlag(MESSAGES_PLAY_SOUND);
+		return getFlag(FlagKey.MESSAGES_PLAY_SOUND.getKey());
 	}
 
 	public void messagesPlaySound(Boolean value) {
-		setFlag(MESSAGES_PLAY_SOUND, value);
+		setFlag(FlagKey.MESSAGES_PLAY_SOUND.getKey(), value);
 	}
 
 	public int commandFlag(CommandSender sender, String setting) throws WrapperCommandSyntaxException {
-		if (mFlagKeys.contains(setting)) {
+		if (FlagKey.of(setting) != null) {
 			Boolean value = getFlag(setting);
 			if (value == null) {
 				sender.sendMessage(Component.empty()
 				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
-				    .append(Component.text(FLAG_STR_DEFAULT, NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
+				    .append(Component.text(FlagValue.DEFAULT.getValue(), NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 0;
 			} else if (value) {
 				sender.sendMessage(Component.empty()
 				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
-				    .append(Component.text(FLAG_STR_TRUE, NamedTextColor.GREEN, TextDecoration.BOLD))
+				    .append(Component.text(FlagValue.TRUE.getValue(), NamedTextColor.GREEN, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 1;
 			} else {
 				sender.sendMessage(Component.empty()
 				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
-				    .append(Component.text(FLAG_STR_FALSE, NamedTextColor.RED, TextDecoration.BOLD))
+				    .append(Component.text(FlagValue.FALSE.getValue(), NamedTextColor.RED, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return -1;
 			}
@@ -133,32 +183,32 @@ public class ChannelSettings {
 	}
 
 	public int commandFlag(CommandSender sender, String setting, String value) throws WrapperCommandSyntaxException {
-		if (mFlagKeys.contains(setting)) {
-			if (FLAG_STR_FALSE.equals(value)) {
+		if (FlagKey.of(setting) != null) {
+			if (FlagValue.FALSE.getValue().equals(value)) {
 				setFlag(setting, false);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
 				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
-				    .append(Component.text(FLAG_STR_FALSE, NamedTextColor.RED, TextDecoration.BOLD))
+				    .append(Component.text(FlagValue.FALSE.getValue(), NamedTextColor.RED, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return -1;
-			} else if (FLAG_STR_TRUE.equals(value)) {
+			} else if (FlagValue.TRUE.getValue().equals(value)) {
 				setFlag(setting, true);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
 				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
-				    .append(Component.text(FLAG_STR_TRUE, NamedTextColor.GREEN, TextDecoration.BOLD))
+				    .append(Component.text(FlagValue.TRUE.getValue(), NamedTextColor.GREEN, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 1;
-			} else if (FLAG_STR_DEFAULT.equals(value)) {
+			} else if (FlagValue.DEFAULT.getValue().equals(value)) {
 				setFlag(setting, null);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
 				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
-				    .append(Component.text(FLAG_STR_DEFAULT, NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
+				    .append(Component.text(FlagValue.DEFAULT.getValue(), NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 0;
 			} else {

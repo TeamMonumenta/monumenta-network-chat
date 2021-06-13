@@ -6,9 +6,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkrelay.NetworkRelayAPI;
+import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
+import com.playmonumenta.redissync.RedisAPI;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
 
@@ -27,15 +31,18 @@ import org.bukkit.plugin.Plugin;
 
 public class PlayerStateManager implements Listener {
 	private static final String IDENTIFIER = "NetworkChat";
+	private static final String REDIS_PLAYER_EVENT_SETTINGS_KEY = "player_event_settings";
 
 	private static PlayerStateManager INSTANCE = null;
 	private static Plugin mPlugin = null;
 	private static Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
+	private static MessageVisibility mMessageVisibility = new MessageVisibility();
 	private static boolean mIsDefaultChatPlugin = true;
 
 	private PlayerStateManager(Plugin plugin) {
 		INSTANCE = this;
 		mPlugin = plugin;
+		reload();
 	}
 
 	public static PlayerStateManager getInstance() {
@@ -49,12 +56,48 @@ public class PlayerStateManager implements Listener {
 		return INSTANCE;
 	}
 
+	public static void reload() {
+		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_PLAYER_EVENT_SETTINGS_KEY)
+			.thenApply(dataStr -> {
+			if (dataStr != null) {
+				Gson gson = new Gson();
+				JsonObject dataJson = gson.fromJson(dataStr, JsonObject.class);
+				loadPlayerEventSettings(dataJson);
+			}
+			return dataStr;
+		});
+	}
+
+	public static void loadPlayerEventSettings(JsonObject playerEventSettingsJson) {
+		mMessageVisibility = MessageVisibility.fromJson(playerEventSettingsJson.getAsJsonObject("message_visibility"));
+		mIsDefaultChatPlugin = playerEventSettingsJson.getAsJsonPrimitive("is_default_chat").getAsBoolean();
+	}
+
+	public static void savePlayerEventSettings() {
+		JsonObject playerEventSettingsJson = new JsonObject();
+		playerEventSettingsJson.add("message_visibility", mMessageVisibility.toJson());
+		playerEventSettingsJson.addProperty("is_default_chat", mIsDefaultChatPlugin);
+
+		JsonObject wrappedConfigJson = new JsonObject();
+		wrappedConfigJson.add(REDIS_PLAYER_EVENT_SETTINGS_KEY, playerEventSettingsJson);
+		try {
+			NetworkRelayAPI.sendBroadcastMessage(NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE, wrappedConfigJson);
+		} catch (Exception e) {
+			mPlugin.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+		}
+	}
+
+	public static MessageVisibility getDefaultMessageVisibility() {
+		return mMessageVisibility;
+	}
+
 	public static boolean isDefaultChat() {
 		return mIsDefaultChatPlugin;
 	}
 
-	public static void isDefaultChat(boolean value) {
+	public static void setDefaultChat(boolean value) {
 		mIsDefaultChatPlugin = value;
+		savePlayerEventSettings();
 	}
 
 	public static Map<UUID, PlayerState> getPlayerStates() {
@@ -201,5 +244,25 @@ public class PlayerStateManager implements Listener {
 		}
 		channel.sendMessage(player, messageStr);
 		event.setCancelled(true);
+	}
+
+	@EventHandler(priority = EventPriority.LOW)
+	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
+		JsonObject data;
+		switch (event.getChannel()) {
+		case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE:
+			data = event.getData();
+			if (data == null) {
+				mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
+				return;
+			}
+			JsonObject playerEventSettingsJson = data.getAsJsonObject(REDIS_PLAYER_EVENT_SETTINGS_KEY);
+			if (playerEventSettingsJson != null) {
+				loadPlayerEventSettings(playerEventSettingsJson);
+			}
+			break;
+		default:
+			break;
+		}
 	}
 }

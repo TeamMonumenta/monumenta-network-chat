@@ -264,7 +264,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("settings"));
 			arguments.add(new MultiLiteralArgument("my"));
 			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -287,8 +287,8 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("settings"));
 			arguments.add(new MultiLiteralArgument("my"));
 			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagValues.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -314,7 +314,7 @@ public class ChatCommand {
 			arguments.add(new StringArgument("Channel Name").overrideSuggestions((sender) -> {
 				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -347,8 +347,8 @@ public class ChatCommand {
 			arguments.add(new StringArgument("Channel Name").overrideSuggestions((sender) -> {
 				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagValues.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -380,7 +380,7 @@ public class ChatCommand {
 			arguments.add(new StringArgument("Channel Name").overrideSuggestions((sender) -> {
 				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -401,8 +401,8 @@ public class ChatCommand {
 			arguments.add(new StringArgument("Channel Name").overrideSuggestions((sender) -> {
 				return ChannelManager.getListenableChannelNames(sender).toArray(new String[0]);
 			}));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagKeys.stream().toArray(String[]::new)));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.mFlagValues.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -426,7 +426,7 @@ public class ChatCommand {
 				return ChannelManager.getManageableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -448,8 +448,8 @@ public class ChatCommand {
 				return ChannelManager.getManageableChannelNames(sender).toArray(new String[0]);
 			}));
 			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagValues.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -457,6 +457,9 @@ public class ChatCommand {
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
 						CommandAPI.fail("No such channel " + channelName + ".");
+					}
+					if (!channel.mayManage(sender)) {
+						CommandAPI.fail("You do not have permission to manage channel " + channel.getName() + ".");
 					}
 
 					ChannelPerms perms = channel.channelPerms();
@@ -476,7 +479,7 @@ public class ChatCommand {
 			arguments.add(new StringArgument("name").overrideSuggestions((sender) -> {
 				return MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new);
 			}));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -484,6 +487,9 @@ public class ChatCommand {
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
 						CommandAPI.fail("No such channel " + channelName + ".");
+					}
+					if (!channel.mayManage(sender)) {
+						CommandAPI.fail("You do not have permission to manage channel " + channel.getName() + ".");
 					}
 
 					String playerName = (String) args[4];
@@ -506,8 +512,8 @@ public class ChatCommand {
 			arguments.add(new StringArgument("name").overrideSuggestions((sender) -> {
 				return MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new);
 			}));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagKeys.stream().toArray(String[]::new)));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.mFlagValues.stream().toArray(String[]::new)));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -515,6 +521,9 @@ public class ChatCommand {
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
 						CommandAPI.fail("No such channel " + channelName + ".");
+					}
+					if (!channel.mayManage(sender)) {
+						CommandAPI.fail("You do not have permission to manage channel " + channel.getName() + ".");
 					}
 
 					String playerName = (String) args[4];
@@ -529,6 +538,32 @@ public class ChatCommand {
 					}
 					ChannelManager.saveChannel(channel);
 					return result;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("visibility"));
+			arguments.add(new MultiLiteralArgument("default"));
+			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2]);
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("visibility"));
+			arguments.add(new MultiLiteralArgument("default"));
+			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
+			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityValues()));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.visibility.default")) {
+						CommandAPI.fail("You do not have permission to change the default message visibility.");
+					}
+					return PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
 				})
 				.register();
 		}
