@@ -57,26 +57,36 @@ public class PlayerStateManager implements Listener {
 	}
 
 	public static void reload() {
+		mPlugin.getLogger().info("Reloading PlayerStateManager settings...");
 		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_PLAYER_EVENT_SETTINGS_KEY)
 			.thenApply(dataStr -> {
+			mPlugin.getLogger().info("Loading PlayerStateManager settings from Redis...");
 			if (dataStr != null) {
+				mPlugin.getLogger().info("Got data!");
 				Gson gson = new Gson();
 				JsonObject dataJson = gson.fromJson(dataStr, JsonObject.class);
-				loadPlayerEventSettings(dataJson);
+				loadSettings(dataJson);
+			} else {
+				mPlugin.getLogger().info("No data?");
 			}
 			return dataStr;
 		});
 	}
 
-	public static void loadPlayerEventSettings(JsonObject playerEventSettingsJson) {
+	public static void loadSettings(JsonObject playerEventSettingsJson) {
+		mPlugin.getLogger().info("Loading PlayerStateManager settings...");
 		mMessageVisibility = MessageVisibility.fromJson(playerEventSettingsJson.getAsJsonObject("message_visibility"));
 		mIsDefaultChatPlugin = playerEventSettingsJson.getAsJsonPrimitive("is_default_chat").getAsBoolean();
+		mPlugin.getLogger().info("Loaded PlayerStateManager settings.");
 	}
 
-	public static void savePlayerEventSettings() {
+	public static void saveSettings() {
+		mPlugin.getLogger().info("Saving PlayerStateManager settings...");
 		JsonObject playerEventSettingsJson = new JsonObject();
 		playerEventSettingsJson.add("message_visibility", mMessageVisibility.toJson());
 		playerEventSettingsJson.addProperty("is_default_chat", mIsDefaultChatPlugin);
+
+		RedisAPI.getInstance().async().hset(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_PLAYER_EVENT_SETTINGS_KEY, playerEventSettingsJson.toString());
 
 		JsonObject wrappedConfigJson = new JsonObject();
 		wrappedConfigJson.add(REDIS_PLAYER_EVENT_SETTINGS_KEY, playerEventSettingsJson);
@@ -85,6 +95,7 @@ public class PlayerStateManager implements Listener {
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
+		mPlugin.getLogger().info("Saved PlayerStateManager settings.");
 	}
 
 	public static MessageVisibility getDefaultMessageVisibility() {
@@ -97,7 +108,7 @@ public class PlayerStateManager implements Listener {
 
 	public static void setDefaultChat(boolean value) {
 		mIsDefaultChatPlugin = value;
-		savePlayerEventSettings();
+		saveSettings();
 	}
 
 	public static Map<UUID, PlayerState> getPlayerStates() {
@@ -258,7 +269,7 @@ public class PlayerStateManager implements Listener {
 			}
 			JsonObject playerEventSettingsJson = data.getAsJsonObject(REDIS_PLAYER_EVENT_SETTINGS_KEY);
 			if (playerEventSettingsJson != null) {
-				loadPlayerEventSettings(playerEventSettingsJson);
+				loadSettings(playerEventSettingsJson);
 			}
 			break;
 		default:

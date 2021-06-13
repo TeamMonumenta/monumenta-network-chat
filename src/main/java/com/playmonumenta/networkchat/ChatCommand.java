@@ -564,7 +564,7 @@ public class ChatCommand {
 						CommandAPI.fail("You do not have permission to change the default message visibility.");
 					}
 					int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
-					PlayerStateManager.savePlayerEventSettings();
+					PlayerStateManager.saveSettings();
 					return result;
 				})
 				.register();
