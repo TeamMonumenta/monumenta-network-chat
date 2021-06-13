@@ -291,7 +291,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	public static String getClassId() {
+	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 

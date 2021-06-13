@@ -45,7 +45,7 @@ public class ChannelFuture extends Channel {
 	}
 
 	// NOTE: If this class ID is ever read, it means the channel hasn't loaded and should be ignored.
-	public static String getClassId() {
+	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 

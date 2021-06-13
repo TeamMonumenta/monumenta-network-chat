@@ -44,10 +44,7 @@ public abstract class Channel {
 		;
 	}
 
-	// OVERRIDE ME - Return an identifier for this channel class.
-	public static String getClassId() {
-		return null;
-	}
+	public abstract String getClassId();
 
 	// Return this channel's UUID
 	public abstract UUID getUniqueId();

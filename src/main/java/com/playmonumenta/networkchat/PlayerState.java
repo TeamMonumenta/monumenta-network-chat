@@ -32,6 +32,7 @@ public class PlayerState {
 	private boolean mChatPaused;
 	private UUID mActiveChannelId;
 	private ChannelSettings mDefaultChannelSettings = new ChannelSettings();
+	private DefaultChannels mDefaultChannels = new DefaultChannels();
 	private Map<UUID, ChannelSettings> mChannelSettings;
 
 	private Map<UUID, UUID> mWhisperChannelsByRecipient;
@@ -146,6 +147,11 @@ public class PlayerState {
 			state.mDefaultChannelSettings = ChannelSettings.fromJson(defaultChannelSettingsJson);
 		}
 
+		JsonObject defaultChannelsJson = obj.getAsJsonObject("defaultChannels");
+		if (defaultChannelsJson != null) {
+			state.mDefaultChannels = DefaultChannels.fromJson(defaultChannelsJson);
+		}
+
 		JsonObject allChannelSettingsJson = obj.getAsJsonObject("channelSettings");
 		if (allChannelSettingsJson != null) {
 			for (Map.Entry<String, JsonElement> channelSettingEntry : allChannelSettingsJson.entrySet()) {
@@ -208,6 +214,7 @@ public class PlayerState {
 		result.add("watchedChannels", watchedChannels);
 		result.add("unwatchedChannels", unwatchedChannels);
 		result.add("defaultChannelSettings", mDefaultChannelSettings.toJson());
+		result.add("defaultChannels", mDefaultChannels.toJson());
 		result.add("channelSettings", allChannelSettings);
 
 		return result;
@@ -219,6 +226,10 @@ public class PlayerState {
 
 	public ChannelSettings channelSettings() {
 		return mDefaultChannelSettings;
+	}
+
+	public DefaultChannels defaultChannels() {
+		return mDefaultChannels;
 	}
 
 	public ChannelSettings channelSettings(Channel channel) {
@@ -384,11 +395,12 @@ public class PlayerState {
 		mChannelSettings.remove(channelId);
 	}
 
-	public UUID getActiveChannelId() {
-		if (mActiveChannelId != null) {
-			return mActiveChannelId;
+	public Channel getDefaultChannel(String channelType) {
+		Channel channel = mDefaultChannels.getDefaultChannel(channelType);
+		if (channel == null) {
+			channel = ChannelManager.getDefaultChannel(channelType);
 		}
-		return ChannelManager.getDefaultChannel().getUniqueId();
+		return channel;
 	}
 
 	public Channel getActiveChannel() {
@@ -453,15 +465,23 @@ public class PlayerState {
 	protected void channelLoaded(UUID channelId) {
 		Channel loadedChannel = ChannelManager.getChannel(channelId);
 		String lastKnownName = mWatchedChannelIds.get(channelId);
+		if (lastKnownName != null) {
+			mWatchedChannelIds.put(channelId, loadedChannel.getName());
+		}
 		UUID whisperRecipientUuid = null;
 		boolean showAlert = true;
 		if (lastKnownName == null) {
 			lastKnownName = mUnwatchedChannelIds.get(channelId);
+			if (lastKnownName != null) {
+				mUnwatchedChannelIds.put(channelId, loadedChannel.getName());
+			}
 		}
 		if (lastKnownName == null) {
 			whisperRecipientUuid = mWhisperRecipientByChannels.get(channelId);
-			lastKnownName = "whisper chat with...someone?";
-			showAlert = false;
+			if (whisperRecipientUuid != null) {
+				lastKnownName = "whisper chat with...someone?";
+				showAlert = false;
+			}
 		}
 		if (lastKnownName == null) {
 			lastKnownName = "...something?...";

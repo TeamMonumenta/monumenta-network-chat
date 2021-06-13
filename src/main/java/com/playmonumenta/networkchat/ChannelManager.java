@@ -45,11 +45,11 @@ public class ChannelManager implements Listener {
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
 	private static final String REDIS_CHANNEL_PARTICIPANTS_PATH = "networkchat:channel_participants";
 	private static final String REDIS_FORCELOADED_CHANNEL_PATH = "networkchat:forceloaded_channels";
+	private static final String REDIS_DEFAULT_CHANNELS_KEY = "default_channels";
 
 	private static ChannelManager INSTANCE = null;
 	private static Plugin mPlugin = null;
-	private static File mServerChannelConfigFile;
-	private static UUID mDefaultChannel;
+	private static DefaultChannels mDefaultChannels = new DefaultChannels();
 	private static Set<UUID> mForceLoadedChannels = new ConcurrentSkipListSet<>();
 	private static Map<String, UUID> mChannelIdsByName = new ConcurrentSkipListMap<>();
 	private static Map<UUID, String> mChannelNames = new ConcurrentSkipListMap<>();
@@ -70,7 +70,6 @@ public class ChannelManager implements Listener {
 	private ChannelManager(Plugin plugin) {
 		INSTANCE = this;
 		mPlugin = plugin;
-		mServerChannelConfigFile = new File(plugin.getDataFolder(), "serverChannelConfig.json");
 		reload();
 		loadAllChannelNames();
 	}
@@ -87,41 +86,33 @@ public class ChannelManager implements Listener {
 	}
 
 	public static void reload() {
-		// Load the list of forceloaded channels
-		JsonObject serverChannelConfigJson;
-		try {
-			serverChannelConfigJson = FileUtils.readJson(mServerChannelConfigFile.getPath());
-		} catch (Exception e) {
-			mPlugin.getLogger().warning("Could not load server channel config; assuming file does not exist yet.");
-			return;
-		}
-
 		mForceLoadedChannels.clear();
 
-		mDefaultChannel = null;
-		JsonPrimitive defaultChannelJson = serverChannelConfigJson.getAsJsonPrimitive("defaultChannel");
-		try {
-			mDefaultChannel = UUID.fromString(defaultChannelJson.getAsString());
-			mForceLoadedChannels.add(mDefaultChannel);
-			loadChannel(mDefaultChannel);
-		} catch (Exception e) {
-			mPlugin.getLogger().warning("Could not get default channel. Configure with /chattest.");
-		}
+		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_DEFAULT_CHANNELS_KEY)
+			.thenApply(dataStr -> {
+			if (dataStr != null) {
+				Gson gson = new Gson();
+				JsonObject dataJson = gson.fromJson(dataStr, JsonObject.class);
+				mDefaultChannels = DefaultChannels.fromJson(dataJson);
+			}
+			return dataStr;
+		});
 
 		ValueStreamingChannel<String> forceloadStreamingChannel = new ForceloadStreamingChannel();
 		RedisAPI.getInstance().async().smembers(forceloadStreamingChannel, REDIS_FORCELOADED_CHANNEL_PATH);
 	}
 
-	public static void saveConfig() {
-		JsonObject serverChannelConfigJson = new JsonObject();
-		if (mDefaultChannel != null) {
-			serverChannelConfigJson.addProperty("defaultChannel", mDefaultChannel.toString());
-		}
+	public static void saveDefaultChannels() {
+		JsonObject defaultChannelsJson = mDefaultChannels.toJson();
 
+		RedisAPI.getInstance().async().hset(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_DEFAULT_CHANNELS_KEY, defaultChannelsJson.toString());
+
+		JsonObject wrappedConfigJson = new JsonObject();
+		wrappedConfigJson.add(REDIS_DEFAULT_CHANNELS_KEY, defaultChannelsJson);
 		try {
-			FileUtils.writeJson(mServerChannelConfigFile.getPath(), serverChannelConfigJson);
+			NetworkRelayAPI.sendBroadcastMessage(NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE, wrappedConfigJson);
 		} catch (Exception e) {
-			mPlugin.getLogger().warning("Could not save server channel config.");
+			mPlugin.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -131,6 +122,16 @@ public class ChannelManager implements Listener {
 
 	public static Set<String> getChannelNames() {
 		return new ConcurrentSkipListSet<>(mChannelIdsByName.keySet());
+	}
+
+	public static Set<String> getChannelNames(String channelType) {
+		Set<String> matches = new ConcurrentSkipListSet<>();
+		for (Channel channel : getLoadedChannels()) {
+			if (channelType.equals(channel.getClassId())) {
+				matches.add(channel.getName());
+			}
+		}
+		return matches;
 	}
 
 	public static List<Channel> getLoadedChannels() {
@@ -251,7 +252,6 @@ public class ChannelManager implements Listener {
 				sendQueuedMessages = true;
 			} else {
 				// Unregister the old channel so the new one can load.
-				PlayerStateManager.unregisterChannel(channelId);
 				mChannels.remove(channelId);
 			}
 		}
@@ -280,8 +280,16 @@ public class ChannelManager implements Listener {
 		}
 	}
 
+	public static DefaultChannels getDefaultChannels() {
+		return mDefaultChannels;
+	}
+
 	public static Channel getDefaultChannel() {
-		return mChannels.get(mDefaultChannel);
+		return mDefaultChannels.getDefaultChannel("default");
+	}
+
+	public static Channel getDefaultChannel(String channelId) {
+		return mDefaultChannels.getDefaultChannel(channelId);
 	}
 
 	public static Channel getChannel(UUID channelId) {
@@ -355,21 +363,6 @@ public class ChannelManager implements Listener {
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
 		}
-	}
-
-	public static int setDefaultChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
-		UUID channelId = mChannelIdsByName.get(channelName);
-		if (channelId == null) {
-			CommandAPI.fail("Channel " + channelName + " does not exist!");
-		}
-
-		loadChannel(channelId);
-		mDefaultChannel = channelId;
-		RedisAPI.getInstance().async().sadd(REDIS_FORCELOADED_CHANNEL_PATH, channelId.toString());
-		mForceLoadedChannels.add(channelId);
-		saveConfig();
-		sender.sendMessage(Component.text("Channel " + channelName + " is now the default channel.", NamedTextColor.GRAY));
-		return 1;
 	}
 
 	private static void forceLoadChannel(Channel channel) {
@@ -643,14 +636,26 @@ public class ChannelManager implements Listener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
+		JsonObject data;
 		switch (event.getChannel()) {
 		case NETWORK_CHAT_CHANNEL_UPDATE:
-			JsonObject data = event.getData();
+			data = event.getData();
 			if (data == null) {
 				mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with null data");
 				return;
 			}
 			networkRelayChannelUpdate(data);
+			break;
+		case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE:
+			data = event.getData();
+			if (data == null) {
+				mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with null data");
+				return;
+			}
+			JsonObject defaultChannelsJson = data.getAsJsonObject("REDIS_DEFAULT_CHANNELS_KEY");
+			if (defaultChannelsJson != null) {
+				mDefaultChannels = DefaultChannels.fromJson(defaultChannelsJson);
+			}
 			break;
 		default:
 			break;

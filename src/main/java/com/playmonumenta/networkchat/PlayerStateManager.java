@@ -185,7 +185,8 @@ public class PlayerStateManager implements Listener {
 		Player player = event.getPlayer();
 		PlayerState playerState = mPlayerStates.get(player.getUniqueId());
 		if (playerState == null) {
-			player.sendMessage(Component.text("You have no chat state and cannot talk. Please report this bug.", NamedTextColor.RED));
+			player.sendMessage(Component.text("You have no chat state and cannot talk. Please report this bug, then reconnect to the server.", NamedTextColor.RED));
+			event.setCancelled(true);
 			return;
 		}
 
@@ -195,10 +196,10 @@ public class PlayerStateManager implements Listener {
 		Channel channel = playerState.getActiveChannel();
 		if (channel == null) {
 			player.sendMessage(Component.text("You have no active channel. Please set one with /chattest and try again.", NamedTextColor.RED));
+			event.setCancelled(true);
 			return;
 		}
 		channel.sendMessage(player, messageStr);
-
 		event.setCancelled(true);
 	}
 }

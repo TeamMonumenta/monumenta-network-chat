@@ -291,7 +291,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		return 1;
 	}
 
-	public static String getClassId() {
+	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 

@@ -11,6 +11,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class NetworkChatPlugin extends JavaPlugin {
+	// Config is partially handled in other classes, such as ChannelManager
+	public static final String NETWORK_CHAT_CONFIG_UPDATE = "com.playmonumenta.networkchat.config_update";
+	protected static final String REDIS_CONFIG_PATH = "networkchat:config";
+
 	private static NetworkChatPlugin INSTANCE = null;
 	public ChannelManager mChannelManager = null;
 	public MessageManager mMessageManager = null;

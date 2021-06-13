@@ -38,6 +38,7 @@ public class RemotePlayerManager implements Listener {
 	private static Map<String, Map<String, UUID>> mRemotePlayers = new ConcurrentSkipListMap<>();
 	private static Map<String, UUID> mPlayerIds = new ConcurrentSkipListMap<>();
 	private static Map<UUID, String> mPlayerNames = new ConcurrentSkipListMap<>();
+	private static Map<UUID, String> mPlayerLocations = new ConcurrentSkipListMap<>();
 	private static Map<UUID, Component> mPlayerComponents = new ConcurrentSkipListMap<>();
 
 	private RemotePlayerManager(Plugin plugin) {
@@ -94,6 +95,10 @@ public class RemotePlayerManager implements Listener {
 
 	public static UUID getPlayerId(String playerName) {
 		return mPlayerIds.get(playerName);
+	}
+
+	public static String getPlayerShard(UUID playerId) {
+		return mPlayerLocations.get(playerId);
 	}
 
 	public static void showOnlinePlayers(Audience audience) {
@@ -153,6 +158,7 @@ public class RemotePlayerManager implements Listener {
 
 		mPlayerIds.put(playerName, playerUuid);
 		mPlayerNames.put(playerUuid, playerName);
+		mPlayerLocations.put(playerUuid, mShardName);
 		mPlayerComponents.put(playerUuid, playerComponent);
 
 		JsonObject remotePlayerData = new JsonObject();
@@ -180,6 +186,7 @@ public class RemotePlayerManager implements Listener {
 		String playerName;
 		UUID playerUuid;
 		Component playerComponent;
+		String lastLocation = null;
 
 		try {
 			//isRefresh = data.get("isRefresh").getAsBoolean();
@@ -195,6 +202,7 @@ public class RemotePlayerManager implements Listener {
 			mPlugin.getLogger().severe(e.toString());
 			return;
 		}
+		lastLocation = mPlayerLocations.get(playerUuid);
 
 		if (mShardName.equals(remoteShardName)) {
 			return;
@@ -203,11 +211,13 @@ public class RemotePlayerManager implements Listener {
 
 		if (isOnline) {
 			remotePlayers.put(playerName, playerUuid);
+			mPlayerLocations.put(playerUuid, remoteShardName);
 			mPlayerIds.put(playerName, playerUuid);
 			mPlayerNames.put(playerUuid, playerName);
 			mPlayerComponents.put(playerUuid, playerComponent);
-		} else {
+		} else if (remoteShardName.equals(lastLocation)) {
 			remotePlayers.remove(playerName);
+			mPlayerLocations.remove(playerUuid);
 			mPlayerIds.remove(playerName);
 			mPlayerNames.remove(playerUuid);
 			mPlayerComponents.remove(playerUuid);
@@ -285,6 +295,7 @@ public class RemotePlayerManager implements Listener {
 		UUID playerUuid = player.getUniqueId();
 		Component playerComponent = MessagingUtils.playerComponent(player);
 
+		mPlayerLocations.remove(playerUuid);
 		mPlayerIds.remove(playerName);
 		mPlayerNames.remove(playerUuid);
 		mPlayerComponents.remove(playerUuid);

@@ -158,7 +158,7 @@ public class ChannelGlobal extends Channel {
 		}
 	}
 
-	public static String getClassId() {
+	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
