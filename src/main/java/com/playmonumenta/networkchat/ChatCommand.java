@@ -21,12 +21,26 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.transformation.Transformation;
+import net.kyori.adventure.text.minimessage.transformation.TransformationType;
+import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 public class ChatCommand {
 	public static final String[] COMMANDS = new String[]{"chat", "ch", "chattest"};
+	public static final String[] COLOR_SUGGESTIONS = new String[]{"aqua", "dark_purple", "#0189af"};
+	private static final MiniMessage MINIMESSAGE = MiniMessage.builder()
+		.transformation(TransformationType.COLOR)
+		.transformation(TransformationType.DECORATION)
+		.markdown()
+		.markdownFlavor(DiscordFlavor.get())
+		.build();
 
 	public static void register() {
 		List<Argument> arguments = new ArrayList<>();
@@ -566,6 +580,137 @@ public class ChatCommand {
 					int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
 					PlayerStateManager.saveSettings();
 					return result;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("color"));
+			arguments.add(new MultiLiteralArgument("default"));
+			arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
+				ChannelGlobal.CHANNEL_CLASS_ID,
+				ChannelLocal.CHANNEL_CLASS_ID,
+				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelWhisper.CHANNEL_CLASS_ID));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.format.default")) {
+						CommandAPI.fail("You do not have permission to change the default channel formats.");
+					}
+					String id = (String) args[2];
+					TextColor color = NetworkChatPlugin.messageColor(id);
+					sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("color"));
+			arguments.add(new MultiLiteralArgument("default"));
+			arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
+				ChannelGlobal.CHANNEL_CLASS_ID,
+				ChannelLocal.CHANNEL_CLASS_ID,
+				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelWhisper.CHANNEL_CLASS_ID));
+			arguments.add(new GreedyStringArgument("color").overrideSuggestions((sender) -> {
+				return COLOR_SUGGESTIONS;
+			}));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.format.default")) {
+						CommandAPI.fail("You do not have permission to change the default channel formats.");
+					}
+					String id = (String) args[2];
+					String colorString = (String) args[3];
+					TextColor color = MessagingUtils.colorFromString(colorString);
+					if (color == null) {
+						CommandAPI.fail("No such color " + colorString);
+					}
+					NetworkChatPlugin.messageColor(id, color);
+					sender.sendMessage(Component.text(id + " set to " + MessagingUtils.colorToString(color), color));
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("format"));
+			arguments.add(new MultiLiteralArgument("default"));
+			arguments.add(new MultiLiteralArgument("player",
+				ChannelAnnouncement.CHANNEL_CLASS_ID,
+				ChannelGlobal.CHANNEL_CLASS_ID,
+				ChannelLocal.CHANNEL_CLASS_ID,
+				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelWhisper.CHANNEL_CLASS_ID));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.format.default")) {
+						CommandAPI.fail("You do not have permission to change the default channel formats.");
+					}
+					String id = (String) args[2];
+					TextColor color = NetworkChatPlugin.messageColor(id);
+					String format = NetworkChatPlugin.messageFormat(id);
+
+					Component senderComponent = MessagingUtils.senderComponent(sender);
+					sender.sendMessage(Component.text(id + " is " + format, color)
+						.insertion("/chattest format default " + id + " " + format));
+					if (id.equals("player")) {
+						sender.sendMessage(Component.text("Example: ").append(senderComponent));
+					} else {
+						String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
+						Component fullMessage = Component.empty()
+							.insertion("/chattest format default " + id + " " + format)
+							.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
+								Template.of("sender", senderComponent),
+								Template.of("receiver", senderComponent))))
+							.append(Component.empty().color(color).append(Component.text("Test message")));
+
+						sender.sendMessage(Component.text("Example message:", color));
+						sender.sendMessage(fullMessage);
+					}
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("format"));
+			arguments.add(new MultiLiteralArgument("default"));
+			arguments.add(new MultiLiteralArgument("player",
+				ChannelAnnouncement.CHANNEL_CLASS_ID,
+				ChannelGlobal.CHANNEL_CLASS_ID,
+				ChannelLocal.CHANNEL_CLASS_ID,
+				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelWhisper.CHANNEL_CLASS_ID));
+			arguments.add(new GreedyStringArgument("format"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.format.default")) {
+						CommandAPI.fail("You do not have permission to change the default channel formats.");
+					}
+					String id = (String) args[2];
+					TextColor color = NetworkChatPlugin.messageColor(id);
+					String format = (String) args[3];
+					NetworkChatPlugin.messageFormat(id, format);
+
+					Component senderComponent = MessagingUtils.senderComponent(sender);
+					sender.sendMessage(Component.text(id + " set to " + format, color)
+						.insertion("/chattest format default " + id + " " + format));
+					if (id.equals("player")) {
+						sender.sendMessage(Component.text("Example: ").append(senderComponent));
+					} else {
+						String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
+						Component fullMessage = Component.empty()
+							.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
+								Template.of("sender", senderComponent),
+								Template.of("receiver", senderComponent))))
+							.append(Component.empty().color(color).append(Component.text("Test message")));
+
+						sender.sendMessage(Component.text("Example message:", color));
+						sender.sendMessage(fullMessage);
+					}
+					return 1;
 				})
 				.register();
 		}

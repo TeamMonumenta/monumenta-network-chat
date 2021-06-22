@@ -12,6 +12,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Team;
 
+import com.google.gson.JsonElement;
+import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.RemotePlayerManager;
 
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -30,8 +32,6 @@ import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
-
-import com.google.gson.JsonElement;
 
 public class MessagingUtils {
 	public static final GsonComponentSerializer GSON_SERIALIZER = GsonComponentSerializer.gson();
@@ -52,13 +52,6 @@ public class MessagingUtils {
 	    .transformation(TransformationType.RAINBOW)
 	    .transformation(TransformationType.RESET)
 	    .build();
-	private static final String DEFAULT_PLAYER_FMT = "<insert:%player_name%>"
-	    + "<click:suggest_command:/tell %player_name% >"
-	    + "<hover:show_entity:'minecraft:player':%player_uuid%:%player_name%>"
-	    + "<team_color><team_prefix>%player_name%<team_suffix>"
-	    + "</hover></click></insert>";
-
-	private static String mPlayerFormat = DEFAULT_PLAYER_FMT;
 
 	public static String translatePlayerName(Player player, String message) {
 		return (message.replaceAll("@S", player.getName()));
@@ -104,7 +97,7 @@ public class MessagingUtils {
 			teamSuffix = Component.empty();
 		}
 
-		return PLAYER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(player, mPlayerFormat),
+		return PLAYER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.mMessageFormats.get("player")),
 		    List.of(Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
 		        Template.of("team_prefix", teamPrefix),
 		        Template.of("team_suffix", teamSuffix)));
@@ -145,5 +138,24 @@ public class MessagingUtils {
 	public static String plainText(Component formattedText) {
 		String legacyText = PLAIN_SERIALIZER.serialize(formattedText);
 		return PLAIN_SERIALIZER.serialize(LEGACY_SERIALIZER.deserialize(legacyText));
+	}
+
+	public static TextColor colorFromString(String value) {
+		if (value.startsWith("#")) {
+			return TextColor.fromHexString(value);
+		} else {
+			return NamedTextColor.NAMES.value(value);
+		}
+	}
+
+	public static String colorToString(TextColor color) {
+		if (color instanceof NamedTextColor) {
+			return color.toString();
+		}
+		return color.asHexString();
+	}
+
+	public static String colorToMiniMessage(TextColor color) {
+		return "<" + colorToString(color) + ">";
 	}
 }

@@ -18,10 +18,10 @@ public abstract class Channel {
 
 		if (channelClassId.equals(ChannelAnnouncement.CHANNEL_CLASS_ID)) {
 			return ChannelAnnouncement.fromJsonInternal(channelJson);
-		} else if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
-			return ChannelLocal.fromJsonInternal(channelJson);
 		} else if (channelClassId.equals(ChannelGlobal.CHANNEL_CLASS_ID)) {
 			return ChannelGlobal.fromJsonInternal(channelJson);
+		} else if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
+			return ChannelLocal.fromJsonInternal(channelJson);
 		} else if (channelClassId.equals(ChannelParty.CHANNEL_CLASS_ID)) {
 			return ChannelParty.fromJsonInternal(channelJson);
 		} else if (channelClassId.equals(ChannelWhisper.CHANNEL_CLASS_ID)) {

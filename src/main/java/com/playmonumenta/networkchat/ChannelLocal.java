@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
 import dev.jorel.commandapi.CommandAPI;
@@ -27,6 +28,7 @@ import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.transformation.Transformation;
@@ -354,8 +356,9 @@ public class ChannelLocal extends Channel {
 			.markdownFlavor(DiscordFlavor.get())
 			.build();
 
-		// TODO Use configurable formatting, not hard-coded formatting.
-		String prefix = "<gray><hover:show_text:\"<yellow>Local Channel\">\\<<yellow><channel_name><gray>></hover> <white><sender> <gray>» ";
+		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
+		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		UUID senderUuid = message.getSenderId();
 		Identity senderIdentity;
@@ -368,7 +371,7 @@ public class ChannelLocal extends Channel {
 		Component fullMessage = Component.empty()
 		    .append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName),
 		        Template.of("sender", message.getSenderComponent()))))
-		    .append(Component.empty().color(NamedTextColor.YELLOW).append(message.getMessage()));
+		    .append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);

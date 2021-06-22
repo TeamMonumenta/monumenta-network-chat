@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -26,6 +27,7 @@ import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.transformation.Transformation;
@@ -338,12 +340,13 @@ public class ChannelAnnouncement extends Channel {
 			.markdownFlavor(DiscordFlavor.get())
 			.build();
 
-		// TODO Use configurable formatting, not hard-coded formatting.
-		String prefix = "<gray><hover:show_text:\"<red>Announcement Channel\">\\<<red><channel_name><gray>></hover> ";
+		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
+		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		Component fullMessage = Component.empty()
 		    .append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName))))
-		    .append(Component.empty().color(NamedTextColor.RED).append(message.getMessage()));
+		    .append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(Identity.nil(), fullMessage, MessageType.SYSTEM);
 		if (recipient instanceof Player) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
