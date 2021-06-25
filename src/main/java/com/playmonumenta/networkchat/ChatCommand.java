@@ -20,6 +20,7 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -654,13 +655,12 @@ public class ChatCommand {
 
 					Component senderComponent = MessagingUtils.senderComponent(sender);
 					sender.sendMessage(Component.text(id + " is " + format, color)
-						.insertion("/chattest format default " + id + " " + format));
+						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
 					if (id.equals("player")) {
 						sender.sendMessage(Component.text("Example: ").append(senderComponent));
 					} else {
 						String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
 						Component fullMessage = Component.empty()
-							.insertion("/chattest format default " + id + " " + format)
 							.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
 								Template.of("sender", senderComponent),
 								Template.of("receiver", senderComponent))))
@@ -696,7 +696,7 @@ public class ChatCommand {
 
 					Component senderComponent = MessagingUtils.senderComponent(sender);
 					sender.sendMessage(Component.text(id + " set to " + format, color)
-						.insertion("/chattest format default " + id + " " + format));
+						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
 					if (id.equals("player")) {
 						sender.sendMessage(Component.text("Example: ").append(senderComponent));
 					} else {

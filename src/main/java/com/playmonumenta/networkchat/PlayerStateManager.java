@@ -242,7 +242,7 @@ public class PlayerStateManager implements Listener {
 
 		Channel channel = playerState.getActiveChannel();
 		if (channel == null) {
-			player.sendMessage(Component.text("You have no active channel. Please set one with /chattest and try again.", NamedTextColor.RED));
+			player.sendMessage(Component.text("You have no active channel. Please set one with /chat and try again.", NamedTextColor.RED));
 			event.setCancelled(true);
 			return;
 		}

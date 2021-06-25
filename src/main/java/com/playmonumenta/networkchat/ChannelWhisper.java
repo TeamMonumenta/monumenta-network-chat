@@ -155,7 +155,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
 		// Setting up new whisper channels will be done via /msg, /tell, /w, and similar,
-		// not through /chattest new Blah whisper. The provided arguments are ignored.
+		// not through /chat new Blah whisper. The provided arguments are ignored.
 		List<Argument> arguments = new ArrayList<>();
 
 		for (String command : WHISPER_COMMANDS) {
