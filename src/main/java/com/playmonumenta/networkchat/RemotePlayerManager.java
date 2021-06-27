@@ -158,8 +158,14 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
+	public static void refreshLocalPlayers() {
+		for (Player player : Bukkit.getOnlinePlayers()) {
+			refreshPlayerName(player);
+		}
+	}
+
 	// Run this on any player to update their displayed name
-	public void refreshPlayerName(Player player) {
+	public static void refreshPlayerName(Player player) {
 		String playerName = player.getName();
 		UUID playerUuid = player.getUniqueId();
 		Component playerComponent = MessagingUtils.playerComponent(player);
@@ -232,7 +238,7 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
-	private void refreshResponse() {
+	private static void refreshResponse() {
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			JsonObject remotePlayerData = new JsonObject();
 			remotePlayerData.addProperty("isRefresh", false);
