@@ -345,6 +345,8 @@ public class ChannelManager implements Listener {
 		}
 
 		mChannels.remove(channelId);
+		mChannelNames.remove(channelId);
+		mChannelIdsByName.remove(channelName);
 
 		// Update Redis
 		RedisAsyncCommands<String, String> redisAsync = RedisAPI.getInstance().async();
