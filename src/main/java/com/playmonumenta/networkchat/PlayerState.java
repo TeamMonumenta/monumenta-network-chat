@@ -468,7 +468,6 @@ public class PlayerState {
 		if (lastKnownName != null) {
 			mWatchedChannelIds.put(channelId, loadedChannel.getName());
 		}
-		UUID whisperRecipientUuid = null;
 		boolean showAlert = true;
 		if (lastKnownName == null) {
 			lastKnownName = mUnwatchedChannelIds.get(channelId);
@@ -476,6 +475,7 @@ public class PlayerState {
 				mUnwatchedChannelIds.put(channelId, loadedChannel.getName());
 			}
 		}
+		UUID whisperRecipientUuid = null;
 		if (lastKnownName == null) {
 			whisperRecipientUuid = mWhisperRecipientByChannels.get(channelId);
 			if (whisperRecipientUuid != null) {
@@ -484,7 +484,7 @@ public class PlayerState {
 			}
 		}
 		if (lastKnownName == null) {
-			lastKnownName = "...something?...";
+			return;
 		}
 		if (loadedChannel == null) {
 			// Channel was deleted
