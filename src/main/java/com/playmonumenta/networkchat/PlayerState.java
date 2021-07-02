@@ -228,10 +228,6 @@ public class PlayerState {
 		return mDefaultChannelSettings;
 	}
 
-	public DefaultChannels defaultChannels() {
-		return mDefaultChannels;
-	}
-
 	public ChannelSettings channelSettings(Channel channel) {
 		UUID channelId = channel.getUniqueId();
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
@@ -240,6 +236,10 @@ public class PlayerState {
 			mChannelSettings.put(channelId, channelSettings);
 		}
 		return channelSettings;
+	}
+
+	public DefaultChannels defaultChannels() {
+		return mDefaultChannels;
 	}
 
 	public void receiveMessage(Message message) {
@@ -264,8 +264,8 @@ public class PlayerState {
 
 	// Re-show chat with deleted messages removed, even while paused.
 	public void refreshChat() {
-		int blank_messages = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
-		for (int i = 0; i < blank_messages; ++i) {
+		int blankMessages = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
+		for (int i = 0; i < blankMessages; ++i) {
 			getPlayer().sendMessage(Component.empty());
 		}
 
@@ -450,7 +450,7 @@ public class PlayerState {
 		if (shouldPlaySound) {
 			Player player = getPlayer();
 			// TODO Customize sound
-			player.playSound​(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 0.5f);
+			player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 0.5f);
 		}
 	}
 
