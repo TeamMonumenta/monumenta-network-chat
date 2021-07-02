@@ -1,9 +1,7 @@
 package com.playmonumenta.networkchat;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import com.google.gson.JsonElement;
@@ -21,13 +19,13 @@ import org.bukkit.command.CommandSender;
 
 // Permissions to listen or talk in a channel
 public class MessageVisibility {
-	public static enum VisibilityKey {
+	public enum VisibilityKey {
 		JOIN("join"),
 		DEATH("death");
 
 		String mKey;
 
-		private VisibilityKey(String s) {
+		VisibilityKey(String s) {
 			mKey = s;
 		}
 
@@ -44,7 +42,7 @@ public class MessageVisibility {
 		}
 	}
 
-	public static enum VisibilityValue {
+	public enum VisibilityValue {
 		DEFAULT("default"),
 		ALWAYS("always"),
 		LOCAL("local"),
@@ -53,7 +51,7 @@ public class MessageVisibility {
 
 		String mValue;
 
-		private VisibilityValue(String s) {
+		VisibilityValue(String s) {
 			mValue = s;
 		}
 

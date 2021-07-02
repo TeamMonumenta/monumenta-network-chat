@@ -54,13 +54,13 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mDefaultMessageColors.put(ChannelAnnouncement.CHANNEL_CLASS_ID, NamedTextColor.RED);
 		mDefaultMessageFormats.put(ChannelAnnouncement.CHANNEL_CLASS_ID, "<gray><hover:show_text:\"<channel_color>Announcement Channel\">\\<<channel_color><channel_name><gray>></hover>");
 		mDefaultMessageColors.put(ChannelGlobal.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
-		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><hover:show_text:\"<channel_color>Global Channel\">\\<<channel_color><channel_name><gray>></hover> <white><sender> <gray>»");
+		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><hover:show_text:\"<channel_color>Global Channel\">\\<<channel_color><channel_name><gray>></hover> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelLocal.CHANNEL_CLASS_ID, NamedTextColor.YELLOW);
-		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><hover:show_text:\"<channel_color>Local Channel\">\\<<channel_color><channel_name><gray>></hover> <white><sender> <gray>»");
+		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><hover:show_text:\"<channel_color>Local Channel\">\\<<channel_color><channel_name><gray>></hover> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelParty.CHANNEL_CLASS_ID, NamedTextColor.LIGHT_PURPLE);
-		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><hover:show_text:\"<channel_color>Party Channel\">\\<<channel_color><channel_name><gray>></hover> <white><sender> <gray>»");
+		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><hover:show_text:\"<channel_color>Party Channel\">\\<<channel_color><channel_name><gray>></hover> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelWhisper.CHANNEL_CLASS_ID, NamedTextColor.GRAY);
-		mDefaultMessageFormats.put(ChannelWhisper.CHANNEL_CLASS_ID, "<channel_color><sender> whispers to <receiver> <gray>»");
+		mDefaultMessageFormats.put(ChannelWhisper.CHANNEL_CLASS_ID, "<channel_color><sender> whispers to <receiver> <gray>\u00bb");
 
 		mMessageColors.putAll(mDefaultMessageColors);
 		mMessageFormats.putAll(mDefaultMessageFormats);

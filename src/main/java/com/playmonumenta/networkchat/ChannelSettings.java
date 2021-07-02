@@ -1,9 +1,7 @@
 package com.playmonumenta.networkchat;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import com.google.gson.JsonElement;
@@ -21,13 +19,13 @@ import org.bukkit.command.CommandSender;
 
 // Settings for a given channel, same structure for channel default and player preference
 public class ChannelSettings {
-	public static enum FlagKey {
+	public enum FlagKey {
 		IS_LISTENING("is_listening"),
 		MESSAGES_PLAY_SOUND("messages_play_sound");
 
 		String mKey;
 
-		private FlagKey(String s) {
+		FlagKey(String s) {
 			mKey = s;
 		}
 
@@ -44,14 +42,14 @@ public class ChannelSettings {
 		}
 	}
 
-	public static enum FlagValue {
+	public enum FlagValue {
 		DEFAULT("default"),
 		FALSE("false"),
 		TRUE("true");
 
 		String mValue;
 
-		private FlagValue(String s) {
+		FlagValue(String s) {
 			mValue = s;
 		}
 

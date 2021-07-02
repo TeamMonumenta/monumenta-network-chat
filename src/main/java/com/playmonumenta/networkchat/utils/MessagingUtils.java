@@ -20,13 +20,11 @@ import me.clip.placeholderapi.PlaceholderAPI;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;

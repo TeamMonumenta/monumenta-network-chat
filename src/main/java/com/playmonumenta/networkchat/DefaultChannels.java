@@ -1,6 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -8,7 +7,6 @@ import java.util.UUID;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
@@ -40,7 +38,7 @@ public class DefaultChannels {
 				try {
 					defaults.mDefaultsByType.put(key, UUID.fromString(valueJson.getAsString()));
 				} catch (Exception e) {
-					;
+					NetworkChatPlugin.getInstance().getLogger().warning("Failed to set default for " + key);
 				}
 			}
 		}

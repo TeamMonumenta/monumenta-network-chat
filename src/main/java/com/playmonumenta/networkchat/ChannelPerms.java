@@ -1,9 +1,7 @@
 package com.playmonumenta.networkchat;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import com.google.gson.JsonElement;
@@ -21,13 +19,13 @@ import org.bukkit.command.CommandSender;
 
 // Permissions to listen or talk in a channel
 public class ChannelPerms {
-	public static enum FlagKey {
+	public enum FlagKey {
 		MAY_CHAT("may_chat"),
 		MAY_LISTEN("may_listen");
 
 		String mKey;
 
-		private FlagKey(String s) {
+		FlagKey(String s) {
 			mKey = s;
 		}
 
@@ -44,14 +42,14 @@ public class ChannelPerms {
 		}
 	}
 
-	public static enum FlagValue {
+	public enum FlagValue {
 		DEFAULT("default"),
 		FALSE("false"),
 		TRUE("true");
 
 		String mValue;
 
-		private FlagValue(String s) {
+		FlagValue(String s) {
 			mValue = s;
 		}
 
