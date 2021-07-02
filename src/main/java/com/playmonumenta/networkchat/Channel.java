@@ -40,18 +40,14 @@ public abstract class Channel {
 
 	// OVERRIDE ME - Register commands for new channels; continues off an existing argument list of literals.
 	// Channel ID is at index = prefixArguments.size() - 1
-	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
-		;
-	}
+	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {}
 
 	public abstract String getClassId();
 
 	// Return this channel's UUID
 	public abstract UUID getUniqueId();
 
-	public void markModified() {
-		;
-	}
+	public void markModified() {}
 
 	// Used to make sure this is the latest version
 	public Instant lastModified() {
@@ -81,9 +77,7 @@ public abstract class Channel {
 		return null;
 	}
 
-	public void clearPlayerPerms(UUID playerId) {
-		;
-	}
+	public void clearPlayerPerms(UUID playerId) {}
 
 	public boolean mayManage(CommandSender sender) {
 		return sender.hasPermission("networkchat.moderator");

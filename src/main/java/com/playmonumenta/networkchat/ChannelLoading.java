@@ -56,14 +56,10 @@ public class ChannelLoading extends Channel {
 	}
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
-	public void distributeMessage(Message message) {
-		;
-	}
+	public void distributeMessage(Message message) {}
 
 	// The channel is loading - we can't determine who can see this yet!
-	protected void showMessage(CommandSender recipient, Message message) {
-		;
-	}
+	protected void showMessage(CommandSender recipient, Message message) {}
 
 	// Register a player state waiting for this channel to finish loading.
 	public void addWaitingPlayerState(PlayerState playerState) {
