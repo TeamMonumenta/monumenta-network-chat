@@ -1,6 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.lang.NumberFormatException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -246,7 +244,6 @@ public class PlayerState {
 		if (message.isDeleted()) {
 			return;
 		}
-		UUID channelId = message.getChannelUniqueId();
 
 		if (mChatPaused) {
 			if (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {

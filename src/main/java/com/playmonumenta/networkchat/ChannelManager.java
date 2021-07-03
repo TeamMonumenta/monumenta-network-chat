@@ -1,6 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Instant;
@@ -16,8 +15,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
@@ -32,7 +29,6 @@ import io.lettuce.core.output.ValueStreamingChannel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -245,19 +241,14 @@ public class ChannelManager implements Listener {
 
 		// Unregister any old channels as needed.
 		Channel oldChannel = mChannels.get(channelId);
-		boolean sendQueuedMessages = false;
 		if (oldChannel != null) {
-			if (oldChannel instanceof ChannelLoading) {
-				// It's safe to replace a loading channel with a loading one.
-				sendQueuedMessages = true;
-			} else {
+			if (!(oldChannel instanceof ChannelLoading)) {
 				// Unregister the old channel so the new one can load.
 				mChannels.remove(channelId);
 			}
 		}
 
 		// Continue registering the loaded channel.
-		String channelName = channel.getName();
 		mChannels.put(channelId, channel);
 
 		if (!(channel instanceof ChannelInviteOnly)) {
@@ -532,7 +523,6 @@ public class ChannelManager implements Listener {
 			// Abort unload attempt
 			return;
 		}
-		String channelName = channel.getName();
 
 		for (PlayerState playerState : PlayerStateManager.getPlayerStates().values()) {
 			if (playerState.isWatchingChannelId(channelId)) {

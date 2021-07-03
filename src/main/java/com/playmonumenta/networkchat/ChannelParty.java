@@ -1,7 +1,6 @@
 package com.playmonumenta.networkchat;
 
 import java.time.Instant;
-import java.util.Collection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,7 +88,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		ChannelParty channel = new ChannelParty(channelId, lastUpdate, name);
 
 		JsonArray participantsJson = channelJson.getAsJsonArray("participants");
-		Set<UUID> participants = new HashSet<>();
 		for (JsonElement participantJson : participantsJson) {
 			channel.addPlayer(UUID.fromString(participantJson.getAsString()), false);
 		}
