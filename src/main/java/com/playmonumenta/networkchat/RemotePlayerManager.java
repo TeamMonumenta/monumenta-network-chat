@@ -238,24 +238,6 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
-	private static void refreshResponse() {
-		for (Player player : Bukkit.getOnlinePlayers()) {
-			JsonObject remotePlayerData = new JsonObject();
-			remotePlayerData.addProperty("isRefresh", false);
-			remotePlayerData.addProperty("isHidden", false);
-			remotePlayerData.addProperty("isOnline", true);
-			remotePlayerData.addProperty("shard", mShardName);
-			remotePlayerData.addProperty("playerName", player.getName());
-			remotePlayerData.addProperty("playerUuid", player.getUniqueId().toString());
-
-			try {
-				NetworkRelayAPI.sendBroadcastMessage(REMOTE_PLAYER_CHANNEL, remotePlayerData);
-			} catch (Exception e) {
-				mPlugin.getLogger().severe("Failed to broadcast " + REMOTE_PLAYER_CHANNEL);
-			}
-		}
-	}
-
 	@EventHandler(priority = EventPriority.LOW)
 	public void destOnlineEvent(DestOnlineEvent event) {
 		String remoteShardName = event.getDest();
@@ -342,7 +324,7 @@ public class RemotePlayerManager implements Listener {
 			remotePlayerChange(data);
 			break;
 		case REFRESH_CHANNEL:
-			refreshResponse();
+			refreshLocalPlayers();
 			break;
 		default:
 			break;
