@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.destroystokyo.paper.ClientOption;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -408,6 +409,15 @@ public class PlayerState {
 	}
 
 	public boolean isListening(Channel channel) {
+		switch (getPlayer().getClientOption(ClientOption.CHAT_VISIBILITY)) {
+		case HIDDEN:
+			return false;
+		case SYSTEM:
+			if (!(channel instanceof ChannelAnnouncement)) {
+				return false;
+			}
+		}
+
 		UUID channelId = channel.getUniqueId();
 
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
