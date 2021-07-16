@@ -202,22 +202,18 @@ public class PlayerStateManager implements Listener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void playerQuitEvent(PlayerQuitEvent event) throws Exception {
-		Bukkit.getScheduler().runTaskLater(mPlugin, () -> {
-			Player player = event.getPlayer();
-			UUID playerId = player.getUniqueId();
+		Player player = event.getPlayer();
+		UUID playerId = player.getUniqueId();
 
-			if (!player.isOnline()) {
-				PlayerState oldState = mPlayerStates.get(playerId);
-				mPlayerStates.remove(playerId);
-				if (oldState != null) {
-					for (UUID channelId : oldState.getWatchedChannelIds()) {
-						Channel channel = ChannelManager.getChannel(channelId);
-						// This conveniently only unloads channels if they're not in use.
-						ChannelManager.unloadChannel(channel);
-					}
-				}
+		PlayerState oldState = mPlayerStates.get(playerId);
+		mPlayerStates.remove(playerId);
+		if (oldState != null) {
+			for (UUID channelId : oldState.getWatchedChannelIds()) {
+				Channel channel = ChannelManager.getChannel(channelId);
+				// This conveniently only unloads channels if they're not in use.
+				ChannelManager.unloadChannel(channel);
 			}
-		}, 100);
+		}
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
