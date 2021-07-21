@@ -14,7 +14,7 @@
         <maven.build.timestamp.format>yyyyMMdd-HHmmss</maven.build.timestamp.format>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <minecraft.server.version>1.16.3-R0.1-SNAPSHOT</minecraft.server.version>
+        <minecraft.server.version>1.16.5-R0.1-SNAPSHOT</minecraft.server.version>
     </properties>
 
     <distributionManagement>
@@ -31,43 +31,68 @@
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
-            <id>commandapi</id>
-            <url>https://raw.githubusercontent.com/JorelAli/CommandAPI/mvn-repo/</url>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
         <repository>
             <id>monumenta-network-relay</id>
-			<url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/</url>
+            <url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/</url>
         </repository>
         <repository>
             <id>monumenta-redis-sync</id>
             <url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-redis-sync/master/mvn-repo/</url>
         </repository>
+        <repository>
+            <id>placeholderapi</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
+        <repository>
+            <id>sonatype-oss-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </repository>
     </repositories>
 
     <dependencies>
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
+            <groupId>com.destroystokyo.paper</groupId>
+            <artifactId>paper-api</artifactId>
             <version>${minecraft.server.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>dev.jorel</groupId>
+            <groupId>dev.jorel.CommandAPI</groupId>
             <artifactId>commandapi-core</artifactId>
-            <version>5.2</version>
+            <version>6.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.playmonumenta</groupId>
             <artifactId>monumenta-network-relay</artifactId>
-            <version>0.3</version>
+            <version>0.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.playmonumenta</groupId>
             <artifactId>redissync</artifactId>
-            <version>1.7</version>
+            <version>2.3</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+            <version>5.3.5.RELEASE</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+         <groupId>me.clip</groupId>
+          <artifactId>placeholderapi</artifactId>
+          <version>2.10.9</version>
+         <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-text-minimessage</artifactId>
+            <version>4.1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
@@ -94,6 +119,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.7.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.1.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -148,6 +178,64 @@
                 <configuration>
                     <configLocation>${basedir}/checkstyle.xml</configLocation>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <createDependencyReducedPom>true</createDependencyReducedPom>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <includes>
+                                <include>META-INF/**</include>
+                                <include>plugin.yml</include>
+                                <include>com/playmonumenta/**</include>
+                                <include>net/kyori/adventure/text/minimessage/**</include>
+                                <include>org/checkerframework/**</include>
+                                <include>org/jetbrains/annotations/**</include>
+                                <include>org/intellij/lang/annotations/**</include>
+                            </includes>
+                            <excludes>
+                                <!-- Avoid "Invalid signature file digest" error -->
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <mainClass>com.playmonumenta.networkchat.NetworkChatPlugin</mainClass>
+                        </transformer>
+                    </transformers>
+                    <relocations>
+                        <relocation>
+                            <pattern>net.kyori.adventure.text.minimessage</pattern>
+                            <shadedPattern>com.playmonumenta.networkchat.internal.net.kyori.adventure.text.minimessage</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.checkerframework</pattern>
+                            <shadedPattern>com.playmonumenta.networkchat.internal.org.checkerframework</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.jetbrains.annotations</pattern>
+                            <shadedPattern>com.playmonumenta.networkchat.internal.org.jetbrains.annotations</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.intellij.lang.annotations</pattern>
+                            <shadedPattern>com.playmonumenta.networkchat.internal.org.intellij.lang.annotations</shadedPattern>
+                        </relocation>
+                    </relocations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

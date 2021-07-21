@@ -1,3 +1,6 @@
 # If this is true, join messages will be broadcast to other servers
 # If false, no join messages will appear
 join-messages-enabled: true
+# If this is true, typing in chat without a command sends messages through this plugin
+# If false, this plugin will only handle messages sent via commands
+is-default-chat: true
