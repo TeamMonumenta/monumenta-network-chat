@@ -653,10 +653,4 @@ public class ChannelManager implements Listener {
 			break;
 		}
 	}
-
-	protected static void resetAll() {
-		RedisAPI.getInstance().async().del(REDIS_CHANNEL_NAME_TO_UUID_PATH);
-		RedisAPI.getInstance().async().del(REDIS_CHANNELS_PATH);
-		RedisAPI.getInstance().async().del(REDIS_CHANNEL_PARTICIPANTS_PATH);
-	}
 }

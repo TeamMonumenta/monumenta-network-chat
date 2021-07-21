@@ -340,6 +340,7 @@ public class ChannelGlobal extends Channel {
 
 		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
+			.replace("<message_gui_cmd>", message.getGuiCommand())
 		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		UUID senderUuid = message.getSenderId();
@@ -351,9 +352,9 @@ public class ChannelGlobal extends Channel {
 		}
 
 		Component fullMessage = Component.empty()
-		    .append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName),
-		        Template.of("sender", message.getSenderComponent()))))
-		    .append(Component.empty().color(channelColor).append(message.getMessage()));
+			.append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName),
+				Template.of("sender", message.getSenderComponent()))))
+			.append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);

@@ -1,5 +1,10 @@
 package com.playmonumenta.networkchat;
 
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -14,6 +19,7 @@ public class MessageManager implements Listener {
 
 	private static MessageManager INSTANCE = null;
 	private static Plugin mPlugin = null;
+	private static Map<UUID, WeakReference<Message>> mMessages = new HashMap<>();
 
 	private MessageManager(Plugin plugin) {
 		INSTANCE = this;
@@ -29,6 +35,14 @@ public class MessageManager implements Listener {
 			INSTANCE = new MessageManager(plugin);
 		}
 		return INSTANCE;
+	}
+
+	public static Message getMessage(UUID messageId) {
+		WeakReference<Message> messageWeakReference = mMessages.get(messageId);
+		if (messageWeakReference == null) {
+			return null;
+		}
+		return messageWeakReference.get();
 	}
 
 	public void broadcastMessage(Message message) throws Exception {
@@ -67,5 +81,27 @@ public class MessageManager implements Listener {
 		} else {
 			channel.distributeMessage(message);
 		}
+	}
+
+	// Internal use only; register a weak reference to a Message for command use
+	protected static void registerMessage(Message message) {
+		UUID messageId = message.getUniqueId();
+		if (messageId == null) {
+			return;
+		}
+		if (mMessages.containsKey(messageId)) {
+			mPlugin.getLogger().severe("Attempting to register previously registered message ID!");
+		}
+		mMessages.put(messageId, new WeakReference<Message>(message));
+	}
+
+	// Internal use only; unregister a weak reference to a Message when the Message is finalized
+	protected static void unregisterMessage(UUID messageId) {
+		if (messageId == null) {
+			return;
+		}
+		mPlugin.getLogger().finest(() -> "unregistering message ID " + messageId.toString()
+		                                 + ", tracked message IDs: " + Integer.toString(mMessages.size()));
+		mMessages.remove(messageId);
 	}
 }

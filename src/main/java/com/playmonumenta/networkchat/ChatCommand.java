@@ -158,22 +158,14 @@ public class ChatCommand {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
+			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel Name").overrideSuggestions((sender) -> {
 				return ChannelManager.getChatableChannelNames(sender).toArray(new String[0]);
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					return deleteChannel(sender, (String)args[1]);
-				})
-				.register();
-
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("resetall"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					return resetAll(sender);
+					return deleteChannel(sender, (String)args[2]);
 				})
 				.register();
 
@@ -711,6 +703,28 @@ public class ChatCommand {
 					return 1;
 				})
 				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("delete"));
+			arguments.add(new MultiLiteralArgument("message"));
+			arguments.add(new StringArgument("message ID"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return deleteMessage(sender, (String) args[2]);
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("gui"));
+			arguments.add(new MultiLiteralArgument("message"));
+			arguments.add(new GreedyStringArgument("message ID"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					messageGui(baseCommand, sender, (String) args[2]);
+				})
+				.register();
 		}
 
 		new CommandAPICommand("pausechat")
@@ -784,23 +798,13 @@ public class ChatCommand {
 	}
 
 	private static int deleteChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.delete")) {
+		if (!sender.hasPermission("networkchat.delete.channel")) {
 			CommandAPI.fail("You do not have permission to delete channels.");
 		}
 
 		// May call CommandAPI.fail()
 		ChannelManager.deleteChannel(channelName);
 		sender.sendMessage(Component.text("Channel " + channelName + " deleted.", NamedTextColor.GRAY));
-		return 1;
-	}
-
-	private static int resetAll(CommandSender sender) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.resetall")) {
-			CommandAPI.fail("You do not have permission to delete channels.");
-		}
-
-		ChannelManager.resetAll();
-		sender.sendMessage(Component.text("All things reset.", NamedTextColor.RED));
 		return 1;
 	}
 
@@ -983,5 +987,104 @@ public class ChatCommand {
 			target.sendMessage(Component.text("Chat paused.", NamedTextColor.GRAY));
 		}
 		return 1;
+	}
+
+	private static int deleteMessage(CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
+		if (!sender.hasPermission("networkchat.delete.message")) {
+			CommandAPI.fail("You do not have permission to delete channels.");
+		}
+
+		UUID messageId;
+		try {
+			messageId = UUID.fromString(messageIdStr);
+		} catch (Exception e) {
+			CommandAPI.fail("Invalid message ID. Click a channel name to open the message GUI.");
+			return 0;
+		}
+
+		Message message = MessageManager.getMessage(messageId);
+		if (message == null) {
+			CommandAPI.fail("That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
+		}
+		message.markDeleted();
+		sender.sendMessage(Component.text("Message deleted from this shard, chat not refreshed. This feature is WIP."));
+		return 1;
+	}
+
+	private static void messageGui(String baseCommand, CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
+		if (!sender.hasPermission("networkchat.gui.message")) {
+			CommandAPI.fail("You do not have permission to open the message GUI.");
+		}
+
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player)) {
+			CommandAPI.fail("This command can only be run as a player.");
+		}
+
+		Player target = (Player) callee;
+		PlayerState playerState = PlayerStateManager.getPlayerState(target);
+		if (playerState == null) {
+			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+		}
+
+		UUID messageId;
+		try {
+			messageId = UUID.fromString(messageIdStr);
+		} catch (Exception e) {
+			CommandAPI.fail("Invalid message ID. Click a channel name to open the message GUI.");
+			return;
+		}
+
+		Message message = MessageManager.getMessage(messageId);
+		if (message == null) {
+			CommandAPI.fail("That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
+		}
+		Component gui = Component.empty();
+
+		Channel channel = message.getChannel();
+		if (channel != null) {
+			gui = gui.append(Component.text(" "))
+				.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
+					.hoverEvent(Component.text("Leave channel", NamedTextColor.LIGHT_PURPLE))
+					.clickEvent(ClickEvent.runCommand("/" + baseCommand + " leave " + channel.getName())));
+			gui = gui.append(Component.text(" "))
+				.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
+					.hoverEvent(Component.text("My channel settings", NamedTextColor.LIGHT_PURPLE))
+					.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " settings channel " + channel.getName() + " ")));
+			if (target.hasPermission("networkchat.rename")) {
+				gui = gui.append(Component.text(" "))
+					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
+						.hoverEvent(Component.text("Rename channel", NamedTextColor.LIGHT_PURPLE))
+						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " rename " + channel.getName() + " ")));
+			}
+			if (target.hasPermission("networkchat.channel.delete")) {
+				gui = gui.append(Component.text(" "))
+					.append(Component.text("[]", NamedTextColor.RED)
+						.hoverEvent(Component.text("Delete channel", NamedTextColor.RED))
+						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete channel " + channel.getName())));
+			}
+		}
+
+		if (message.senderIsPlayer()) {
+			UUID fromId = message.getSenderId();
+			String fromName = message.getSenderName();
+			Component fromComponent = message.getSenderComponent();
+
+			if (channel.mayManage(target)) {
+				gui = gui.append(Component.text(" "))
+					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
+						.hoverEvent(Component.text("Sender channel permissions", NamedTextColor.LIGHT_PURPLE))
+						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " permissions channel " + channel.getName() + " player " + fromName + " ")));
+			}
+		}
+
+		if (target.hasPermission("networkchat.delete.message")) {
+			gui = gui.append(Component.text(" "))
+				.append(Component.text("[]", NamedTextColor.RED)
+					.hoverEvent(Component.text("Delete message", NamedTextColor.RED))
+					.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete message " + messageIdStr)));
+		}
+
+		target.sendMessage(gui);
 	}
 }

@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
@@ -20,6 +21,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 public class Message {
+	private final UUID mId;
 	private final Instant mInstant;
 	private final UUID mChannelId;
 	private final UUID mSenderId;
@@ -31,7 +33,8 @@ public class Message {
 	private final Component mMessage;
 	private boolean mIsDeleted = false;
 
-	private Message(Instant instant, UUID channelId, UUID senderId, String senderName, NamespacedKey senderType, boolean senderIsPlayer, Component senderComponent, JsonObject extraData, Component message) {
+	private Message(UUID id, Instant instant, UUID channelId, UUID senderId, String senderName, NamespacedKey senderType, boolean senderIsPlayer, Component senderComponent, JsonObject extraData, Component message) {
+		mId = id;
 		mInstant = instant;
 		mChannelId = channelId;
 		mSenderId = senderId;
@@ -41,10 +44,12 @@ public class Message {
 		mSenderComponent = senderComponent;
 		mExtraData = extraData;
 		mMessage = message;
+		MessageManager.registerMessage(this);
 	}
 
 	// Normally called through a channel
 	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, Component message) {
+		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
 		UUID senderId = null;
@@ -55,7 +60,7 @@ public class Message {
 		}
 		boolean senderIsPlayer = sender instanceof Player;
 		Component senderComponent = MessagingUtils.senderComponent(sender);
-		return new Message(instant, channelId, senderId, sender.getName(), senderType, senderIsPlayer, senderComponent, extraData, message);
+		return new Message(id, instant, channelId, senderId, sender.getName(), senderType, senderIsPlayer, senderComponent, extraData, message);
 	}
 
 	// Normally called through a channel
@@ -79,6 +84,15 @@ public class Message {
 
 	// For when receiving remote messages
 	protected static Message fromJson(JsonObject object) {
+		UUID id = null;
+		if (object.get("id") != null) {
+			id = UUID.fromString(object.get("id").getAsString());
+		}
+		Message existingMessage = MessageManager.getMessage(id);
+		if (existingMessage != null) {
+			return existingMessage;
+		}
+
 		Instant instant = Instant.ofEpochMilli(object.get("instant").getAsLong());
 		UUID channelId = UUID.fromString(object.get("channelId").getAsString());
 		UUID senderId = null;
@@ -98,12 +112,13 @@ public class Message {
 		}
 		Component message = GsonComponentSerializer.gson().deserializeFromTree(object.get("message"));
 
-		return new Message(instant, channelId, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);
+		return new Message(id, instant, channelId, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);
 	}
 
 	protected JsonObject toJson() {
 		JsonObject object = new JsonObject();
 
+		object.addProperty("id", mId.toString());
 		object.addProperty("instant", mInstant.toEpochMilli());
 		object.addProperty("channelId", mChannelId.toString());
 		if (mSenderId != null) {
@@ -121,6 +136,26 @@ public class Message {
 		object.add("message", GsonComponentSerializer.gson().serializeToTree(mMessage));
 
 		return object;
+	}
+
+	@Override protected void finalize() throws Throwable {
+		MessageManager.unregisterMessage(mId);
+		super.finalize();
+	}
+
+	public UUID getUniqueId() {
+		return mId;
+	}
+
+	public String getGuiCommand() {
+		if (mId == null) {
+			return "/chat gui";
+		}
+		return "/chat gui message " + mId.toString();
+	}
+
+	public ClickEvent getGuiClickEvent() {
+		return ClickEvent.runCommand(getGuiCommand());
 	}
 
 	public Instant getInstant() {
@@ -181,7 +216,7 @@ public class Message {
 		return true;
 	}
 
-	// This should be called by the manager to ensure chat is resent.
+	// TODO apply on all shards, ensure chat is resent.
 	protected void markDeleted() {
 		mIsDeleted = true;
 	}

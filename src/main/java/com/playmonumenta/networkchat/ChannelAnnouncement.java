@@ -342,11 +342,12 @@ public class ChannelAnnouncement extends Channel {
 
 		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
-		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
+			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		Component fullMessage = Component.empty()
-		    .append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName))))
-		    .append(Component.empty().color(channelColor).append(message.getMessage()));
+			.append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName))))
+			.append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(Identity.nil(), fullMessage, MessageType.SYSTEM);
 		if (recipient instanceof Player) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
