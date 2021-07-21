@@ -31,8 +31,8 @@
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
-            <id>commandapi</id>
-            <url>https://raw.githubusercontent.com/JorelAli/CommandAPI/mvn-repo/</url>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
         <repository>
             <id>monumenta-network-relay</id>
@@ -60,9 +60,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>dev.jorel</groupId>
+            <groupId>dev.jorel.CommandAPI</groupId>
             <artifactId>commandapi-core</artifactId>
-            <version>5.2</version>
+            <version>6.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
