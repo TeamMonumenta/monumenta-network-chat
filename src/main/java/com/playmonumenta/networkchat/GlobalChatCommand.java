@@ -44,7 +44,7 @@ public class GlobalChatCommand {
 
 		name = name.replace("\\", "\\\\").replace("\"", "\\\"");
 		message = message.replace("\\", "\\\\").replace("\"", "\\\"");
-		String command = "tellraw @a [\"§7<§fG§7> §f" + name + " §7»§f" + message + "\"]";
+		String command = "tellraw @a [\"§7<§fG§7> §f" + name + " §7»§f " + message + "\"]";
 
 		try {
 			NetworkRelayAPI.sendBroadcastCommand(command);
