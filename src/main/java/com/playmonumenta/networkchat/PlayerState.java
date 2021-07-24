@@ -416,6 +416,7 @@ public class PlayerState {
 			if (!(channel instanceof ChannelAnnouncement)) {
 				return false;
 			}
+			break;
 		default:
 		}
 
