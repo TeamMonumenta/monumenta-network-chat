@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat;
 
+import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +20,7 @@ public class MessageManager implements Listener {
 
 	private static MessageManager INSTANCE = null;
 	private static Plugin mPlugin = null;
+	private static Cleaner mCleaner = Cleaner.create();
 	private static Map<UUID, WeakReference<Message>> mMessages = new HashMap<>();
 
 	private MessageManager(Plugin plugin) {
@@ -83,6 +85,11 @@ public class MessageManager implements Listener {
 		}
 	}
 
+	// Internal use only; used to clean up registered Messages.
+	protected static Cleaner cleaner() {
+		return mCleaner;
+	}
+
 	// Internal use only; register a weak reference to a Message for command use
 	protected static void registerMessage(Message message) {
 		UUID messageId = message.getUniqueId();
@@ -93,6 +100,8 @@ public class MessageManager implements Listener {
 			mPlugin.getLogger().severe("Attempting to register previously registered message ID!");
 		}
 		mMessages.put(messageId, new WeakReference<Message>(message));
+		mPlugin.getLogger().finest(() -> "New message ID " + messageId.toString()
+		                                 + ", tracked message IDs: " + Integer.toString(mMessages.size()));
 	}
 
 	// Internal use only; unregister a weak reference to a Message when the Message is finalized
