@@ -184,13 +184,13 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.clear();
 			// last element of prefixArguments is channel ID
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getPartyChannelNames(sender).toArray(new String[0]);
-			}));
+			arguments.add(new StringArgument("Channel ID").replaceSuggestions(info ->
+				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
+			));
 			arguments.add(new MultiLiteralArgument("invite"));
-			arguments.add(new StringArgument("Player").overrideSuggestions((sender) -> {
-				return RemotePlayerManager.onlinePlayerNames().toArray(new String[0]);
-			}));
+			arguments.add(new StringArgument("Player").replaceSuggestions(info ->
+				RemotePlayerManager.onlinePlayerNames().toArray(new String[0])
+			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -222,13 +222,13 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.clear();
 			// last element of prefixArguments is channel ID
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getPartyChannelNames(sender).toArray(new String[0]);
-			}));
+			arguments.add(new StringArgument("Channel ID").replaceSuggestions(info ->
+				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
+			));
 			arguments.add(new MultiLiteralArgument("kick"));
-			arguments.add(new StringArgument("Player").overrideSuggestions((sender) -> {
-				return RemotePlayerManager.onlinePlayerNames().toArray(new String[0]);
-			}));
+			arguments.add(new StringArgument("Player").replaceSuggestions(info ->
+				RemotePlayerManager.onlinePlayerNames().toArray(new String[0])
+			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -261,9 +261,9 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.clear();
 			// last element of prefixArguments is channel ID
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel ID").overrideSuggestions((sender) -> {
-				return ChannelManager.getPartyChannelNames(sender).toArray(new String[0]);
-			}));
+			arguments.add(new StringArgument("Channel ID").replaceSuggestions(info ->
+				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
+			));
 			arguments.add(new MultiLiteralArgument("leave"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)

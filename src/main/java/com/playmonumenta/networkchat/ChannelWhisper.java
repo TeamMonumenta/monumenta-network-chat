@@ -161,9 +161,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			CommandAPI.unregister(command);
 
 			arguments.clear();
-			arguments.add(new StringArgument("recipient").overrideSuggestions((sender) -> {
-				return RemotePlayerManager.onlinePlayerNames().toArray(new String[0]);
-			}));
+			arguments.add(new StringArgument("recipient").replaceSuggestions(info ->
+				RemotePlayerManager.onlinePlayerNames().toArray(new String[0])
+			));
 			new CommandAPICommand(command)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -172,9 +172,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 				.register();
 
 			arguments.clear();
-			arguments.add(new StringArgument("recipient").overrideSuggestions((sender) -> {
-				return RemotePlayerManager.onlinePlayerNames().toArray(new String[0]);
-			}));
+			arguments.add(new StringArgument("recipient").replaceSuggestions(info ->
+				RemotePlayerManager.onlinePlayerNames().toArray(new String[0])
+			));
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
 				.withArguments(arguments)

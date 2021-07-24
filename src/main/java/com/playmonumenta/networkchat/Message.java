@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat;
 
+import java.lang.ref.Cleaner;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
@@ -20,7 +21,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-public class Message {
+public class Message implements AutoCloseable {
 	private final UUID mId;
 	private final Instant mInstant;
 	private final UUID mChannelId;
@@ -138,9 +139,8 @@ public class Message {
 		return object;
 	}
 
-	@Override protected void finalize() throws Throwable {
+	public void close() {
 		MessageManager.unregisterMessage(mId);
-		super.finalize();
 	}
 
 	public UUID getUniqueId() {
