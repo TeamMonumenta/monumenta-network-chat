@@ -11,11 +11,14 @@ import java.util.UUID;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.BooleanArgument;
+import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
@@ -44,6 +47,8 @@ public class ChannelAnnouncement extends Channel {
 	private ChannelSettings mDefaultSettings;
 	private ChannelPerms mDefaultPerms;
 	private Map<UUID, ChannelPerms> mPlayerPerms;
+	private boolean mAutoJoin = true;
+	private String mChannelPermission = null;
 
 	private ChannelAnnouncement(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
@@ -109,6 +114,16 @@ public class ChannelAnnouncement extends Channel {
 			}
 		}
 
+		JsonPrimitive autoJoinJson = channelJson.getAsJsonPrimitive("autoJoin");
+		if (autoJoinJson != null && autoJoinJson.isBoolean()) {
+			channel.mAutoJoin = autoJoinJson.getAsBoolean();
+		}
+
+		JsonPrimitive channelPermissionJson = channelJson.getAsJsonPrimitive("channelPermission");
+		if (channelPermissionJson != null && channelPermissionJson.isString()) {
+			channel.mChannelPermission = channelPermissionJson.getAsString();
+		}
+
 		return channel;
 	}
 
@@ -127,6 +142,10 @@ public class ChannelAnnouncement extends Channel {
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
+		result.addProperty("autoJoin", mAutoJoin);
+		if (mChannelPermission != null) {
+			result.addProperty("channelPermission", mChannelPermission);
+		}
 		result.add("defaultSettings", mDefaultSettings.toJson());
 		result.add("defaultPerms", mDefaultPerms.toJson());
 		result.add("playerPerms", allPlayerPermsJson);
@@ -152,6 +171,51 @@ public class ChannelAnnouncement extends Channel {
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
 						newChannel = new ChannelAnnouncement(channelName);
+					} catch (Exception e) {
+						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+					}
+					// Throws an exception if the channel already exists, failing the command.
+					ChannelManager.registerNewChannel(sender, newChannel);
+				})
+				.register();
+
+			arguments.add(new BooleanArgument("Auto Join"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String)args[prefixArguments.size() - 1];
+					ChannelAnnouncement newChannel = null;
+					if (!sender.hasPermission("networkchat.new.announcement")) {
+						CommandAPI.fail("You do not have permission to make new announcement channels.");
+					}
+
+					// Ignore [prefixArguments.size()], which is just the channel class ID.
+					try {
+						newChannel = new ChannelAnnouncement(channelName);
+						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
+					} catch (Exception e) {
+						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+					}
+					// Throws an exception if the channel already exists, failing the command.
+					ChannelManager.registerNewChannel(sender, newChannel);
+				})
+				.register();
+
+			arguments.add(new GreedyStringArgument("Channel Permission"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String)args[prefixArguments.size() - 1];
+					ChannelAnnouncement newChannel = null;
+					if (!sender.hasPermission("networkchat.new.announcement")) {
+						CommandAPI.fail("You do not have permission to make new announcement channels.");
+					}
+
+					// Ignore [prefixArguments.size()], which is just the channel class ID.
+					try {
+						newChannel = new ChannelAnnouncement(channelName);
+						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
+						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
 					} catch (Exception e) {
 						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
@@ -224,11 +288,18 @@ public class ChannelAnnouncement extends Channel {
 		mPlayerPerms.remove(playerId);
 	}
 
+	public boolean shouldAutoJoin(PlayerState state) {
+		return mAutoJoin && mayListen(state.getPlayer());
+	}
+
 	public boolean mayChat(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.say")) {
 			return false;
 		}
 		if (!sender.hasPermission("networkchat.say.announcement")) {
+			return false;
+		}
+		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 			return false;
 		}
 
@@ -255,6 +326,9 @@ public class ChannelAnnouncement extends Channel {
 		if (!sender.hasPermission("networkchat.see.announcement")) {
 			return false;
 		}
+		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
+			return false;
+		}
 
 		if (!(sender instanceof Player)) {
 			return true;
@@ -275,34 +349,46 @@ public class ChannelAnnouncement extends Channel {
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.say")) {
-			CommandAPI.fail("You do not have permission to chat.");
-		}
-		if (!sender.hasPermission("networkchat.say.announcement")) {
-			CommandAPI.fail("You do not have permission to make announcements.");
-		}
-
-		if (!mayChat(sender)) {
-			CommandAPI.fail("You do not have permission to chat in this channel.");
-		}
-
 		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
-		if (sender.hasPermission("networkchat.transform.color")) {
+		if (sender instanceof Player) {
+			if (!sender.hasPermission("networkchat.say")) {
+				CommandAPI.fail("You do not have permission to chat.");
+			}
+			if (!sender.hasPermission("networkchat.say.announcement")) {
+				CommandAPI.fail("You do not have permission to make announcements.");
+			}
+			if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
+				CommandAPI.fail("You do not have permission to talk in " + mName + ".");
+			}
+
+			if (!mayChat(sender)) {
+				CommandAPI.fail("You do not have permission to chat in this channel.");
+			}
+
+			if (sender.hasPermission("networkchat.transform.color")) {
+				allowedTransforms.add(TransformationType.COLOR);
+			}
+			if (sender.hasPermission("networkchat.transform.decoration")) {
+				allowedTransforms.add(TransformationType.DECORATION);
+			}
+			if (sender.hasPermission("networkchat.transform.keybind")) {
+				allowedTransforms.add(TransformationType.KEYBIND);
+			}
+			if (sender.hasPermission("networkchat.transform.font")) {
+				allowedTransforms.add(TransformationType.FONT);
+			}
+			if (sender.hasPermission("networkchat.transform.gradient")) {
+				allowedTransforms.add(TransformationType.GRADIENT);
+			}
+			if (sender.hasPermission("networkchat.transform.rainbow")) {
+				allowedTransforms.add(TransformationType.RAINBOW);
+			}
+		} else {
 			allowedTransforms.add(TransformationType.COLOR);
-		}
-		if (sender.hasPermission("networkchat.transform.decoration")) {
 			allowedTransforms.add(TransformationType.DECORATION);
-		}
-		if (sender.hasPermission("networkchat.transform.keybind")) {
 			allowedTransforms.add(TransformationType.KEYBIND);
-		}
-		if (sender.hasPermission("networkchat.transform.font")) {
 			allowedTransforms.add(TransformationType.FONT);
-		}
-		if (sender.hasPermission("networkchat.transform.gradient")) {
 			allowedTransforms.add(TransformationType.GRADIENT);
-		}
-		if (sender.hasPermission("networkchat.transform.rainbow")) {
 			allowedTransforms.add(TransformationType.RAINBOW);
 		}
 

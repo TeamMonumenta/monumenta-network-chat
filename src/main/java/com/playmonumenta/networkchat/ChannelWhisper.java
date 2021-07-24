@@ -396,6 +396,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		mPlayerPerms.remove(playerId);
 	}
 
+	public boolean shouldAutoJoin(PlayerState state) {
+		return false;
+	}
+
 	public boolean mayChat(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.say")) {
 			return false;
@@ -448,15 +452,15 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
+		if (!(sender instanceof Player)) {
+			CommandAPI.fail("Only players may whisper.");
+		}
+
 		if (!sender.hasPermission("networkchat.say")) {
 			CommandAPI.fail("You do not have permission to chat.");
 		}
 		if (!sender.hasPermission("networkchat.say.whisper")) {
 			CommandAPI.fail("You do not have permission to whisper.");
-		}
-
-		if (!(sender instanceof Player)) {
-			CommandAPI.fail("Only players may whisper.");
 		}
 
 		if (!mayChat(sender)) {

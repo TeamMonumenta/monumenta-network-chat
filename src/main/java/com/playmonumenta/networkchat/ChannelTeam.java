@@ -2,6 +2,7 @@ package com.playmonumenta.networkchat;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,23 +10,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import com.playmonumenta.networkrelay.NetworkRelayAPI;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Team;
 
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
@@ -38,36 +40,32 @@ import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
-// A channel visible only to this shard (and moderators who opt in from elsewhere)
-public class ChannelLocal extends Channel {
-	public static final String CHANNEL_CLASS_ID = "local";
+// A channel visible to all shards
+public class ChannelTeam extends Channel {
+	public static final String CHANNEL_CLASS_ID = "team";
+	private static final String[] TEAM_COMMANDS = {"teammsg", "tm"};
 
 	private UUID mId;
 	private Instant mLastUpdate;
-	private String mShardName;
-	private String mName;
+	private String mTeamName;
 	private ChannelSettings mDefaultSettings;
 	private ChannelPerms mDefaultPerms;
 	private Map<UUID, ChannelPerms> mPlayerPerms;
-	private boolean mAutoJoin = true;
-	private String mChannelPermission = null;
 
-	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) throws Exception {
+	private ChannelTeam(UUID channelId, Instant lastUpdate, String teamName) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
-		mShardName = NetworkRelayAPI.getShardName();
-		mName = name;
+		mTeamName = teamName;
 
 		mDefaultSettings = new ChannelSettings();
 		mDefaultPerms = new ChannelPerms();
 		mPlayerPerms = new HashMap<>();
 	}
 
-	public ChannelLocal(String name) throws Exception {
+	public ChannelTeam(String teamName) {
 		mLastUpdate = Instant.now();
 		mId = UUID.randomUUID();
-		mShardName = NetworkRelayAPI.getShardName();
-		mName = name;
+		mTeamName = teamName;
 
 		mDefaultSettings = new ChannelSettings();
 		mDefaultPerms = new ChannelPerms();
@@ -77,7 +75,7 @@ public class ChannelLocal extends Channel {
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
-			throw new Exception("Cannot create ChannelLocal from channel ID " + channelClassId);
+			throw new Exception("Cannot create ChannelTeam from channel ID " + channelClassId);
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
@@ -85,9 +83,10 @@ public class ChannelLocal extends Channel {
 		if (channelJson.get("lastUpdate") != null) {
 			lastUpdate = Instant.ofEpochMilli(channelJson.get("lastUpdate").getAsLong());
 		}
-		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
-		ChannelLocal channel = new ChannelLocal(channelId, lastUpdate, name);
+		String teamName = channelJson.getAsJsonPrimitive("team").getAsString();
+
+		ChannelTeam channel = new ChannelTeam(channelId, lastUpdate, teamName);
 
 		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
 		if (defaultSettingsJson != null) {
@@ -116,16 +115,6 @@ public class ChannelLocal extends Channel {
 			}
 		}
 
-		JsonPrimitive autoJoinJson = channelJson.getAsJsonPrimitive("autoJoin");
-		if (autoJoinJson != null && autoJoinJson.isBoolean()) {
-			channel.mAutoJoin = autoJoinJson.getAsBoolean();
-		}
-
-		JsonPrimitive channelPermissionJson = channelJson.getAsJsonPrimitive("channelPermission");
-		if (channelPermissionJson != null && channelPermissionJson.isString()) {
-			channel.mChannelPermission = channelPermissionJson.getAsString();
-		}
-
 		return channel;
 	}
 
@@ -143,11 +132,8 @@ public class ChannelLocal extends Channel {
 		result.addProperty("type", CHANNEL_CLASS_ID);
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
-		result.addProperty("name", mName);
-		result.addProperty("autoJoin", mAutoJoin);
-		if (mChannelPermission != null) {
-			result.addProperty("channelPermission", mChannelPermission);
-		}
+		result.addProperty("name", getName());
+		result.addProperty("team", mTeamName);
 		result.add("defaultSettings", mDefaultSettings.toJson());
 		result.add("defaultPerms", mDefaultPerms.toJson());
 		result.add("playerPerms", allPlayerPermsJson);
@@ -155,77 +141,91 @@ public class ChannelLocal extends Channel {
 	}
 
 	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
-		List<Argument> arguments;
+		// Setting up new team channels will be done via /teammsg, /tm, and similar,
+		// not through /chat new Blah team. The provided arguments are ignored.
+		List<Argument> arguments = new ArrayList<>();
 
-		for (String baseCommand : baseCommands) {
-			arguments = new ArrayList<>(prefixArguments);
-			// last element of prefixArguments is channel ID
-			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+		for (String command : TEAM_COMMANDS) {
+			CommandAPI.unregister(command);
+
+			new CommandAPICommand(command)
 				.executes((sender, args) -> {
-					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelLocal newChannel = null;
-					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandAPI.fail("You do not have permission to make new local channels.");
-					}
-
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
-					try {
-						newChannel = new ChannelLocal(channelName);
-					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
-					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
+					return runCommandSet(sender);
 				})
 				.register();
 
-			arguments.add(new BooleanArgument("Auto Join"));
-			new CommandAPICommand(baseCommand)
+			arguments.clear();
+			arguments.add(new GreedyStringArgument("message"));
+			new CommandAPICommand(command)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelLocal newChannel = null;
-					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandAPI.fail("You do not have permission to make new local channels.");
-					}
-
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
-					try {
-						newChannel = new ChannelLocal(channelName);
-						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
-					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
-					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
-				})
-				.register();
-
-			arguments.add(new GreedyStringArgument("Channel Permission"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelLocal newChannel = null;
-					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandAPI.fail("You do not have permission to make new local channels.");
-					}
-
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
-					try {
-						newChannel = new ChannelLocal(channelName);
-						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
-						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
-					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
-					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
+					return runCommandSay(sender, (String)args[0]);
 				})
 				.register();
 		}
+	}
+
+	private static int runCommandSet(CommandSender sender) throws WrapperCommandSyntaxException {
+		if (!(sender instanceof Player)) {
+			sender.sendMessage(Component.translatable("permissions.requires.player"));
+			CommandAPI.fail("A player is required to run this command here");
+		}
+
+		Player sendingPlayer = (Player) sender;
+		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam((sendingPlayer).getName());
+		if (team == null) {
+			sender.sendMessage(Component.translatable("commands.teammsg.failed.noteam"));
+			CommandAPI.fail(sendingPlayer.getName() + " must be on a team to message their team.");
+		}
+		String teamName = team.getName();
+
+		Channel channel = ChannelManager.getChannel("Team_" + teamName);
+		if (channel == null) {
+			try {
+				channel = new ChannelTeam(teamName);
+			} catch (Exception e) {
+				CommandAPI.fail("Could not create new team channel: Could not connect to RabbitMQ.");
+			}
+			ChannelManager.registerNewChannel(sender, channel);
+		}
+
+		PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+		senderState.setActiveChannel(channel);
+		sender.sendMessage(Component.text("You are now typing to team ", NamedTextColor.GRAY).append(team.displayName()));
+		return 1;
+	}
+
+	private static int runCommandSay(CommandSender sender, String message) throws WrapperCommandSyntaxException {
+		if (!(sender instanceof Entity)) {
+			sender.sendMessage(Component.translatable("permissions.requires.entity"));
+			CommandAPI.fail("An entity is required to run this command here");
+		}
+
+		Entity sendingEntity = (Entity) sender;
+		Team team;
+		if (sendingEntity instanceof Player) {
+			team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(((Player) sendingEntity).getName());
+		} else {
+			team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(sendingEntity.getUniqueId().toString());
+		}
+		if (team == null) {
+			sender.sendMessage(Component.translatable("commands.teammsg.failed.noteam"));
+			CommandAPI.fail(sendingEntity.getName() + " must be on a team to message their team.");
+		}
+		String teamName = team.getName();
+
+		Channel channel = ChannelManager.getChannel("Team_" + teamName);
+		if (channel == null) {
+			try {
+				channel = new ChannelTeam(teamName);
+			} catch (Exception e) {
+				CommandAPI.fail("Could not create new team channel: Could not connect to RabbitMQ.");
+			}
+			ChannelManager.registerNewChannel(sender, channel);
+		}
+
+		channel.sendMessage(sendingEntity, message);
+		return 1;
 	}
 
 	public String getClassId() {
@@ -245,11 +245,11 @@ public class ChannelLocal extends Channel {
 	}
 
 	protected void setName(String name) throws WrapperCommandSyntaxException {
-		mName = name;
+		CommandAPI.fail("Team channels may not be named.");
 	}
 
 	public String getName() {
-		return mName;
+		return "Team_" + mTeamName;
 	}
 
 	public ChannelSettings channelSettings() {
@@ -290,22 +290,15 @@ public class ChannelLocal extends Channel {
 		mPlayerPerms.remove(playerId);
 	}
 
-	public String getShardName() {
-		return mShardName;
-	}
-
 	public boolean shouldAutoJoin(PlayerState state) {
-		return mAutoJoin && mayListen(state.getPlayer());
+		return true;
 	}
 
 	public boolean mayChat(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.say")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.say.local")) {
-			return false;
-		}
-		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
+		if (!sender.hasPermission("networkchat.say.team")) {
 			return false;
 		}
 
@@ -313,7 +306,8 @@ public class ChannelLocal extends Channel {
 			return true;
 		}
 
-		ChannelPerms playerPerms = mPlayerPerms.get(((Player) sender).getUniqueId());
+		Player player = (Player) sender;
+		ChannelPerms playerPerms = mPlayerPerms.get(player.getUniqueId());
 		if (playerPerms == null) {
 			if (mDefaultPerms.mayChat() != null && !mDefaultPerms.mayChat()) {
 				return false;
@@ -322,25 +316,28 @@ public class ChannelLocal extends Channel {
 			return false;
 		}
 
-		return true;
+		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
+		if (team == null) {
+			return false;
+		}
+		String teamName = team.getName();
+		return mTeamName.equals(teamName);
 	}
 
 	public boolean mayListen(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.see")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.see.local")) {
-			return false;
-		}
-		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
+		if (!sender.hasPermission("networkchat.see.team")) {
 			return false;
 		}
 
 		if (!(sender instanceof Player)) {
-			return true;
+			return false;
 		}
 
-		UUID playerId = ((Player) sender).getUniqueId();
+		Player player = (Player) sender;
+		UUID playerId = player.getUniqueId();
 
 		ChannelPerms playerPerms = mPlayerPerms.get(playerId);
 		if (playerPerms == null) {
@@ -351,55 +348,48 @@ public class ChannelLocal extends Channel {
 			return false;
 		}
 
-		return true;
+		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
+		if (team == null) {
+			return false;
+		}
+		String teamName = team.getName();
+		return mTeamName.equals(teamName);
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
-		if (sender instanceof Player) {
-			if (!sender.hasPermission("networkchat.say")) {
-				CommandAPI.fail("You do not have permission to chat.");
-			}
-			if (!sender.hasPermission("networkchat.say.local")) {
-				CommandAPI.fail("You do not have permission to talk in local chat.");
-			}
-			if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
-				CommandAPI.fail("You do not have permission to talk in " + mName + ".");
-			}
+		if (!sender.hasPermission("networkchat.say")) {
+			CommandAPI.fail("You do not have permission to chat.");
+		}
+		if (!sender.hasPermission("networkchat.say.team")) {
+			CommandAPI.fail("You do not have permission to talk to a team.");
+		}
 
-			if (!mayChat(sender)) {
-				CommandAPI.fail("You do not have permission to chat in this channel.");
-			}
-
-			if (sender.hasPermission("networkchat.transform.color")) {
-				allowedTransforms.add(TransformationType.COLOR);
-			}
-			if (sender.hasPermission("networkchat.transform.decoration")) {
-				allowedTransforms.add(TransformationType.DECORATION);
-			}
-			if (sender.hasPermission("networkchat.transform.keybind")) {
-				allowedTransforms.add(TransformationType.KEYBIND);
-			}
-			if (sender.hasPermission("networkchat.transform.font")) {
-				allowedTransforms.add(TransformationType.FONT);
-			}
-			if (sender.hasPermission("networkchat.transform.gradient")) {
-				allowedTransforms.add(TransformationType.GRADIENT);
-			}
-			if (sender.hasPermission("networkchat.transform.rainbow")) {
-				allowedTransforms.add(TransformationType.RAINBOW);
-			}
-		} else {
-			allowedTransforms.add(TransformationType.COLOR);
-			allowedTransforms.add(TransformationType.DECORATION);
-			allowedTransforms.add(TransformationType.KEYBIND);
-			allowedTransforms.add(TransformationType.FONT);
-			allowedTransforms.add(TransformationType.GRADIENT);
-			allowedTransforms.add(TransformationType.RAINBOW);
+		if (!mayChat(sender)) {
+			CommandAPI.fail("You do not have permission to chat in this channel.");
 		}
 
 		JsonObject extraData = new JsonObject();
-		extraData.addProperty("fromShard", mShardName);
+		extraData.addProperty("team", mTeamName);
+
+		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
+		if (sender.hasPermission("networkchat.transform.color")) {
+			allowedTransforms.add(TransformationType.COLOR);
+		}
+		if (sender.hasPermission("networkchat.transform.decoration")) {
+			allowedTransforms.add(TransformationType.DECORATION);
+		}
+		if (sender.hasPermission("networkchat.transform.keybind")) {
+			allowedTransforms.add(TransformationType.KEYBIND);
+		}
+		if (sender.hasPermission("networkchat.transform.font")) {
+			allowedTransforms.add(TransformationType.FONT);
+		}
+		if (sender.hasPermission("networkchat.transform.gradient")) {
+			allowedTransforms.add(TransformationType.GRADIENT);
+		}
+		if (sender.hasPermission("networkchat.transform.rainbow")) {
+			allowedTransforms.add(TransformationType.RAINBOW);
+		}
 
 		Message message = Message.createMessage(this, sender, extraData, messageText, true, allowedTransforms);
 
@@ -408,19 +398,27 @@ public class ChannelLocal extends Channel {
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
+			CommandAPI.fail("Could not send message.");
 		}
 	}
 
 	public void distributeMessage(Message message) {
+		showMessage(Bukkit.getConsoleSender(), message);
+
 		JsonObject extraData = message.getExtraData();
-		if (extraData == null
-		    || extraData.getAsJsonPrimitive("fromShard") == null
-		    || !extraData.getAsJsonPrimitive("fromShard").isString()
-		    || !mShardName.equals(extraData.getAsJsonPrimitive("fromShard").getAsString())) {
-			// TODO Chat spy here
+		String teamName;
+		try {
+			teamName = extraData.getAsJsonPrimitive("team").getAsString();
+		} catch (Exception e) {
+			// Could not read team from message
 			return;
 		}
-		showMessage(Bukkit.getConsoleSender(), message);
+		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
+		if (team == null) {
+			// No such team on this server
+			return;
+		}
+
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
 			if (!mayListen(state.getPlayer())) {
@@ -435,6 +433,32 @@ public class ChannelLocal extends Channel {
 	}
 
 	protected void showMessage(CommandSender recipient, Message message) {
+		JsonObject extraData = message.getExtraData();
+		String teamName;
+		try {
+			teamName = extraData.getAsJsonPrimitive("team").getAsString();
+		} catch (Exception e) {
+			// Could not read team from message
+			return;
+		}
+
+		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
+		TextColor color;
+		Component teamPrefix;
+		Component teamDisplayName;
+		Component teamSuffix;
+		try {
+			color = team.color();
+			teamPrefix = team.prefix();
+			teamDisplayName = team.displayName();
+			teamSuffix = team.suffix();
+		} catch (Exception e) {
+			color = null;
+			teamPrefix = Component.empty();
+			teamDisplayName = Component.translatable("chat.square_brackets", Component.text(team.getName()));
+			teamSuffix = Component.empty();
+		}
+
 		MiniMessage minimessage = MiniMessage.builder()
 			.transformation(TransformationType.COLOR)
 			.transformation(TransformationType.DECORATION)
@@ -444,21 +468,23 @@ public class ChannelLocal extends Channel {
 
 		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
-			.replace("<message_gui_cmd>", message.getGuiCommand())
 		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		UUID senderUuid = message.getSenderId();
 		Identity senderIdentity;
-		if (message.senderIsPlayer()) {
-			senderIdentity = Identity.identity(senderUuid);
-		} else {
+		if (senderUuid == null) {
 			senderIdentity = Identity.nil();
+		} else {
+			senderIdentity = Identity.identity(senderUuid);
 		}
 
 		Component fullMessage = Component.empty()
-			.append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName),
-				Template.of("sender", message.getSenderComponent()))))
-			.append(Component.empty().color(channelColor).append(message.getMessage()));
+		    .append(minimessage.parse(prefix, List.of(Template.of("sender", message.getSenderComponent()),
+		        Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+		        Template.of("team_prefix", teamPrefix),
+		        Template.of("team_displayname", teamDisplayName),
+		        Template.of("team_suffix", teamSuffix))))
+		    .append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);

@@ -33,23 +33,29 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 
 	private static NetworkChatPlugin INSTANCE = null;
-	public static Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
-	public static Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
-	public static Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
-	public static Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
-	public static ChannelManager mChannelManager = null;
-	public static MessageManager mMessageManager = null;
-	public static PlayerStateManager mPlayerStateManager = null;
-	public static RemotePlayerManager mRemotePlayerManager = null;
+	private static Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
+	private static Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
+	private static Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
+	private static Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
+	private static ChannelManager mChannelManager = null;
+	private static MessageManager mMessageManager = null;
+	private static PlayerStateManager mPlayerStateManager = null;
+	private static RemotePlayerManager mRemotePlayerManager = null;
 
 	@Override
 	public void onLoad() {
-		// TODO Move these formatting options to a defaults structure, then copy to the final mappings
 		mDefaultMessageFormats.put("player", "<insert:%player_name%>"
 			+ "<click:suggest_command:/tell %player_name% >"
 			+ "<hover:show_entity:'minecraft:player':%player_uuid%:%player_name%>"
 			+ "<team_color><team_prefix>%player_name%<team_suffix>"
 			+ "</hover></click></insert>");
+
+		mDefaultMessageFormats.put("entity", "<insert:<entity_uuid>>"
+			+ "<hover:show_entity:'<entity_type>':<entity_uuid>:<entity_name>>"
+			+ "<team_color><team_prefix><entity_name><team_suffix>"
+			+ "</hover></insert>");
+
+		mDefaultMessageFormats.put("sender", "<sender_name>");
 
 		mDefaultMessageColors.put(ChannelAnnouncement.CHANNEL_CLASS_ID, NamedTextColor.RED);
 		mDefaultMessageFormats.put(ChannelAnnouncement.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Announcement Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click>");
@@ -59,6 +65,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Local Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelParty.CHANNEL_CLASS_ID, NamedTextColor.LIGHT_PURPLE);
 		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Party Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
+		mDefaultMessageColors.put(ChannelTeam.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
+		mDefaultMessageFormats.put(ChannelTeam.CHANNEL_CLASS_ID, "<channel_color><team_displayname> \\<<sender>>");
 		mDefaultMessageColors.put(ChannelWhisper.CHANNEL_CLASS_ID, NamedTextColor.GRAY);
 		mDefaultMessageFormats.put(ChannelWhisper.CHANNEL_CLASS_ID, "<channel_color><sender> whispers to <receiver> <gray>\u00bb");
 
@@ -131,6 +139,10 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		return INSTANCE;
 	}
 
+	public static int getMessageTtl() {
+		return 5;
+	}
+
 	public static void colorsFromJson(JsonObject dataJson) {
 		for (Map.Entry<String, JsonElement> entry : dataJson.entrySet()) {
 			String id = entry.getKey();
@@ -160,7 +172,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		JsonObject wrappedConfigJson = new JsonObject();
 		wrappedConfigJson.add(REDIS_MESSAGE_COLORS_KEY, dataJson);
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE, wrappedConfigJson);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE,
+			                                             wrappedConfigJson,
+			                                             getMessageTtl());
 		} catch (Exception e) {
 			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
@@ -201,7 +215,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		JsonObject wrappedConfigJson = new JsonObject();
 		wrappedConfigJson.add(REDIS_MESSAGE_FORMATS_KEY, dataJson);
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE, wrappedConfigJson);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE,
+			                                             wrappedConfigJson,
+			                                             getMessageTtl());
 		} catch (Exception e) {
 			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}

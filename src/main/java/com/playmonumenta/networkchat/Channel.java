@@ -24,6 +24,8 @@ public abstract class Channel {
 			return ChannelLocal.fromJsonInternal(channelJson);
 		} else if (channelClassId.equals(ChannelParty.CHANNEL_CLASS_ID)) {
 			return ChannelParty.fromJsonInternal(channelJson);
+		} else if (channelClassId.equals(ChannelTeam.CHANNEL_CLASS_ID)) {
+			return ChannelTeam.fromJsonInternal(channelJson);
 		} else if (channelClassId.equals(ChannelWhisper.CHANNEL_CLASS_ID)) {
 			return ChannelWhisper.fromJsonInternal(channelJson);
 		} else {
@@ -78,6 +80,10 @@ public abstract class Channel {
 	}
 
 	public void clearPlayerPerms(UUID playerId) {}
+
+	public boolean shouldAutoJoin(PlayerState state) {
+		return mayListen(state.getPlayer());
+	}
 
 	public boolean mayManage(CommandSender sender) {
 		return sender.hasPermission("networkchat.moderator");

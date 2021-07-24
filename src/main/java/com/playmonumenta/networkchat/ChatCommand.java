@@ -50,6 +50,7 @@ public class ChatCommand {
 		ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelParty.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+		ChannelTeam.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelWhisper.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 
 		for (String baseCommand : COMMANDS) {
@@ -101,6 +102,82 @@ public class ChatCommand {
 							CommandAPI.fail("You do not have permission to set the default channels.");
 						}
 						return ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
+					})
+					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("profilemessage"));
+				arguments.add(new MultiLiteralArgument("get"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandAPI.fail("This command can only be run as a player.");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						}
+						String profileMessage = state.profileMessage();
+						if (profileMessage.isEmpty()) {
+							target.sendMessage(Component.text("Your profile message is blank.", NamedTextColor.GRAY));
+						} else {
+							target.sendMessage(Component.text("Your profile message is:", NamedTextColor.GRAY));
+							target.sendMessage(state.profileMessageComponent()
+								.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
+						}
+						return profileMessage.length();
+					})
+					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("profilemessage"));
+				arguments.add(new MultiLiteralArgument("set"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandAPI.fail("This command can only be run as a player.");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						}
+						target.sendMessage(Component.text("Your profile message has been cleared.", NamedTextColor.GRAY));
+						state.profileMessage("");
+						return 0;
+					})
+					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("profilemessage"));
+				arguments.add(new MultiLiteralArgument("set"));
+				arguments.add(new GreedyStringArgument("message"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandAPI.fail("This command can only be run as a player.");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						}
+						target.sendMessage(Component.text("Your profile message has been set to:", NamedTextColor.GRAY));
+						String profileMessage = (String)args[2];
+						state.profileMessage(profileMessage);
+						target.sendMessage(state.profileMessageComponent()
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
+						return profileMessage.length();
 					})
 					.register();
 
@@ -577,6 +654,7 @@ public class ChatCommand {
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -598,6 +676,7 @@ public class ChatCommand {
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
 			new CommandAPICommand(baseCommand)
@@ -622,10 +701,13 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("format"));
 			arguments.add(new MultiLiteralArgument("default"));
 			arguments.add(new MultiLiteralArgument("player",
+				"entity",
+				"sender",
 				ChannelAnnouncement.CHANNEL_CLASS_ID,
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -661,10 +743,13 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("format"));
 			arguments.add(new MultiLiteralArgument("default"));
 			arguments.add(new MultiLiteralArgument("player",
+				"entity",
+				"sender",
 				ChannelAnnouncement.CHANNEL_CLASS_ID,
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			arguments.add(new GreedyStringArgument("format"));
 			new CommandAPICommand(baseCommand)

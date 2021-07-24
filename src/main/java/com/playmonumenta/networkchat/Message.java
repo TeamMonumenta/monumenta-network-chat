@@ -22,6 +22,21 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 public class Message implements AutoCloseable {
+	static class State implements Runnable {
+		private final UUID mId;
+
+		State(UUID id) {
+			mId = id;
+		}
+
+		public void run() {
+			MessageManager.unregisterMessage(mId);
+		}
+	}
+
+	private final State mState;
+	private final Cleaner.Cleanable mCleanable;
+
 	private final UUID mId;
 	private final Instant mInstant;
 	private final UUID mChannelId;
@@ -45,6 +60,9 @@ public class Message implements AutoCloseable {
 		mSenderComponent = senderComponent;
 		mExtraData = extraData;
 		mMessage = message;
+
+		mState = new State(mId);
+		mCleanable = MessageManager.cleaner().register(this, mState);
 		MessageManager.registerMessage(this);
 	}
 
@@ -122,6 +140,23 @@ public class Message implements AutoCloseable {
 		object.addProperty("id", mId.toString());
 		object.addProperty("instant", mInstant.toEpochMilli());
 		object.addProperty("channelId", mChannelId.toString());
+
+		/***********************************************************************
+		 * For the discord bot; remove when updated to pull from Redis
+		 */
+		Channel channel = getChannel();
+		String channelClassId = ChannelLoading.CHANNEL_CLASS_ID;
+		String channelName = "Unknown";
+		if (channel != null) {
+			channelClassId = channel.getClassId();
+			channelName = channel.getName();
+		}
+		object.addProperty("channelClassId", channelClassId);
+		object.addProperty("channelClassName", channelName);
+		/*
+		 * For the discord bot; remove when updated to pull from Redis
+		 **********************************************************************/
+
 		if (mSenderId != null) {
 			object.addProperty("senderId", mSenderId.toString());
 		}
@@ -140,7 +175,7 @@ public class Message implements AutoCloseable {
 	}
 
 	public void close() {
-		MessageManager.unregisterMessage(mId);
+		mCleanable.clean();
 	}
 
 	public UUID getUniqueId() {

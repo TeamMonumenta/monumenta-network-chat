@@ -106,7 +106,9 @@ public class ChannelManager implements Listener {
 		JsonObject wrappedConfigJson = new JsonObject();
 		wrappedConfigJson.add(REDIS_DEFAULT_CHANNELS_KEY, defaultChannelsJson);
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE, wrappedConfigJson);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE,
+			                                             wrappedConfigJson,
+			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
@@ -207,20 +209,9 @@ public class ChannelManager implements Listener {
 		mChannels.put(channelId, channel);
 		saveChannel(channel);
 
-		if (!(channel instanceof ChannelInviteOnly)) {
-			for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
-				if (!state.hasSeenChannelId(channelId)) {
-					state.joinChannel(channel);
-				}
-			}
-		} else if (!(channel instanceof ChannelWhisper)) {
-			ChannelInviteOnly channelInvOnly = (ChannelInviteOnly) channel;
-			for (UUID participantId : channelInvOnly.getParticipantIds()) {
-				PlayerState state = PlayerStateManager.getPlayerState(participantId);
-				if (state == null) {
-					continue;
-				}
-				if (!state.hasSeenChannelId(channelId)) {
+		for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
+			if (!state.hasSeenChannelId(channelId)) {
+				if (channel.shouldAutoJoin(state)) {
 					state.joinChannel(channel);
 				}
 			}
@@ -352,7 +343,9 @@ public class ChannelManager implements Listener {
 		wrappedChannelJson.addProperty("channelLastUpdate", channel.lastModified().toEpochMilli());
 		// "channelData" intentionally left out (null indicates delete)
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(NETWORK_CHAT_CHANNEL_UPDATE, wrappedChannelJson);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CHANNEL_UPDATE,
+			                                             wrappedChannelJson,
+			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
 		}
@@ -507,7 +500,9 @@ public class ChannelManager implements Listener {
 		wrappedChannelJson.addProperty("channelLastUpdate", channel.lastModified().toEpochMilli());
 		wrappedChannelJson.add("channelData", channelJson);
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(NETWORK_CHAT_CHANNEL_UPDATE, wrappedChannelJson);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CHANNEL_UPDATE,
+			                                             wrappedChannelJson,
+			                                             NetworkChatPlugin.getMessageTtl());
 			mPlugin.getLogger().info("Broadcast channel " + channelIdStr + " changes.");
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
@@ -568,6 +563,7 @@ public class ChannelManager implements Listener {
 
 			JsonArray participantsJson = data.getAsJsonArray("participants");
 			if (participantsJson != null) {
+				participants = new ConcurrentSkipListSet<>();
 				for (JsonElement participantJson : participantsJson) {
 					participants.add(UUID.fromString(participantJson.getAsString()));
 				}
