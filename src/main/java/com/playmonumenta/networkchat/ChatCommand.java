@@ -622,6 +622,8 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("format"));
 			arguments.add(new MultiLiteralArgument("default"));
 			arguments.add(new MultiLiteralArgument("player",
+				"entity",
+				"sender",
 				ChannelAnnouncement.CHANNEL_CLASS_ID,
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
@@ -661,6 +663,8 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("format"));
 			arguments.add(new MultiLiteralArgument("default"));
 			arguments.add(new MultiLiteralArgument("player",
+				"entity",
+				"sender",
 				ChannelAnnouncement.CHANNEL_CLASS_ID,
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,

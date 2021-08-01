@@ -273,34 +273,43 @@ public class ChannelGlobal extends Channel {
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.say")) {
-			CommandAPI.fail("You do not have permission to chat.");
-		}
-		if (!sender.hasPermission("networkchat.say.global")) {
-			CommandAPI.fail("You do not have permission to talk in global chat.");
-		}
-
-		if (!mayChat(sender)) {
-			CommandAPI.fail("You do not have permission to chat in this channel.");
-		}
-
 		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
-		if (sender.hasPermission("networkchat.transform.color")) {
+		if (sender instanceof Player) {
+			if (!sender.hasPermission("networkchat.say")) {
+				CommandAPI.fail("You do not have permission to chat.");
+			}
+			if (!sender.hasPermission("networkchat.say.global")) {
+				CommandAPI.fail("You do not have permission to talk in global chat.");
+			}
+
+			if (!mayChat(sender)) {
+				CommandAPI.fail("You do not have permission to chat in this channel.");
+			}
+
+			if (sender.hasPermission("networkchat.transform.color")) {
+				allowedTransforms.add(TransformationType.COLOR);
+			}
+			if (sender.hasPermission("networkchat.transform.decoration")) {
+				allowedTransforms.add(TransformationType.DECORATION);
+			}
+			if (sender.hasPermission("networkchat.transform.keybind")) {
+				allowedTransforms.add(TransformationType.KEYBIND);
+			}
+			if (sender.hasPermission("networkchat.transform.font")) {
+				allowedTransforms.add(TransformationType.FONT);
+			}
+			if (sender.hasPermission("networkchat.transform.gradient")) {
+				allowedTransforms.add(TransformationType.GRADIENT);
+			}
+			if (sender.hasPermission("networkchat.transform.rainbow")) {
+				allowedTransforms.add(TransformationType.RAINBOW);
+			}
+		} else {
 			allowedTransforms.add(TransformationType.COLOR);
-		}
-		if (sender.hasPermission("networkchat.transform.decoration")) {
 			allowedTransforms.add(TransformationType.DECORATION);
-		}
-		if (sender.hasPermission("networkchat.transform.keybind")) {
 			allowedTransforms.add(TransformationType.KEYBIND);
-		}
-		if (sender.hasPermission("networkchat.transform.font")) {
 			allowedTransforms.add(TransformationType.FONT);
-		}
-		if (sender.hasPermission("networkchat.transform.gradient")) {
 			allowedTransforms.add(TransformationType.GRADIENT);
-		}
-		if (sender.hasPermission("networkchat.transform.rainbow")) {
 			allowedTransforms.add(TransformationType.RAINBOW);
 		}
 

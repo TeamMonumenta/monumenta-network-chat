@@ -448,15 +448,15 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
+		if (!(sender instanceof Player)) {
+			CommandAPI.fail("Only players may whisper.");
+		}
+
 		if (!sender.hasPermission("networkchat.say")) {
 			CommandAPI.fail("You do not have permission to chat.");
 		}
 		if (!sender.hasPermission("networkchat.say.whisper")) {
 			CommandAPI.fail("You do not have permission to whisper.");
-		}
-
-		if (!(sender instanceof Player)) {
-			CommandAPI.fail("Only players may whisper.");
 		}
 
 		if (!mayChat(sender)) {
