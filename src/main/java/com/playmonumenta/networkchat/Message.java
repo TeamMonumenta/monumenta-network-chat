@@ -140,6 +140,14 @@ public class Message implements AutoCloseable {
 		object.addProperty("id", mId.toString());
 		object.addProperty("instant", mInstant.toEpochMilli());
 		object.addProperty("channelId", mChannelId.toString());
+
+		Channel channel = getChannel();
+		String channelClassId = ChannelLoading.CHANNEL_CLASS_ID;
+		if (channel != null) {
+			channelClassId = channel.getClassId();
+		}
+		object.addProperty("channelClassId", channelClassId);
+
 		if (mSenderId != null) {
 			object.addProperty("senderId", mSenderId.toString());
 		}
