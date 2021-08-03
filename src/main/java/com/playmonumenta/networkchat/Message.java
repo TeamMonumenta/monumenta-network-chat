@@ -141,12 +141,21 @@ public class Message implements AutoCloseable {
 		object.addProperty("instant", mInstant.toEpochMilli());
 		object.addProperty("channelId", mChannelId.toString());
 
+		/***********************************************************************
+		 * For the discord bot; remove when updated to pull from Redis
+		 */
 		Channel channel = getChannel();
 		String channelClassId = ChannelLoading.CHANNEL_CLASS_ID;
+		String channelName = "Unknown";
 		if (channel != null) {
 			channelClassId = channel.getClassId();
+			channelName = channel.getName();
 		}
 		object.addProperty("channelClassId", channelClassId);
+		object.addProperty("channelClassName", channelName);
+		/*
+		 * For the discord bot; remove when updated to pull from Redis
+		 **********************************************************************/
 
 		if (mSenderId != null) {
 			object.addProperty("senderId", mSenderId.toString());
