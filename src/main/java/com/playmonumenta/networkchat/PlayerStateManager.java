@@ -85,7 +85,9 @@ public class PlayerStateManager implements Listener {
 		JsonObject wrappedConfigJson = new JsonObject();
 		wrappedConfigJson.add(REDIS_PLAYER_EVENT_SETTINGS_KEY, playerEventSettingsJson);
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE, wrappedConfigJson);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE,
+			                                             wrappedConfigJson,
+			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}

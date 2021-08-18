@@ -48,7 +48,9 @@ public class MessageManager implements Listener {
 	}
 
 	public void broadcastMessage(Message message) throws Exception {
-		NetworkRelayAPI.sendBroadcastMessage(NETWORK_CHAT_MESSAGE, message.toJson());
+		NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_MESSAGE,
+		                                             message.toJson(),
+		                                             NetworkChatPlugin.getMessageTtl());
 	}
 
 	@EventHandler(priority = EventPriority.LOW)

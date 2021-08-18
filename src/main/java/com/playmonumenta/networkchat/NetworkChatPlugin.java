@@ -137,6 +137,10 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		return INSTANCE;
 	}
 
+	public static int getMessageTtl() {
+		return 5;
+	}
+
 	public static void colorsFromJson(JsonObject dataJson) {
 		for (Map.Entry<String, JsonElement> entry : dataJson.entrySet()) {
 			String id = entry.getKey();
@@ -166,7 +170,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		JsonObject wrappedConfigJson = new JsonObject();
 		wrappedConfigJson.add(REDIS_MESSAGE_COLORS_KEY, dataJson);
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE, wrappedConfigJson);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE,
+			                                             wrappedConfigJson,
+			                                             getMessageTtl());
 		} catch (Exception e) {
 			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
@@ -207,7 +213,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		JsonObject wrappedConfigJson = new JsonObject();
 		wrappedConfigJson.add(REDIS_MESSAGE_FORMATS_KEY, dataJson);
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE, wrappedConfigJson);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE,
+			                                             wrappedConfigJson,
+			                                             getMessageTtl());
 		} catch (Exception e) {
 			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}

@@ -60,7 +60,9 @@ public class RemotePlayerManager implements Listener {
 			mPlugin.getLogger().severe("Failed to get remote shard names");
 		}
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(REFRESH_CHANNEL, new JsonObject());
+			NetworkRelayAPI.sendExpiringBroadcastMessage(REFRESH_CHANNEL,
+			                                             new JsonObject(),
+			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + REFRESH_CHANNEL);
 		}
@@ -185,7 +187,9 @@ public class RemotePlayerManager implements Listener {
 		remotePlayerData.add("playerComponent", MessagingUtils.toJson(playerComponent));
 
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(REMOTE_PLAYER_CHANNEL, remotePlayerData);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_CHANNEL,
+			                                             remotePlayerData,
+			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + REMOTE_PLAYER_CHANNEL);
 		}
@@ -306,7 +310,9 @@ public class RemotePlayerManager implements Listener {
 		remotePlayerData.add("playerComponent", MessagingUtils.toJson(playerComponent));
 
 		try {
-			NetworkRelayAPI.sendBroadcastMessage(REMOTE_PLAYER_CHANNEL, remotePlayerData);
+			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_CHANNEL,
+			                                             remotePlayerData,
+			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + REMOTE_PLAYER_CHANNEL);
 		}
