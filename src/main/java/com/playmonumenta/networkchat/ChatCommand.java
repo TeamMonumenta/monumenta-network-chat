@@ -50,6 +50,7 @@ public class ChatCommand {
 		ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelParty.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+		ChannelTeam.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelWhisper.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 
 		for (String baseCommand : COMMANDS) {
@@ -577,6 +578,7 @@ public class ChatCommand {
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -598,6 +600,7 @@ public class ChatCommand {
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
 			new CommandAPICommand(baseCommand)
@@ -628,6 +631,7 @@ public class ChatCommand {
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -669,6 +673,7 @@ public class ChatCommand {
 				ChannelGlobal.CHANNEL_CLASS_ID,
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			arguments.add(new GreedyStringArgument("format"));
 			new CommandAPICommand(baseCommand)

@@ -77,18 +77,28 @@ public class MessagingUtils {
 			entityName = Component.translatable("entity." + type.toString().replace(":", "."));
 		}
 
-		Team entityTeam = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(id.toString());
+		Team entityTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(id.toString());
 		TextColor color;
 		Component teamPrefix;
+		Component teamDisplayName;
 		Component teamSuffix;
-		try {
-			color = entityTeam.color();
-			teamPrefix = entityTeam.prefix();
-			teamSuffix = entityTeam.suffix();
-		} catch (Exception e) {
+		if (entityTeam == null) {
 			color = null;
 			teamPrefix = Component.empty();
+			teamDisplayName = Component.empty();
 			teamSuffix = Component.empty();
+		} else {
+			try {
+				color = entityTeam.color();
+				teamPrefix = entityTeam.prefix();
+				teamDisplayName = entityTeam.displayName();
+				teamSuffix = entityTeam.suffix();
+			} catch (Exception e) {
+				color = null;
+				teamPrefix = Component.empty();
+				teamDisplayName = Component.translatable("minecraft:chat.square_brackets", Component.text(entityTeam.getName()));
+				teamSuffix = Component.empty();
+			}
 		}
 
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("entity")),
@@ -97,27 +107,39 @@ public class MessagingUtils {
 		        Template.of("entity_name", entityName),
 		        Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
 		        Template.of("team_prefix", teamPrefix),
+		        Template.of("team_displayname", teamDisplayName),
 		        Template.of("team_suffix", teamSuffix)));
 	}
 
 	public static Component playerComponent(Player player) {
-		Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(player.getName());
+		Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
 		TextColor color;
 		Component teamPrefix;
+		Component teamDisplayName;
 		Component teamSuffix;
-		try {
-			color = playerTeam.color();
-			teamPrefix = playerTeam.prefix();
-			teamSuffix = playerTeam.suffix();
-		} catch (Exception e) {
+		if (playerTeam == null) {
 			color = null;
 			teamPrefix = Component.empty();
+			teamDisplayName = Component.empty();
 			teamSuffix = Component.empty();
+		} else {
+			try {
+				color = playerTeam.color();
+				teamPrefix = playerTeam.prefix();
+				teamDisplayName = playerTeam.displayName();
+				teamSuffix = playerTeam.suffix();
+			} catch (Exception e) {
+				color = null;
+				teamPrefix = Component.empty();
+				teamDisplayName = Component.translatable("chat.square_brackets", Component.text(playerTeam.getName()));
+				teamSuffix = Component.empty();
+			}
 		}
 
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player")),
 		    List.of(Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
 		        Template.of("team_prefix", teamPrefix),
+		        Template.of("team_displayname", teamDisplayName),
 		        Template.of("team_suffix", teamSuffix)));
 	}
 
