@@ -17,6 +17,7 @@ import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
@@ -46,6 +47,7 @@ public class ChannelLocal extends Channel {
 	private ChannelSettings mDefaultSettings;
 	private ChannelPerms mDefaultPerms;
 	private Map<UUID, ChannelPerms> mPlayerPerms;
+	private boolean mAutoJoin = true;
 
 	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) throws Exception {
 		mId = channelId;
@@ -161,6 +163,28 @@ public class ChannelLocal extends Channel {
 					ChannelManager.registerNewChannel(sender, newChannel);
 				})
 				.register();
+
+			arguments.add(new BooleanArgument("Auto-Join"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String)args[prefixArguments.size() - 1];
+					ChannelLocal newChannel = null;
+					if (!sender.hasPermission("networkchat.new.local")) {
+						CommandAPI.fail("You do not have permission to make new local channels.");
+					}
+
+					// Ignore [prefixArguments.size()], which is just the channel class ID.
+					try {
+						newChannel = new ChannelLocal(channelName);
+						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
+					} catch (Exception e) {
+						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+					}
+					// Throws an exception if the channel already exists, failing the command.
+					ChannelManager.registerNewChannel(sender, newChannel);
+				})
+				.register();
 		}
 	}
 
@@ -228,6 +252,10 @@ public class ChannelLocal extends Channel {
 
 	public String getShardName() {
 		return mShardName;
+	}
+
+	public boolean shouldAutoJoin(PlayerState state) {
+		return mAutoJoin && mayListen(state.getPlayer());
 	}
 
 	public boolean mayChat(CommandSender sender) {

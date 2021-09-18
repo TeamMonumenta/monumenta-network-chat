@@ -219,6 +219,10 @@ public class PlayerState {
 		return result;
 	}
 
+	public UUID getPlayerUniqueId() {
+		return mPlayerId;
+	}
+
 	public Player getPlayer() {
 		return Bukkit.getPlayer(mPlayerId);
 	}

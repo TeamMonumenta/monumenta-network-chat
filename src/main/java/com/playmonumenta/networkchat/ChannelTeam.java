@@ -290,6 +290,10 @@ public class ChannelTeam extends Channel {
 		mPlayerPerms.remove(playerId);
 	}
 
+	public boolean shouldAutoJoin(PlayerState state) {
+		return true;
+	}
+
 	public boolean mayChat(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.say")) {
 			return false;

@@ -81,6 +81,10 @@ public abstract class Channel {
 
 	public void clearPlayerPerms(UUID playerId) {}
 
+	public boolean shouldAutoJoin(PlayerState state) {
+		return mayListen(state.getPlayer());
+	}
+
 	public boolean mayManage(CommandSender sender) {
 		return sender.hasPermission("networkchat.moderator");
 	}

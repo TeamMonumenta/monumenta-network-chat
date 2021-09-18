@@ -396,6 +396,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		mPlayerPerms.remove(playerId);
 	}
 
+	public boolean shouldAutoJoin(PlayerState state) {
+		return false;
+	}
+
 	public boolean mayChat(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.say")) {
 			return false;

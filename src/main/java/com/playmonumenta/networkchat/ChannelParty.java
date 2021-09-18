@@ -413,6 +413,10 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		mPlayerPerms.remove(playerId);
 	}
 
+	public boolean shouldAutoJoin(PlayerState state) {
+		return mParticipants.contains(state.getPlayerUniqueId());
+	}
+
 	public boolean mayManage(CommandSender sender) {
 		if (sender.hasPermission("networkchat.moderator")) {
 			return true;
