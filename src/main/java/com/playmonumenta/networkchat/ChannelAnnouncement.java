@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import dev.jorel.commandapi.CommandAPI;
@@ -111,6 +112,11 @@ public class ChannelAnnouncement extends Channel {
 			}
 		}
 
+		JsonPrimitive autoJoinJson = channelJson.getAsJsonPrimitive("autoJoin");
+		if (autoJoinJson != null && autoJoinJson.isBoolean()) {
+			channel.mAutoJoin = autoJoinJson.getAsBoolean();
+		}
+
 		return channel;
 	}
 
@@ -129,6 +135,7 @@ public class ChannelAnnouncement extends Channel {
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
+		result.addProperty("autoJoin", mAutoJoin);
 		result.add("defaultSettings", mDefaultSettings.toJson());
 		result.add("defaultPerms", mDefaultPerms.toJson());
 		result.add("playerPerms", allPlayerPermsJson);
