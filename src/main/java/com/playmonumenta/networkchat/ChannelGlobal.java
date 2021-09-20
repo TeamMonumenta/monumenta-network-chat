@@ -18,6 +18,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
+import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
@@ -47,6 +48,7 @@ public class ChannelGlobal extends Channel {
 	private ChannelPerms mDefaultPerms;
 	private Map<UUID, ChannelPerms> mPlayerPerms;
 	private boolean mAutoJoin = true;
+	private String mChannelPermission = null;
 
 	private ChannelGlobal(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
@@ -115,6 +117,11 @@ public class ChannelGlobal extends Channel {
 			channel.mAutoJoin = autoJoinJson.getAsBoolean();
 		}
 
+		JsonPrimitive channelPermissionJson = channelJson.getAsJsonPrimitive("channelPermission");
+		if (channelPermissionJson != null && channelPermissionJson.isString()) {
+			channel.mChannelPermission = channelPermissionJson.getAsString();
+		}
+
 		return channel;
 	}
 
@@ -134,6 +141,9 @@ public class ChannelGlobal extends Channel {
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
 		result.addProperty("autoJoin", mAutoJoin);
+		if (mChannelPermission != null) {
+			result.addProperty("channelPermission", mChannelPermission);
+		}
 		result.add("defaultSettings", mDefaultSettings.toJson());
 		result.add("defaultPerms", mDefaultPerms.toJson());
 		result.add("playerPerms", allPlayerPermsJson);
@@ -167,7 +177,7 @@ public class ChannelGlobal extends Channel {
 				})
 				.register();
 
-			arguments.add(new BooleanArgument("Auto-Join"));
+			arguments.add(new BooleanArgument("Auto Join"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -181,6 +191,29 @@ public class ChannelGlobal extends Channel {
 					try {
 						newChannel = new ChannelGlobal(channelName);
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
+					} catch (Exception e) {
+						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+					}
+					// Throws an exception if the channel already exists, failing the command.
+					ChannelManager.registerNewChannel(sender, newChannel);
+				})
+				.register();
+
+			arguments.add(new GreedyStringArgument("Channel Permission"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String)args[prefixArguments.size() - 1];
+					ChannelGlobal newChannel = null;
+					if (!sender.hasPermission("networkchat.new.global")) {
+						CommandAPI.fail("You do not have permission to make new global channels.");
+					}
+
+					// Ignore [prefixArguments.size()], which is just the channel class ID.
+					try {
+						newChannel = new ChannelGlobal(channelName);
+						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
+						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
 					} catch (Exception e) {
 						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
@@ -264,6 +297,9 @@ public class ChannelGlobal extends Channel {
 		if (!sender.hasPermission("networkchat.say.global")) {
 			return false;
 		}
+		if (!sender.hasPermission(mChannelPermission)) {
+			return false;
+		}
 
 		if (!(sender instanceof Player)) {
 			return true;
@@ -286,6 +322,9 @@ public class ChannelGlobal extends Channel {
 			return false;
 		}
 		if (!sender.hasPermission("networkchat.see.global")) {
+			return false;
+		}
+		if (!sender.hasPermission(mChannelPermission)) {
 			return false;
 		}
 
@@ -315,6 +354,9 @@ public class ChannelGlobal extends Channel {
 			}
 			if (!sender.hasPermission("networkchat.say.global")) {
 				CommandAPI.fail("You do not have permission to talk in global chat.");
+			}
+			if (!sender.hasPermission(mChannelPermission)) {
+				CommandAPI.fail("You do not have permission to talk in " + mName + ".");
 			}
 
 			if (!mayChat(sender)) {
