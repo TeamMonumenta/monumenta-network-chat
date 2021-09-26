@@ -85,6 +85,12 @@ public abstract class Channel {
 		return mayListen(state.getPlayer());
 	}
 
+	public String getChannelPermission() {
+		return null;
+	}
+
+	public void setChannelPermission(String newPerms) {}
+
 	public boolean mayManage(CommandSender sender) {
 		return sender.hasPermission("networkchat.moderator");
 	}

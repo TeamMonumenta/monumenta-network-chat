@@ -158,6 +158,20 @@ public class ChatCommand {
 			}
 
 			arguments.clear();
+			arguments.add(new MultiLiteralArgument("change perms"));
+			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[])
+			));
+			arguments.add(new GreedyStringArgument("New channel perms"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return changeChannelPerms(sender, (String) args[1], (String) args[2])
+				})
+				.register();
+
+
+			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
@@ -787,6 +801,21 @@ public class ChatCommand {
 				})
 				.register();
 		}
+	}
+
+	private static int changeChannelPerms(CommandSender sender, String channelName, String newPerms) throws WrapperCommandSyntaxException {
+		Channel channel = ChannelManager.getChannel(channelName);
+		if (channel == null) {
+			CommandAPI.fail("No such channel " + channelName + ".");
+		}
+
+		if (!channel.mayManage(sender)) {
+			CommandAPI.fail("You do not have permission to change permission to channels.");
+		}
+
+		channel.setChannelPermission(newPerms);
+
+		return 1;
 	}
 
 	private static int renameChannel(CommandSender sender, String oldChannelName, String newChannelName) throws WrapperCommandSyntaxException {

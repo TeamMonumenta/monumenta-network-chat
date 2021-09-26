@@ -290,6 +290,14 @@ public class ChannelGlobal extends Channel {
 		return mAutoJoin && mayListen(state.getPlayer());
 	}
 
+	public String getChannelPermission() {
+		return mChannelPermission;
+	}
+
+	public void setChannelPermission(String newPerm) {
+		mChannelPermission = newPerm;
+	}
+
 	public boolean mayChat(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.say")) {
 			return false;
