@@ -39,7 +39,7 @@ import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 // A channel visible only to this shard (and moderators who opt in from elsewhere)
-public class ChannelLocal extends Channel {
+public class ChannelLocal extends Channel implements ChannelPermissionNode {
 	public static final String CHANNEL_CLASS_ID = "local";
 
 	private UUID mId;
@@ -463,5 +463,15 @@ public class ChannelLocal extends Channel {
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
+	}
+
+	@Override
+	public String getChannelPermission() {
+		return mChannelPermission;
+	}
+
+	@Override
+	public void setChannelPermission(String newPerms) {
+		mChannelPermission = newPerms;
 	}
 }

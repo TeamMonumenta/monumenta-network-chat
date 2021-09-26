@@ -158,18 +158,31 @@ public class ChatCommand {
 			}
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("change perms"));
+			arguments.add(new MultiLiteralArgument("change"));
+			arguments.add(new MultiLiteralArgument("permission"));
 			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
-				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[])
+				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 			));
 			arguments.add(new GreedyStringArgument("New channel perms"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					return changeChannelPerms(sender, (String) args[1], (String) args[2])
+					return changeChannelPerms(sender, (String) args[2], (String) args[3]);
 				})
 				.register();
 
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("get"));
+			arguments.add(new MultiLiteralArgument("permission"));
+			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+			));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return getChannelPermission(sender, (String) args[2]);
+				})
+				.register();
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
@@ -803,6 +816,31 @@ public class ChatCommand {
 		}
 	}
 
+	private static int getChannelPermission(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
+		Channel channel = ChannelManager.getChannel(channelName);
+		if (channel == null) {
+			CommandAPI.fail("No such channel " + channelName + ".");
+		}
+
+		if (!channel.mayManage(sender)) {
+			CommandAPI.fail("You do not have permission to run this command.");
+		}
+
+		if (!(channel instanceof ChannelPermissionNode)) {
+			CommandAPI.fail("This channel has no permission");
+		}
+
+		String perms = ((ChannelPermissionNode) channel).getChannelPermission();
+
+		if (perms == null || perms.isEmpty()) {
+			sender.sendMessage("This channel has no permission setted");
+		} else {
+			sender.sendMessage("Permission: " + perms + " for channel " + channelName);
+		}
+
+		return 1;
+	}
+
 	private static int changeChannelPerms(CommandSender sender, String channelName, String newPerms) throws WrapperCommandSyntaxException {
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
@@ -813,7 +851,11 @@ public class ChatCommand {
 			CommandAPI.fail("You do not have permission to change permission to channels.");
 		}
 
-		channel.setChannelPermission(newPerms);
+		if (!(channel instanceof ChannelPermissionNode)) {
+			CommandAPI.fail("You can't change the permision of this channel");
+		}
+
+		((ChannelPermissionNode) channel).setChannelPermission(newPerms);
 
 		return 1;
 	}

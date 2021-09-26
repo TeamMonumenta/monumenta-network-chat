@@ -38,7 +38,7 @@ import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 // A channel visible to all shards
-public class ChannelGlobal extends Channel {
+public class ChannelGlobal extends Channel implements ChannelPermissionNode {
 	public static final String CHANNEL_CLASS_ID = "global";
 
 	private UUID mId;
