@@ -38,7 +38,7 @@ import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 // A channel visible to all shards
-public class ChannelGlobal extends Channel implements ChannelPermissionNode {
+public class ChannelGlobal extends Channel implements ChannelPermissionNode, ChannelAutoJoin {
 	public static final String CHANNEL_CLASS_ID = "global";
 
 	private UUID mId;
@@ -453,5 +453,13 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode {
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
+	}
+
+	public boolean getAutoJoin() {
+		return mAutoJoin;
+	}
+
+	public void setAutoJoin(Boolean newAutoJoin) {
+		mAutoJoin = newAutoJoin;
 	}
 }

@@ -185,6 +185,69 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
+			arguments.add(new MultiLiteralArgument("get"));
+			arguments.add(new MultiLiteralArgument("autojoin"));
+			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+			));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					Channel channel = ChannelManager.getChannel((String) args[2]);
+
+					if (channel == null) {
+						CommandAPI.fail("No such channel " + (String) args[2] + ".");
+					}
+
+					if (!channel.mayManage(sender)) {
+						CommandAPI.fail("You do not have permission to run this command.");
+					}
+
+					if (!(channel instanceof ChannelAutoJoin)) {
+						CommandAPI.fail("This channel has auto join disabled.");
+					}
+
+					sender.sendMessage("Channel " + (String) args[2] + " auto join: " + (((ChannelAutoJoin) channel).getAutoJoin() ? "enabled." : "disabled."));
+
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("set"));
+			arguments.add(new MultiLiteralArgument("autojoin"));
+			arguments.add(new MultiLiteralArgument("enabled", "disabled"));
+			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+			));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					Channel channel = ChannelManager.getChannel((String) args[3]);
+
+					if (channel == null) {
+						CommandAPI.fail("No such channel " + (String) args[3] + ".");
+					}
+
+					if (!channel.mayManage(sender)) {
+						CommandAPI.fail("You do not have permission to run this command.");
+					}
+
+					if (!(channel instanceof ChannelAutoJoin)) {
+						CommandAPI.fail("This channel has auto join disabled.");
+					}
+
+					Boolean newAutoJoin = ((String) args[2]).equalsIgnoreCase("enabled") ? true : false;
+
+					((ChannelAutoJoin) channel).setAutoJoin(newAutoJoin);
+
+					sender.sendMessage("Channel " + (String) args[2] + " set auto join to " + (newAutoJoin ? "enabled." : "disabled."));
+
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
@@ -833,7 +896,7 @@ public class ChatCommand {
 		String perms = ((ChannelPermissionNode) channel).getChannelPermission();
 
 		if (perms == null || perms.isEmpty()) {
-			sender.sendMessage("This channel has no permission setted");
+			sender.sendMessage("This channel has no permission set");
 		} else {
 			sender.sendMessage("Permission: " + perms + " for channel " + channelName);
 		}
