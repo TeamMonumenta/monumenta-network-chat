@@ -188,7 +188,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("get"));
 			arguments.add(new MultiLiteralArgument("autojoin"));
 			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
-				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+				ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0])
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -218,7 +218,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("autojoin"));
 			arguments.add(new MultiLiteralArgument("enabled", "disabled"));
 			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
-				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+				ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0])
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)

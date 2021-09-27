@@ -136,6 +136,20 @@ public class ChannelManager implements Listener {
 		return new ArrayList<>(mChannels.values());
 	}
 
+	public static Set<String> getAutoJoinableChannelNames(CommandSender sender) {
+		Set<String> channels = new ConcurrentSkipListSet<>();
+		for (Channel channel : mChannels.values()) {
+			if (channel instanceof ChannelWhisper) {
+				continue;
+			}
+
+			if ((channel instanceof ChannelAutoJoin) && channel.mayManage(sender)) {
+				channels.add(channel.getName());
+			}
+		}
+		return channels;
+	}
+
 	public static Set<String> getManageableChannelNames(CommandSender sender) {
 		Set<String> channels = new ConcurrentSkipListSet<>();
 		for (Channel channel : mChannels.values()) {
