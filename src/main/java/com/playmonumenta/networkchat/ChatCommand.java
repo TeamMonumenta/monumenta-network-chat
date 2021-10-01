@@ -248,67 +248,6 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("set"));
-			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
-				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
-			));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					if (!(sender instanceof Player)) {
-						CommandAPI.fail("This command can only be run by players.");
-					}
-
-					Channel channel = ChannelManager.getChannel((String) args[2]);
-
-					if (channel == null) {
-						CommandAPI.fail("No such channel " + (String) args[2] + ".");
-					}
-
-					PlayerState playerState = PlayerStateManager.getPlayerState((Player) sender);
-
-					if (playerState == null) {
-						CommandAPI.fail(sender.getName() + " has no chat state and must relog.");
-					}
-
-					playerState.defaultChannels().setDefaultChannelForType(channel);
-
-					sender.sendMessage("Channel " + channel.getName() + " set as default for " + channel.getClassId() + " type.");
-
-					return 1;
-				})
-				.register();
-
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("show"));
-			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument("channels"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					if (!(sender instanceof Player)) {
-						CommandAPI.fail("This command can only be run by players.");
-					}
-
-					PlayerState playerState = PlayerStateManager.getPlayerState((Player) sender);
-
-					if (playerState == null) {
-						CommandAPI.fail(sender.getName() + " has no chat state and must relog.");
-					}
-
-					DefaultChannels defaultChannels = playerState.defaultChannels();
-					Channel channel = null;
-					for (String channelId : DefaultChannels.CHANNEL_TYPES) {
-						channel = defaultChannels.getDefaultChannel(channelId);
-						sender.sendMessage("Type: " + channelId + " channel: " + (channel == null ? "EMPTY" : channel.getName()));
-					}
-
-					return 1;
-				})
-				.register();
-
-			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
