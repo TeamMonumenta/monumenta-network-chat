@@ -297,7 +297,7 @@ public class ChannelGlobal extends Channel {
 		if (!sender.hasPermission("networkchat.say.global")) {
 			return false;
 		}
-		if (!sender.hasPermission(mChannelPermission)) {
+		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 			return false;
 		}
 
@@ -324,7 +324,7 @@ public class ChannelGlobal extends Channel {
 		if (!sender.hasPermission("networkchat.see.global")) {
 			return false;
 		}
-		if (!sender.hasPermission(mChannelPermission)) {
+		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 			return false;
 		}
 
@@ -355,7 +355,7 @@ public class ChannelGlobal extends Channel {
 			if (!sender.hasPermission("networkchat.say.global")) {
 				CommandAPI.fail("You do not have permission to talk in global chat.");
 			}
-			if (!sender.hasPermission(mChannelPermission)) {
+			if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 				CommandAPI.fail("You do not have permission to talk in " + mName + ".");
 			}
 

@@ -305,7 +305,7 @@ public class ChannelLocal extends Channel {
 		if (!sender.hasPermission("networkchat.say.local")) {
 			return false;
 		}
-		if (!sender.hasPermission(mChannelPermission)) {
+		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 			return false;
 		}
 
@@ -332,7 +332,7 @@ public class ChannelLocal extends Channel {
 		if (!sender.hasPermission("networkchat.see.local")) {
 			return false;
 		}
-		if (!sender.hasPermission(mChannelPermission)) {
+		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 			return false;
 		}
 
@@ -363,7 +363,7 @@ public class ChannelLocal extends Channel {
 			if (!sender.hasPermission("networkchat.say.local")) {
 				CommandAPI.fail("You do not have permission to talk in local chat.");
 			}
-			if (!sender.hasPermission(mChannelPermission)) {
+			if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 				CommandAPI.fail("You do not have permission to talk in " + mName + ".");
 			}
 

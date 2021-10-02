@@ -299,7 +299,7 @@ public class ChannelAnnouncement extends Channel {
 		if (!sender.hasPermission("networkchat.say.announcement")) {
 			return false;
 		}
-		if (!sender.hasPermission(mChannelPermission)) {
+		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 			return false;
 		}
 
@@ -326,7 +326,7 @@ public class ChannelAnnouncement extends Channel {
 		if (!sender.hasPermission("networkchat.see.announcement")) {
 			return false;
 		}
-		if (!sender.hasPermission(mChannelPermission)) {
+		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 			return false;
 		}
 
@@ -357,7 +357,7 @@ public class ChannelAnnouncement extends Channel {
 			if (!sender.hasPermission("networkchat.say.announcement")) {
 				CommandAPI.fail("You do not have permission to make announcements.");
 			}
-			if (!sender.hasPermission(mChannelPermission)) {
+			if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
 				CommandAPI.fail("You do not have permission to talk in " + mName + ".");
 			}
 
