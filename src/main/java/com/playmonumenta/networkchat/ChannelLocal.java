@@ -412,7 +412,6 @@ public class ChannelLocal extends Channel {
 	}
 
 	public void distributeMessage(Message message) {
-		showMessage(Bukkit.getConsoleSender(), message);
 		JsonObject extraData = message.getExtraData();
 		if (extraData == null
 		    || extraData.getAsJsonPrimitive("fromShard") == null
@@ -421,6 +420,7 @@ public class ChannelLocal extends Channel {
 			// TODO Chat spy here
 			return;
 		}
+		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
 			if (!mayListen(state.getPlayer())) {
