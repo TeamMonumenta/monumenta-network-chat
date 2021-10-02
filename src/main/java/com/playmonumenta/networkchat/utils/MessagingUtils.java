@@ -14,6 +14,7 @@ import org.bukkit.scoreboard.Team;
 
 import com.google.gson.JsonElement;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
+import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.RemotePlayerManager;
 
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -114,6 +115,7 @@ public class MessagingUtils {
 	public static Component playerComponent(Player player) {
 		Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
 		TextColor color;
+		String colorMiniMessage = "";
 		Component teamPrefix;
 		Component teamDisplayName;
 		Component teamSuffix;
@@ -125,6 +127,9 @@ public class MessagingUtils {
 		} else {
 			try {
 				color = playerTeam.color();
+				if (color != null) {
+					colorMiniMessage = "<" + color.asHexString() + ">";
+				}
 				teamPrefix = playerTeam.prefix();
 				teamDisplayName = playerTeam.displayName();
 				teamSuffix = playerTeam.suffix();
@@ -136,11 +141,14 @@ public class MessagingUtils {
 			}
 		}
 
+		Component profileMessage = PlayerStateManager.getPlayerState(player).profileMessageComponent();
+
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player")),
-		    List.of(Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+		    List.of(Template.of("team_color", colorMiniMessage),
 		        Template.of("team_prefix", teamPrefix),
 		        Template.of("team_displayname", teamDisplayName),
-		        Template.of("team_suffix", teamSuffix)));
+		        Template.of("team_suffix", teamSuffix),
+		        Template.of("profile_message", profileMessage)));
 	}
 
 	public static void sendStackTrace(CommandSender sender, Exception e) {

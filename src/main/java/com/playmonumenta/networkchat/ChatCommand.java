@@ -106,6 +106,82 @@ public class ChatCommand {
 					.register();
 
 				arguments.clear();
+				arguments.add(new MultiLiteralArgument("profilemessage"));
+				arguments.add(new MultiLiteralArgument("get"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandAPI.fail("This command can only be run as a player.");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						}
+						String profileMessage = state.profileMessage();
+						if (profileMessage.isEmpty()) {
+							target.sendMessage(Component.text("Your profile message is blank.", NamedTextColor.GRAY));
+						} else {
+							target.sendMessage(Component.text("Your profile message is:", NamedTextColor.GRAY));
+							target.sendMessage(state.profileMessageComponent()
+								.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
+						}
+						return profileMessage.length();
+					})
+					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("profilemessage"));
+				arguments.add(new MultiLiteralArgument("set"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandAPI.fail("This command can only be run as a player.");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						}
+						target.sendMessage(Component.text("Your profile message has been cleared.", NamedTextColor.GRAY));
+						state.profileMessage("");
+						return 0;
+					})
+					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("profilemessage"));
+				arguments.add(new MultiLiteralArgument("set"));
+				arguments.add(new GreedyStringArgument("message"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandAPI.fail("This command can only be run as a player.");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						}
+						target.sendMessage(Component.text("Your profile message has been set to:", NamedTextColor.GRAY));
+						String profileMessage = (String)args[2];
+						state.profileMessage(profileMessage);
+						target.sendMessage(state.profileMessageComponent()
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
+						return profileMessage.length();
+					})
+					.register();
+
+				arguments.clear();
 				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
 				arguments.add(new MultiLiteralArgument("my"));
 				arguments.add(new MultiLiteralArgument(channelType));

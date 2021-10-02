@@ -138,7 +138,7 @@ public class PlayerStateManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void playerJoinEvent(PlayerJoinEvent event) throws Exception {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
@@ -202,7 +202,7 @@ public class PlayerStateManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(priority = EventPriority.HIGHEST)
 	public void playerQuitEvent(PlayerQuitEvent event) throws Exception {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();

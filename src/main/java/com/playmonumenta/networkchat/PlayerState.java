@@ -16,6 +16,10 @@ import com.google.gson.JsonPrimitive;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
+import net.kyori.adventure.text.minimessage.transformation.Transformation;
+import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -45,6 +49,8 @@ public class PlayerState {
 	private List<Message> mSeenMessages;
 	private List<Message> mUnseenMessages;
 
+	private String mProfileMessage = "";
+
 	public PlayerState(Player player) {
 		mPlayerId = player.getUniqueId();
 		mChatPaused = false;
@@ -57,7 +63,6 @@ public class PlayerState {
 		mWatchedChannelIds = new HashMap<>();
 		mUnwatchedChannelIds = new HashMap<>();
 
-		// TODO Get default channel here
 		unsetActiveChannel();
 
 		mSeenMessages = new ArrayList<Message>(MAX_DISPLAYED_MESSAGES);
@@ -166,6 +171,11 @@ public class PlayerState {
 			}
 		}
 
+		JsonPrimitive profileMessageJson = obj.getAsJsonPrimitive("profileMessage");
+		if (profileMessageJson != null && profileMessageJson.isString()) {
+			state.mProfileMessage = profileMessageJson.getAsString();
+		}
+
 		return state;
 	}
 
@@ -205,6 +215,9 @@ public class PlayerState {
 		result.addProperty("isPaused", mChatPaused);
 		if (mActiveChannelId != null) {
 			result.addProperty("activeChannel", mActiveChannelId.toString());
+		}
+		if (mProfileMessage != null && !mProfileMessage.isEmpty()) {
+			result.addProperty("profileMessage", mProfileMessage);
 		}
 		result.add("whisperChannels", whisperChannels);
 		if (mLastWhisperChannel != null) {
@@ -512,5 +525,48 @@ public class PlayerState {
 				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newName + ".", NamedTextColor.GRAY));
 			}
 		}
+	}
+
+	public Component profileMessageComponent() {
+		Player player = getPlayer();
+
+		MiniMessage.Builder minimessageBuilder = MiniMessage.builder()
+			.removeDefaultTransformations()
+			.markdown()
+			.markdownFlavor(DiscordFlavor.get());
+
+		if (player.hasPermission("networkchat.transform.color")) {
+			minimessageBuilder.transformation(TransformationType.COLOR);
+		}
+		if (player.hasPermission("networkchat.transform.decoration")) {
+			minimessageBuilder.transformation(TransformationType.DECORATION);
+		}
+		if (player.hasPermission("networkchat.transform.keybind")) {
+			minimessageBuilder.transformation(TransformationType.KEYBIND);
+		}
+		if (player.hasPermission("networkchat.transform.font")) {
+			minimessageBuilder.transformation(TransformationType.FONT);
+		}
+		if (player.hasPermission("networkchat.transform.gradient")) {
+			minimessageBuilder.transformation(TransformationType.GRADIENT);
+		}
+		if (player.hasPermission("networkchat.transform.rainbow")) {
+			minimessageBuilder.transformation(TransformationType.RAINBOW);
+		}
+
+		return minimessageBuilder.build().parse(mProfileMessage);
+	}
+
+	public String profileMessage() {
+		return mProfileMessage;
+	}
+
+	public void profileMessage(String profileMessage) {
+		if (profileMessage == null) {
+			mProfileMessage = "";
+		} else {
+			mProfileMessage = profileMessage;
+		}
+		RemotePlayerManager.refreshPlayerName(getPlayer());
 	}
 }
