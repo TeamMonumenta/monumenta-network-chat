@@ -1,7 +1,7 @@
 package com.playmonumenta.networkchat;
 
 public interface ChannelAutoJoin {
-	public boolean getAutoJoin();
+	boolean getAutoJoin();
 
-	public void setAutoJoin(Boolean newAutoJoin);
+	void setAutoJoin(Boolean newAutoJoin);
 }
