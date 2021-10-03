@@ -563,6 +563,7 @@ public class ChannelManager implements Listener {
 
 			JsonArray participantsJson = data.getAsJsonArray("participants");
 			if (participantsJson != null) {
+				participants = new HashSet<>();
 				for (JsonElement participantJson : participantsJson) {
 					participants.add(UUID.fromString(participantJson.getAsString()));
 				}
