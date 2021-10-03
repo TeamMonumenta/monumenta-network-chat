@@ -52,7 +52,7 @@ public class NetworkChatProperties {
 		try {
 			object = FileUtils.readJson("NetworkChatProperties.json");
 		} catch (Exception e) {
-			//TODO-handle exceptions
+			plugin.getLogger().warning("Exception during reading file NetworkChatProperties.json! Cause: " + e.getMessage());
 		}
 
 		mChatCommandCreateEnabled = getPropertyValueBool(plugin, object, "ChatCommandCreate", mChatCommandCreateEnabled);
