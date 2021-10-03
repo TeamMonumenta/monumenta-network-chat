@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,6 +9,8 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.FileUtils;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
 public class NetworkChatProperties {
@@ -48,16 +51,20 @@ public class NetworkChatProperties {
 	}
 
 	private void loadInternal(Plugin plugin, CommandSender sender) {
-		JsonObject object = null;
-		try {
-			object = FileUtils.readJson("NetworkChatProperties.json");
-		} catch (Exception e) {
-			plugin.getLogger().warning("Exception during reading file NetworkChatProperties.json! Cause: " + e.getMessage());
+		File configFile = new File(plugin.getDataFolder(), "config.yml");
+		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
+		if (config.isBoolean("ChatCommandCreate")) {
+			mChatCommandCreateEnabled = config.getBoolean("ChatCommandCreate", mChatCommandCreateEnabled);
 		}
 
-		mChatCommandCreateEnabled = getPropertyValueBool(plugin, object, "ChatCommandCreate", mChatCommandCreateEnabled);
-		mChatCommandModifyEnabled = getPropertyValueBool(plugin, object, "ChatCommandModify", mChatCommandModifyEnabled);
-		mChatCommandDeleteEnabled = getPropertyValueBool(plugin, object, "ChatCommandDelate", mChatCommandDeleteEnabled);
+		if (config.isBoolean("ChatCommandModify")) {
+			mChatCommandModifyEnabled = config.getBoolean("ChatCommandModify", mChatCommandModifyEnabled);
+		}
+
+		if (config.isBoolean("ChatCommandDelate")) {
+			mChatCommandDeleteEnabled = config.getBoolean("ChatCommandDelate", mChatCommandDeleteEnabled);
+		}
 
 		plugin.getLogger().info("Properties:");
 		if (sender != null) {
@@ -81,15 +88,4 @@ public class NetworkChatProperties {
 		return out;
 	}
 
-	private boolean getPropertyValueBool(Plugin plugin, JsonObject object, String properyName, boolean defaultVal) {
-		boolean value = defaultVal;
-		if (object != null) {
-			JsonElement element = object.get(properyName);
-			if (element != null) {
-				value = element.getAsBoolean();
-			}
-		}
-
-		return value;
-	}
 }
