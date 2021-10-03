@@ -52,13 +52,12 @@ public class NetworkChatProperties {
 		try {
 			object = FileUtils.readJson("NetworkChatProperties.json");
 		} catch (Exception e) {
-			return;
 			//TODO-handle exceptions
 		}
 
-		mChatCommandCreateEnabled = getPropertyValueBool(plugin, object, "", mChatCommandCreateEnabled);
-		mChatCommandModifyEnabled = getPropertyValueBool(plugin, object, "", mChatCommandModifyEnabled);
-		mChatCommandDeleteEnabled = getPropertyValueBool(plugin, object, "", mChatCommandDeleteEnabled);
+		mChatCommandCreateEnabled = getPropertyValueBool(plugin, object, "ChatCommandCreate", mChatCommandCreateEnabled);
+		mChatCommandModifyEnabled = getPropertyValueBool(plugin, object, "ChatCommandModify", mChatCommandModifyEnabled);
+		mChatCommandDeleteEnabled = getPropertyValueBool(plugin, object, "ChatCommandDelate", mChatCommandDeleteEnabled);
 
 		plugin.getLogger().info("Properties:");
 		if (sender != null) {
@@ -84,10 +83,11 @@ public class NetworkChatProperties {
 
 	private boolean getPropertyValueBool(Plugin plugin, JsonObject object, String properyName, boolean defaultVal) {
 		boolean value = defaultVal;
-
-		JsonElement element = object.get(properyName);
-		if (element != null) {
-			value = element.getAsBoolean();
+		if (object != null) {
+			JsonElement element = object.get(properyName);
+			if (element != null) {
+				value = element.getAsBoolean();
+			}
 		}
 
 		return value;
