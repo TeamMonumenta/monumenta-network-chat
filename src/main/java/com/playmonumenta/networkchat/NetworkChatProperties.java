@@ -40,6 +40,7 @@ public class NetworkChatProperties {
 		ensureInstance();
 		return INSTANCE.mChatCommandModifyEnabled;
 	}
+
 	public static boolean getChatCommandDeleteEnabled() {
 		ensureInstance();
 		return INSTANCE.mChatCommandDeleteEnabled;
