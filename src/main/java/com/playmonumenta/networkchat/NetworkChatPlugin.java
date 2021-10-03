@@ -1,9 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Level;
@@ -44,6 +40,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 	@Override
 	public void onLoad() {
+		NetworkChatProperties.load(this, null);
+
 		mDefaultMessageFormats.put("player", "<insert:%player_name%>"
 			+ "<click:suggest_command:/tell %player_name% >"
 			+ "<hover:show_entity:'minecraft:player':%player_uuid%:%player_name%>"

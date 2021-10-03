@@ -38,7 +38,7 @@ import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 // A channel for server announcements
-public class ChannelAnnouncement extends Channel {
+public class ChannelAnnouncement extends Channel implements ChannelPermissionNode {
 	public static final String CHANNEL_CLASS_ID = "announcement";
 
 	private UUID mId;
@@ -438,5 +438,13 @@ public class ChannelAnnouncement extends Channel {
 		if (recipient instanceof Player) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
+	}
+
+	public String getChannelPermission() {
+		return mChannelPermission;
+	}
+
+	public void setChannelPermission(String newPerms) {
+		mChannelPermission = newPerms;
 	}
 }

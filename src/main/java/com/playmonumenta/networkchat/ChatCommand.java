@@ -44,66 +44,72 @@ public class ChatCommand {
 	public static void register() {
 		List<Argument> arguments = new ArrayList<>();
 
-		arguments.add(new MultiLiteralArgument("new"));
-		arguments.add(new StringArgument("Channel Name"));
-		ChannelAnnouncement.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
-		ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
-		ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
-		ChannelParty.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+		if (NetworkChatProperties.getChatCommandCreateEnabled()) {
+			arguments.add(new MultiLiteralArgument("new"));
+			arguments.add(new StringArgument("Channel Name"));
+			ChannelAnnouncement.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+			ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+			ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+			ChannelParty.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+		}
 		ChannelTeam.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 		ChannelWhisper.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
 
 		for (String baseCommand : COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("rename"));
-			arguments.add(new StringArgument("Old Channel Name").replaceSuggestions(info ->
-				ChannelManager.getChannelNames().toArray(new String[0])
-			));
-			arguments.add(new StringArgument("New Channel Name"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					return renameChannel(sender, (String)args[1], (String)args[2]);
-				})
-				.register();
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("rename"));
+				arguments.add(new StringArgument("Old Channel Name").replaceSuggestions(info ->
+					ChannelManager.getChannelNames().toArray(new String[0])
+				));
+				arguments.add(new StringArgument("New Channel Name"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						return renameChannel(sender, (String)args[1], (String)args[2]);
+					})
+					.register();
+			}
 
 			for (String channelType : DefaultChannels.CHANNEL_TYPES) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-				arguments.add(new MultiLiteralArgument("server"));
-				arguments.add(new MultiLiteralArgument(channelType));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.setdefaultchannel")) {
-							CommandAPI.fail("You do not have permission to set the default channels.");
-						}
-						return ChannelManager.getDefaultChannels().command(sender, channelType, true);
-					})
-					.register();
+				if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+					arguments.clear();
+					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
+					arguments.add(new MultiLiteralArgument("server"));
+					arguments.add(new MultiLiteralArgument(channelType));
+					new CommandAPICommand(baseCommand)
+						.withArguments(arguments)
+						.executes((sender, args) -> {
+							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
+								CommandAPI.fail("You do not have permission to set the default channels.");
+							}
+							return ChannelManager.getDefaultChannels().command(sender, channelType, true);
+						})
+						.register();
 
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-				arguments.add(new MultiLiteralArgument("server"));
-				arguments.add(new MultiLiteralArgument(channelType));
-				if (channelType.equals("default")) {
-					arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-						ChannelManager.getChannelNames().toArray(new String[0])
-					));
-				} else {
-					arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-						ChannelManager.getChannelNames(channelType).toArray(new String[0])
-					));
+					arguments.clear();
+					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
+					arguments.add(new MultiLiteralArgument("server"));
+					arguments.add(new MultiLiteralArgument(channelType));
+					if (channelType.equals("default")) {
+						arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+							ChannelManager.getChannelNames().toArray(new String[0])
+						));
+					} else {
+						arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+							ChannelManager.getChannelNames(channelType).toArray(new String[0])
+						));
+					}
+					new CommandAPICommand(baseCommand)
+						.withArguments(arguments)
+						.executes((sender, args) -> {
+							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
+								CommandAPI.fail("You do not have permission to set the default channels.");
+							}
+							return ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
+						})
+						.register();
 				}
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.setdefaultchannel")) {
-							CommandAPI.fail("You do not have permission to set the default channels.");
-						}
-						return ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
-					})
-					.register();
 
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("profilemessage"));
@@ -233,18 +239,114 @@ public class ChatCommand {
 					.register();
 			}
 
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("change"));
+				arguments.add(new MultiLiteralArgument("permission"));
+				arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new GreedyStringArgument("New channel perms"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						return changeChannelPerms(sender, (String) args[2], (String) args[3]);
+					})
+					.register();
+			}
+
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("delete"));
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
+			arguments.add(new MultiLiteralArgument("get"));
+			arguments.add(new MultiLiteralArgument("permission"));
+			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					return deleteChannel(sender, (String)args[2]);
+					return getChannelPermission(sender, (String) args[2]);
 				})
 				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("get"));
+			arguments.add(new MultiLiteralArgument("autojoin"));
+			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0])
+			));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					Channel channel = ChannelManager.getChannel((String) args[2]);
+
+					if (channel == null) {
+						CommandAPI.fail("No such channel " + (String) args[2] + ".");
+					}
+
+					if (!channel.mayManage(sender)) {
+						CommandAPI.fail("You do not have permission to run this command.");
+					}
+
+					if (!(channel instanceof ChannelAutoJoin)) {
+						CommandAPI.fail("This channel has auto join disabled.");
+					}
+
+					sender.sendMessage("Channel " + (String) args[2] + " auto join: " + (((ChannelAutoJoin) channel).getAutoJoin() ? "enabled." : "disabled."));
+
+					return 1;
+				})
+				.register();
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("set"));
+				arguments.add(new MultiLiteralArgument("autojoin"));
+				arguments.add(new MultiLiteralArgument("enabled", "disabled"));
+				arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+					ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0])
+				));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						Channel channel = ChannelManager.getChannel((String) args[3]);
+
+						if (channel == null) {
+							CommandAPI.fail("No such channel " + (String) args[3] + ".");
+						}
+
+						if (!channel.mayManage(sender)) {
+							CommandAPI.fail("You do not have permission to run this command.");
+						}
+
+						if (!(channel instanceof ChannelAutoJoin)) {
+							CommandAPI.fail("This channel has auto join disabled.");
+						}
+
+						Boolean newAutoJoin = ((String) args[2]).equalsIgnoreCase("enabled");
+
+						((ChannelAutoJoin) channel).setAutoJoin(newAutoJoin);
+
+						sender.sendMessage("Channel " + (String) args[2] + " set auto join to " + (newAutoJoin ? "enabled." : "disabled."));
+
+						return 1;
+					})
+					.register();
+			}
+
+			if (NetworkChatProperties.getChatCommandDeleteEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("delete"));
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
+				));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						return deleteChannel(sender, (String)args[2]);
+					})
+					.register();
+			}
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("say"));
@@ -456,50 +558,53 @@ public class ChatCommand {
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
-			));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					String channelName = (String) args[2];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandAPI.fail("No such channel " + channelName + ".");
-					}
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 
-					ChannelSettings settings = channel.channelSettings();
-					return settings.commandFlag(sender, (String) args[3]);
-				})
-				.register();
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("settings"));
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandAPI.fail("No such channel " + channelName + ".");
+						}
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
-			));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					String channelName = (String) args[2];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandAPI.fail("No such channel " + channelName + ".");
-					}
+						ChannelSettings settings = channel.channelSettings();
+						return settings.commandFlag(sender, (String) args[3]);
+					})
+					.register();
 
-					ChannelSettings settings = channel.channelSettings();
-					int result = settings.commandFlag(sender, (String) args[3], (String) args[4]);
-					ChannelManager.saveChannel(channel);
-					return result;
-				})
-				.register();
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("settings"));
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
+				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandAPI.fail("No such channel " + channelName + ".");
+						}
+
+						ChannelSettings settings = channel.channelSettings();
+						int result = settings.commandFlag(sender, (String) args[3], (String) args[4]);
+						ChannelManager.saveChannel(channel);
+						return result;
+					})
+					.register();
+
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("permissions"));
@@ -619,6 +724,8 @@ public class ChatCommand {
 				})
 				.register();
 
+			}
+
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("visibility"));
 			arguments.add(new MultiLiteralArgument("default"));
@@ -647,141 +754,144 @@ public class ChatCommand {
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("color"));
-			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
-				ChannelGlobal.CHANNEL_CLASS_ID,
-				ChannelLocal.CHANNEL_CLASS_ID,
-				ChannelParty.CHANNEL_CLASS_ID,
-				ChannelTeam.CHANNEL_CLASS_ID,
-				ChannelWhisper.CHANNEL_CLASS_ID));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.format.default")) {
-						CommandAPI.fail("You do not have permission to change the default channel formats.");
-					}
-					String id = (String) args[2];
-					TextColor color = NetworkChatPlugin.messageColor(id);
-					sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
-					return 1;
-				})
-				.register();
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("color"));
-			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
-				ChannelGlobal.CHANNEL_CLASS_ID,
-				ChannelLocal.CHANNEL_CLASS_ID,
-				ChannelParty.CHANNEL_CLASS_ID,
-				ChannelTeam.CHANNEL_CLASS_ID,
-				ChannelWhisper.CHANNEL_CLASS_ID));
-			arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.format.default")) {
-						CommandAPI.fail("You do not have permission to change the default channel formats.");
-					}
-					String id = (String) args[2];
-					String colorString = (String) args[3];
-					TextColor color = MessagingUtils.colorFromString(colorString);
-					if (color == null) {
-						CommandAPI.fail("No such color " + colorString);
-					}
-					NetworkChatPlugin.messageColor(id, color);
-					sender.sendMessage(Component.text(id + " set to " + MessagingUtils.colorToString(color), color));
-					return 1;
-				})
-				.register();
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("color"));
+				arguments.add(new MultiLiteralArgument("default"));
+				arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
+					ChannelGlobal.CHANNEL_CLASS_ID,
+					ChannelLocal.CHANNEL_CLASS_ID,
+					ChannelParty.CHANNEL_CLASS_ID,
+					ChannelTeam.CHANNEL_CLASS_ID,
+					ChannelWhisper.CHANNEL_CLASS_ID));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.format.default")) {
+							CommandAPI.fail("You do not have permission to change the default channel formats.");
+						}
+						String id = (String) args[2];
+						TextColor color = NetworkChatPlugin.messageColor(id);
+						sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
+						return 1;
+					})
+					.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("format"));
-			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument("player",
-				"entity",
-				"sender",
-				ChannelAnnouncement.CHANNEL_CLASS_ID,
-				ChannelGlobal.CHANNEL_CLASS_ID,
-				ChannelLocal.CHANNEL_CLASS_ID,
-				ChannelParty.CHANNEL_CLASS_ID,
-				ChannelTeam.CHANNEL_CLASS_ID,
-				ChannelWhisper.CHANNEL_CLASS_ID));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.format.default")) {
-						CommandAPI.fail("You do not have permission to change the default channel formats.");
-					}
-					String id = (String) args[2];
-					TextColor color = NetworkChatPlugin.messageColor(id);
-					String format = NetworkChatPlugin.messageFormat(id);
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("color"));
+				arguments.add(new MultiLiteralArgument("default"));
+				arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
+					ChannelGlobal.CHANNEL_CLASS_ID,
+					ChannelLocal.CHANNEL_CLASS_ID,
+					ChannelParty.CHANNEL_CLASS_ID,
+					ChannelTeam.CHANNEL_CLASS_ID,
+					ChannelWhisper.CHANNEL_CLASS_ID));
+				arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.format.default")) {
+							CommandAPI.fail("You do not have permission to change the default channel formats.");
+						}
+						String id = (String) args[2];
+						String colorString = (String) args[3];
+						TextColor color = MessagingUtils.colorFromString(colorString);
+						if (color == null) {
+							CommandAPI.fail("No such color " + colorString);
+						}
+						NetworkChatPlugin.messageColor(id, color);
+						sender.sendMessage(Component.text(id + " set to " + MessagingUtils.colorToString(color), color));
+						return 1;
+					})
+					.register();
 
-					Component senderComponent = MessagingUtils.senderComponent(sender);
-					sender.sendMessage(Component.text(id + " is " + format, color)
-						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
-					if (id.equals("player")) {
-						sender.sendMessage(Component.text("Example: ").append(senderComponent));
-					} else {
-						String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
-						Component fullMessage = Component.empty()
-							.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
-								Template.of("sender", senderComponent),
-								Template.of("receiver", senderComponent))))
-							.append(Component.empty().color(color).append(Component.text("Test message")));
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("format"));
+				arguments.add(new MultiLiteralArgument("default"));
+				arguments.add(new MultiLiteralArgument("player",
+					"entity",
+					"sender",
+					ChannelAnnouncement.CHANNEL_CLASS_ID,
+					ChannelGlobal.CHANNEL_CLASS_ID,
+					ChannelLocal.CHANNEL_CLASS_ID,
+					ChannelParty.CHANNEL_CLASS_ID,
+					ChannelTeam.CHANNEL_CLASS_ID,
+					ChannelWhisper.CHANNEL_CLASS_ID));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.format.default")) {
+							CommandAPI.fail("You do not have permission to change the default channel formats.");
+						}
+						String id = (String) args[2];
+						TextColor color = NetworkChatPlugin.messageColor(id);
+						String format = NetworkChatPlugin.messageFormat(id);
 
-						sender.sendMessage(Component.text("Example message:", color));
-						sender.sendMessage(fullMessage);
-					}
-					return 1;
-				})
-				.register();
+						Component senderComponent = MessagingUtils.senderComponent(sender);
+						sender.sendMessage(Component.text(id + " is " + format, color)
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
+						if (id.equals("player")) {
+							sender.sendMessage(Component.text("Example: ").append(senderComponent));
+						} else {
+							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
+							Component fullMessage = Component.empty()
+								.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
+									Template.of("sender", senderComponent),
+									Template.of("receiver", senderComponent))))
+								.append(Component.empty().color(color).append(Component.text("Test message")));
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("format"));
-			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument("player",
-				"entity",
-				"sender",
-				ChannelAnnouncement.CHANNEL_CLASS_ID,
-				ChannelGlobal.CHANNEL_CLASS_ID,
-				ChannelLocal.CHANNEL_CLASS_ID,
-				ChannelParty.CHANNEL_CLASS_ID,
-				ChannelTeam.CHANNEL_CLASS_ID,
-				ChannelWhisper.CHANNEL_CLASS_ID));
-			arguments.add(new GreedyStringArgument("format"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.format.default")) {
-						CommandAPI.fail("You do not have permission to change the default channel formats.");
-					}
-					String id = (String) args[2];
-					TextColor color = NetworkChatPlugin.messageColor(id);
-					String format = (String) args[3];
-					NetworkChatPlugin.messageFormat(id, format);
+							sender.sendMessage(Component.text("Example message:", color));
+							sender.sendMessage(fullMessage);
+						}
+						return 1;
+					})
+					.register();
 
-					Component senderComponent = MessagingUtils.senderComponent(sender);
-					sender.sendMessage(Component.text(id + " set to " + format, color)
-						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
-					if (id.equals("player")) {
-						sender.sendMessage(Component.text("Example: ").append(senderComponent));
-					} else {
-						String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
-						Component fullMessage = Component.empty()
-							.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
-								Template.of("sender", senderComponent),
-								Template.of("receiver", senderComponent))))
-							.append(Component.empty().color(color).append(Component.text("Test message")));
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("format"));
+				arguments.add(new MultiLiteralArgument("default"));
+				arguments.add(new MultiLiteralArgument("player",
+					"entity",
+					"sender",
+					ChannelAnnouncement.CHANNEL_CLASS_ID,
+					ChannelGlobal.CHANNEL_CLASS_ID,
+					ChannelLocal.CHANNEL_CLASS_ID,
+					ChannelParty.CHANNEL_CLASS_ID,
+					ChannelTeam.CHANNEL_CLASS_ID,
+					ChannelWhisper.CHANNEL_CLASS_ID));
+				arguments.add(new GreedyStringArgument("format"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.format.default")) {
+							CommandAPI.fail("You do not have permission to change the default channel formats.");
+						}
+						String id = (String) args[2];
+						TextColor color = NetworkChatPlugin.messageColor(id);
+						String format = (String) args[3];
+						NetworkChatPlugin.messageFormat(id, format);
 
-						sender.sendMessage(Component.text("Example message:", color));
-						sender.sendMessage(fullMessage);
-					}
-					return 1;
-				})
-				.register();
+						Component senderComponent = MessagingUtils.senderComponent(sender);
+						sender.sendMessage(Component.text(id + " set to " + format, color)
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
+						if (id.equals("player")) {
+							sender.sendMessage(Component.text("Example: ").append(senderComponent));
+						} else {
+							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
+							Component fullMessage = Component.empty()
+								.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
+									Template.of("sender", senderComponent),
+									Template.of("receiver", senderComponent))))
+								.append(Component.empty().color(color).append(Component.text("Test message")));
+
+							sender.sendMessage(Component.text("Example message:", color));
+							sender.sendMessage(fullMessage);
+						}
+						return 1;
+					})
+					.register();
+			}
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("delete"));
@@ -863,6 +973,50 @@ public class ChatCommand {
 				})
 				.register();
 		}
+	}
+
+	private static int getChannelPermission(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
+		Channel channel = ChannelManager.getChannel(channelName);
+		if (channel == null) {
+			CommandAPI.fail("No such channel " + channelName + ".");
+		}
+
+		if (!channel.mayManage(sender)) {
+			CommandAPI.fail("You do not have permission to run this command.");
+		}
+
+		if (!(channel instanceof ChannelPermissionNode)) {
+			CommandAPI.fail("This channel has no permission");
+		}
+
+		String perms = ((ChannelPermissionNode) channel).getChannelPermission();
+
+		if (perms == null || perms.isEmpty()) {
+			sender.sendMessage("This channel has no permission set");
+		} else {
+			sender.sendMessage("Permission: " + perms + " for channel " + channelName);
+		}
+
+		return 1;
+	}
+
+	private static int changeChannelPerms(CommandSender sender, String channelName, String newPerms) throws WrapperCommandSyntaxException {
+		Channel channel = ChannelManager.getChannel(channelName);
+		if (channel == null) {
+			CommandAPI.fail("No such channel " + channelName + ".");
+		}
+
+		if (!channel.mayManage(sender)) {
+			CommandAPI.fail("You do not have permission to change permission to channels.");
+		}
+
+		if (!(channel instanceof ChannelPermissionNode)) {
+			CommandAPI.fail("You can't change the permision of this channel");
+		}
+
+		((ChannelPermissionNode) channel).setChannelPermission(newPerms);
+
+		return 1;
 	}
 
 	private static int renameChannel(CommandSender sender, String oldChannelName, String newChannelName) throws WrapperCommandSyntaxException {
