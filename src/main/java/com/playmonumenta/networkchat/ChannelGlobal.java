@@ -38,7 +38,7 @@ import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 
 // A channel visible to all shards
-public class ChannelGlobal extends Channel {
+public class ChannelGlobal extends Channel implements ChannelPermissionNode, ChannelAutoJoin {
 	public static final String CHANNEL_CLASS_ID = "global";
 
 	private UUID mId;
@@ -290,6 +290,14 @@ public class ChannelGlobal extends Channel {
 		return mAutoJoin && mayListen(state.getPlayer());
 	}
 
+	public String getChannelPermission() {
+		return mChannelPermission;
+	}
+
+	public void setChannelPermission(String newPerm) {
+		mChannelPermission = newPerm;
+	}
+
 	public boolean mayChat(CommandSender sender) {
 		if (!sender.hasPermission("networkchat.say")) {
 			return false;
@@ -445,5 +453,13 @@ public class ChannelGlobal extends Channel {
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
+	}
+
+	public boolean getAutoJoin() {
+		return mAutoJoin;
+	}
+
+	public void setAutoJoin(Boolean newAutoJoin) {
+		mAutoJoin = newAutoJoin;
 	}
 }
