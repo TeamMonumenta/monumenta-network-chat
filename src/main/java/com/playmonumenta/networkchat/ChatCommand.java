@@ -246,7 +246,7 @@ public class ChatCommand {
 							CommandAPI.fail("This channel has auto join disabled.");
 						}
 
-						Boolean newAutoJoin = ((String) args[2]).equalsIgnoreCase("enabled") ? true : false;
+						Boolean newAutoJoin = ((String) args[2]).equalsIgnoreCase("enabled");
 
 						((ChannelAutoJoin) channel).setAutoJoin(newAutoJoin);
 
