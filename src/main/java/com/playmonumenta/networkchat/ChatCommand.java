@@ -159,6 +159,10 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.setprofilemessage")) {
+							CommandAPI.fail("This command can only be run as a player.");
+						}
+
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player)) {
 							CommandAPI.fail("This command can only be run as a player.");
