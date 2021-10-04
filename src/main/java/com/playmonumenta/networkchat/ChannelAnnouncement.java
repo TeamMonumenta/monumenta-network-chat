@@ -3,10 +3,8 @@ package com.playmonumenta.networkchat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonElement;
@@ -32,7 +30,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 
 // A channel for server announcements
 public class ChannelAnnouncement extends Channel implements ChannelPermissionNode {
