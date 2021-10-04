@@ -21,7 +21,6 @@ import me.clip.placeholderapi.PlaceholderAPI;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -190,6 +189,7 @@ public class MessagingUtils {
 
 		Component profileMessage = PlayerStateManager.getPlayerState(player).profileMessageComponent();
 		String postPapiProcessing = PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player"))
+			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
 			.replace("<hover:show_text:\"\"></hover>", "");
 		return SENDER_FMT_MINIMESSAGE.parse(postPapiProcessing,
 			List.of(Template.of("team_color", colorMiniMessage),
