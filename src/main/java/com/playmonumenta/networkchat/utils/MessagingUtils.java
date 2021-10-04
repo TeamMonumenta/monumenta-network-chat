@@ -37,16 +37,16 @@ public class MessagingUtils {
 	public static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 	public static final PlainComponentSerializer PLAIN_SERIALIZER = PlainComponentSerializer.plain();
 	public static final MiniMessage CHANNEL_HEADER_FMT_MINIMESSAGE = MiniMessage.builder()
-	    .transformations(
-	    	TransformationRegistry.builder().clear()
+		.transformations(
+			TransformationRegistry.builder().clear()
 				.add(TransformationType.COLOR)
 				.add(TransformationType.DECORATION)
-	    		.build()
-	    )
-	    .build();
+				.build()
+		)
+		.build();
 	public static final MiniMessage SENDER_FMT_MINIMESSAGE = MiniMessage.builder()
-	    .transformations(
-	    	TransformationRegistry.builder().clear()
+		.transformations(
+			TransformationRegistry.builder().clear()
 				.add(TransformationType.COLOR)
 				.add(TransformationType.DECORATION)
 				.add(TransformationType.HOVER_EVENT)
@@ -57,9 +57,9 @@ public class MessagingUtils {
 				.add(TransformationType.FONT)
 				.add(TransformationType.GRADIENT)
 				.add(TransformationType.RAINBOW)
-	    		.build()
-	    )
-	    .build();
+				.build()
+		)
+		.build();
 
 	public static MiniMessage getAllowedMiniMessage(CommandSender sender) {
 		TransformationRegistry.Builder transforms = TransformationRegistry.builder().clear();
@@ -106,7 +106,7 @@ public class MessagingUtils {
 			return entityComponent((Entity) sender);
 		}
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
-		    List.of(Template.of("sender_name", sender.getName())));
+			List.of(Template.of("sender_name", sender.getName())));
 	}
 
 	public static Component entityComponent(Entity entity) {
@@ -148,13 +148,13 @@ public class MessagingUtils {
 		}
 
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("entity")),
-		    List.of(Template.of("entity_type", type.toString()),
-		        Template.of("entity_uuid", (id == null) ? "" : id.toString()),
-		        Template.of("entity_name", entityName),
-		        Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
-		        Template.of("team_prefix", teamPrefix),
-		        Template.of("team_displayname", teamDisplayName),
-		        Template.of("team_suffix", teamSuffix)));
+			List.of(Template.of("entity_type", type.toString()),
+				Template.of("entity_uuid", (id == null) ? "" : id.toString()),
+				Template.of("entity_name", entityName),
+				Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+				Template.of("team_prefix", teamPrefix),
+				Template.of("team_displayname", teamDisplayName),
+				Template.of("team_suffix", teamSuffix)));
 	}
 
 	public static Component playerComponent(Player player) {
@@ -192,11 +192,11 @@ public class MessagingUtils {
 		String postPapiProcessing = PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player"))
 			.replace("<hover:show_text:\"\"></hover>", "");
 		return SENDER_FMT_MINIMESSAGE.parse(postPapiProcessing,
-		    List.of(Template.of("team_color", colorMiniMessage),
-		        Template.of("team_prefix", teamPrefix),
-		        Template.of("team_displayname", teamDisplayName),
-		        Template.of("team_suffix", teamSuffix),
-		        Template.of("profile_message", profileMessage)));
+			List.of(Template.of("team_color", colorMiniMessage),
+				Template.of("team_prefix", teamPrefix),
+				Template.of("team_displayname", teamDisplayName),
+				Template.of("team_suffix", teamSuffix),
+				Template.of("profile_message", profileMessage)));
 	}
 
 	public static void sendStackTrace(CommandSender sender, Exception e) {
