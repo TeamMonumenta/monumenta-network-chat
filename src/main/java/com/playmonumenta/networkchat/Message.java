@@ -2,7 +2,6 @@ package com.playmonumenta.networkchat;
 
 import java.lang.ref.Cleaner;
 import java.time.Instant;
-import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
@@ -10,7 +9,6 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import org.bukkit.NamespacedKey;
