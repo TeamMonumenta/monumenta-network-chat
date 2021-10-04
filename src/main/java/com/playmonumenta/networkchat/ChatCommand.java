@@ -23,10 +23,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.transformation.TransformationType;
-import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -34,12 +31,6 @@ import org.bukkit.entity.Player;
 public class ChatCommand {
 	public static final String[] COMMANDS = new String[]{"chat", "ch", "chattest"};
 	public static final String[] COLOR_SUGGESTIONS = new String[]{"aqua", "dark_purple", "#0189af"};
-	private static final MiniMessage MINIMESSAGE = MiniMessage.builder()
-		.transformation(TransformationType.COLOR)
-		.transformation(TransformationType.DECORATION)
-		.markdown()
-		.markdownFlavor(DiscordFlavor.get())
-		.build();
 
 	public static void register() {
 		List<Argument> arguments = new ArrayList<>();
@@ -826,7 +817,7 @@ public class ChatCommand {
 						}
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
-						String format = NetworkChatPlugin.messageFormat(id);
+						String format = NetworkChatPlugin.messageFormat(id).replace("\n", "\\n");
 
 						Component senderComponent = MessagingUtils.senderComponent(sender);
 						sender.sendMessage(Component.text(id + " is " + format, color)
@@ -836,7 +827,7 @@ public class ChatCommand {
 						} else {
 							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
 							Component fullMessage = Component.empty()
-								.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
+								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
 									Template.of("sender", senderComponent),
 									Template.of("receiver", senderComponent))))
 								.append(Component.empty().color(color).append(Component.text("Test message")));
@@ -870,7 +861,7 @@ public class ChatCommand {
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
 						String format = (String) args[3];
-						NetworkChatPlugin.messageFormat(id, format);
+						NetworkChatPlugin.messageFormat(id, format.replace("\\n", "\n"));
 
 						Component senderComponent = MessagingUtils.senderComponent(sender);
 						sender.sendMessage(Component.text(id + " set to " + format, color)
@@ -880,7 +871,7 @@ public class ChatCommand {
 						} else {
 							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
 							Component fullMessage = Component.empty()
-								.append(MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
+								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
 									Template.of("sender", senderComponent),
 									Template.of("receiver", senderComponent))))
 								.append(Component.empty().color(color).append(Component.text("Test message")));

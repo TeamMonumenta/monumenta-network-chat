@@ -13,13 +13,11 @@ import com.destroystokyo.paper.ClientOption;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
-import net.kyori.adventure.text.minimessage.transformation.Transformation;
-import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -529,32 +527,7 @@ public class PlayerState {
 
 	public Component profileMessageComponent() {
 		Player player = getPlayer();
-
-		MiniMessage.Builder minimessageBuilder = MiniMessage.builder()
-			.removeDefaultTransformations()
-			.markdown()
-			.markdownFlavor(DiscordFlavor.get());
-
-		if (player.hasPermission("networkchat.transform.color")) {
-			minimessageBuilder.transformation(TransformationType.COLOR);
-		}
-		if (player.hasPermission("networkchat.transform.decoration")) {
-			minimessageBuilder.transformation(TransformationType.DECORATION);
-		}
-		if (player.hasPermission("networkchat.transform.keybind")) {
-			minimessageBuilder.transformation(TransformationType.KEYBIND);
-		}
-		if (player.hasPermission("networkchat.transform.font")) {
-			minimessageBuilder.transformation(TransformationType.FONT);
-		}
-		if (player.hasPermission("networkchat.transform.gradient")) {
-			minimessageBuilder.transformation(TransformationType.GRADIENT);
-		}
-		if (player.hasPermission("networkchat.transform.rainbow")) {
-			minimessageBuilder.transformation(TransformationType.RAINBOW);
-		}
-
-		return minimessageBuilder.build().parse(mProfileMessage);
+		return MessagingUtils.getAllowedMiniMessage(player).parse(mProfileMessage);
 	}
 
 	public String profileMessage() {

@@ -11,9 +11,6 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.transformation.Transformation;
-import net.kyori.adventure.text.minimessage.transformation.TransformationType;
-import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import org.bukkit.NamespacedKey;
@@ -83,21 +80,8 @@ public class Message implements AutoCloseable {
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, String message, boolean markdown, Set<TransformationType<? extends Transformation>> textTransformations) {
-		MiniMessage.Builder minimessageBuilder = MiniMessage.builder()
-		    .removeDefaultTransformations();
-
-		if (markdown) {
-			minimessageBuilder.markdown()
-			    .markdownFlavor(DiscordFlavor.get());
-		}
-
-		for (TransformationType<? extends Transformation> transform : textTransformations) {
-			minimessageBuilder.transformation(transform);
-		}
-
-		Component messageComponent = minimessageBuilder.build().parse(message);
-
+	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, String message) {
+		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).parse(message);
 		return Message.createMessage(channel, sender, extraData, messageComponent);
 	}
 
@@ -140,22 +124,6 @@ public class Message implements AutoCloseable {
 		object.addProperty("id", mId.toString());
 		object.addProperty("instant", mInstant.toEpochMilli());
 		object.addProperty("channelId", mChannelId.toString());
-
-		/***********************************************************************
-		 * For the discord bot; remove when updated to pull from Redis
-		 */
-		Channel channel = getChannel();
-		String channelClassId = ChannelLoading.CHANNEL_CLASS_ID;
-		String channelName = "Unknown";
-		if (channel != null) {
-			channelClassId = channel.getClassId();
-			channelName = channel.getName();
-		}
-		object.addProperty("channelClassId", channelClassId);
-		object.addProperty("channelClassName", channelName);
-		/*
-		 * For the discord bot; remove when updated to pull from Redis
-		 **********************************************************************/
 
 		if (mSenderId != null) {
 			object.addProperty("senderId", mSenderId.toString());
