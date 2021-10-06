@@ -106,7 +106,11 @@ public class MessagingUtils {
 			return entityComponent((Entity) sender);
 		}
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
-			List.of(Template.of("sender_name", sender.getName()), Template.of("[item]", () -> {
+			List.of(Template.of("sender_name", sender.getName()), Template.of("item", () -> {
+				if (!sender.hasPermission("networkchat.transform.item")) {
+					return Component.empty();
+				}
+
 				if (!(sender instanceof Player)) {
 					return Component.empty();
 				}
