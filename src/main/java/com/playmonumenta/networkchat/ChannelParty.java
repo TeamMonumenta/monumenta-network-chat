@@ -16,7 +16,6 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
-import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
@@ -158,14 +157,14 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelParty newChannel = null;
 					if (!sender.hasPermission("networkchat.new.party")) {
-						CommandAPI.fail("You do not have permission to make new party channels.");
+						CommandUtils.fail(sender, "You do not have permission to make new party channels.");
 					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
 						newChannel = new ChannelParty(channelName);
 					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Add the sender to the party if they're a player
 					CommandSender callee = CommandUtils.getCallee(sender);
@@ -193,21 +192,21 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					String channelId = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelId);
 					if (ch == null) {
-						CommandAPI.fail("No such channel " + channelId + ".");
+						CommandUtils.fail(sender, "No such channel " + channelId + ".");
 					}
 					if (!(ch instanceof ChannelParty)) {
-						CommandAPI.fail("Channel " + channelId + " is not a party channel.");
+						CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
 					}
 					ChannelParty channel = (ChannelParty) ch;
 
 					if (!channel.isParticipant(sender)) {
-						CommandAPI.fail("You are not a participant of " + channelId + ".");
+						CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
 					}
 
 					String playerName = (String)args[3];
 					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 					if (playerId == null) {
-						CommandAPI.fail("No such player " + playerName + ".");
+						CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
 
 					sender.sendMessage(Component.text("Added " + playerName + " to " + channelId + ".", NamedTextColor.GRAY));
@@ -231,21 +230,21 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					String channelId = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelId);
 					if (ch == null) {
-						CommandAPI.fail("No such channel " + channelId + ".");
+						CommandUtils.fail(sender, "No such channel " + channelId + ".");
 					}
 					if (!(ch instanceof ChannelParty)) {
-						CommandAPI.fail("Channel " + channelId + " is not a party channel.");
+						CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
 					}
 					ChannelParty channel = (ChannelParty) ch;
 
 					if (!channel.isParticipant(sender)) {
-						CommandAPI.fail("You are not a participant of " + channelId + ".");
+						CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
 					}
 
 					String playerName = (String)args[3];
 					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 					if (playerId == null) {
-						CommandAPI.fail("No such player " + playerName + ".");
+						CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
 
 					// TODO Display message and make player unwatch channel.
@@ -267,15 +266,15 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					String channelId = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelId);
 					if (ch == null) {
-						CommandAPI.fail("No such channel " + channelId + ".");
+						CommandUtils.fail(sender, "No such channel " + channelId + ".");
 					}
 					if (!(ch instanceof ChannelParty)) {
-						CommandAPI.fail("Channel " + channelId + " is not a party channel.");
+						CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
 					}
 					ChannelParty channel = (ChannelParty) ch;
 
 					if (!channel.isParticipant(sender)) {
-						CommandAPI.fail("You are not a participant of " + channelId + ".");
+						CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
 					}
 					Player player = (Player) sender;
 
@@ -487,14 +486,14 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (sender instanceof Player) {
 			if (!sender.hasPermission("networkchat.say")) {
-				CommandAPI.fail("You do not have permission to chat.");
+				CommandUtils.fail(sender, "You do not have permission to chat.");
 			}
 			if (!sender.hasPermission("networkchat.say.party")) {
-				CommandAPI.fail("You do not have permission to talk in party chat.");
+				CommandUtils.fail(sender, "You do not have permission to talk in party chat.");
 			}
 
 			if (!mayChat(sender)) {
-				CommandAPI.fail("You do not have permission to chat in this channel.");
+				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 			}
 		}
 
@@ -505,7 +504,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
-			CommandAPI.fail("Could not send message.");
+			CommandUtils.fail(sender, "Could not send message.");
 		}
 	}
 
