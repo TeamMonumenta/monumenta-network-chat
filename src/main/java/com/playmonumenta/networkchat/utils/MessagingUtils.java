@@ -10,6 +10,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Team;
 
 import com.google.gson.JsonElement;
@@ -105,7 +106,21 @@ public class MessagingUtils {
 			return entityComponent((Entity) sender);
 		}
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
-			List.of(Template.of("sender_name", sender.getName())));
+			List.of(Template.of("sender_name", sender.getName()), Template.of("item", () -> {
+				if (!sender.hasPermission("networkchat.transform.item")) {
+					return Component.empty();
+				}
+
+				if (!(sender instanceof Player)) {
+					return Component.empty();
+				}
+				Player player = (Player) sender;
+				ItemStack item = player.getInventory().getItemInMainHand();
+				if (item != null) {
+					return item.displayName().hoverEvent(item);
+				}
+				return Component.empty();
+			})));
 	}
 
 	public static Component entityComponent(Entity entity) {
