@@ -102,7 +102,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerPermsJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					// TODO Log this
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch exeption during converting json to channel local reason: " + e.getMessage());
 					continue;
 				}
 				ChannelPerms playerPerms = ChannelPerms.fromJson(playerPermsJson);

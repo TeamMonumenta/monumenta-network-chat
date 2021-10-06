@@ -100,7 +100,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerPermsJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					// TODO Log this
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch exeption during converting json to channel Announcement reason: " + e.getMessage());
 					continue;
 				}
 				ChannelPerms playerPerms = ChannelPerms.fromJson(playerPermsJson);
