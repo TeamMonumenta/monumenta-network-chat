@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import dev.jorel.commandapi.CommandAPI;
@@ -164,14 +165,14 @@ public class ChannelTeam extends Channel {
 	private static int runCommandSet(CommandSender sender) throws WrapperCommandSyntaxException {
 		if (!(sender instanceof Player)) {
 			sender.sendMessage(Component.translatable("permissions.requires.player"));
-			CommandAPI.fail("A player is required to run this command here");
+			CommandUtils.fail(sender, "A player is required to run this command here");
 		}
 
 		Player sendingPlayer = (Player) sender;
 		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam((sendingPlayer).getName());
 		if (team == null) {
 			sender.sendMessage(Component.translatable("commands.teammsg.failed.noteam"));
-			CommandAPI.fail(sendingPlayer.getName() + " must be on a team to message their team.");
+			CommandUtils.fail(sender, sendingPlayer.getName() + " must be on a team to message their team.");
 		}
 		String teamName = team.getName();
 
@@ -180,7 +181,7 @@ public class ChannelTeam extends Channel {
 			try {
 				channel = new ChannelTeam(teamName);
 			} catch (Exception e) {
-				CommandAPI.fail("Could not create new team channel: Could not connect to RabbitMQ.");
+				CommandUtils.fail(sender, "Could not create new team channel: Could not connect to RabbitMQ.");
 			}
 			ChannelManager.registerNewChannel(sender, channel);
 		}
@@ -194,7 +195,7 @@ public class ChannelTeam extends Channel {
 	private static int runCommandSay(CommandSender sender, String message) throws WrapperCommandSyntaxException {
 		if (!(sender instanceof Entity)) {
 			sender.sendMessage(Component.translatable("permissions.requires.entity"));
-			CommandAPI.fail("An entity is required to run this command here");
+			CommandUtils.fail(sender, "An entity is required to run this command here");
 		}
 
 		Entity sendingEntity = (Entity) sender;
@@ -206,7 +207,7 @@ public class ChannelTeam extends Channel {
 		}
 		if (team == null) {
 			sender.sendMessage(Component.translatable("commands.teammsg.failed.noteam"));
-			CommandAPI.fail(sendingEntity.getName() + " must be on a team to message their team.");
+			CommandUtils.fail(sender, sendingEntity.getName() + " must be on a team to message their team.");
 		}
 		String teamName = team.getName();
 
@@ -215,7 +216,7 @@ public class ChannelTeam extends Channel {
 			try {
 				channel = new ChannelTeam(teamName);
 			} catch (Exception e) {
-				CommandAPI.fail("Could not create new team channel: Could not connect to RabbitMQ.");
+				CommandUtils.fail(sender, "Could not create new team channel: Could not connect to RabbitMQ.");
 			}
 			ChannelManager.registerNewChannel(sender, channel);
 		}
@@ -354,14 +355,14 @@ public class ChannelTeam extends Channel {
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!sender.hasPermission("networkchat.say")) {
-			CommandAPI.fail("You do not have permission to chat.");
+			CommandUtils.fail(sender, "You do not have permission to chat.");
 		}
 		if (!sender.hasPermission("networkchat.say.team")) {
-			CommandAPI.fail("You do not have permission to talk to a team.");
+			CommandUtils.fail(sender, "You do not have permission to talk to a team.");
 		}
 
 		if (!mayChat(sender)) {
-			CommandAPI.fail("You do not have permission to chat in this channel.");
+			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 		}
 
 		JsonObject extraData = new JsonObject();
@@ -394,7 +395,7 @@ public class ChannelTeam extends Channel {
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
-			CommandAPI.fail("Could not send message.");
+			CommandUtils.fail(sender, "Could not send message.");
 		}
 	}
 

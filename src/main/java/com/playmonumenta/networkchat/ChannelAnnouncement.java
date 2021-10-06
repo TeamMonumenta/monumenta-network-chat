@@ -12,6 +12,7 @@ import java.util.UUID;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import dev.jorel.commandapi.CommandAPI;
@@ -165,14 +166,14 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelAnnouncement newChannel = null;
 					if (!sender.hasPermission("networkchat.new.announcement")) {
-						CommandAPI.fail("You do not have permission to make new announcement channels.");
+						CommandUtils.fail(sender, "You do not have permission to make new announcement channels.");
 					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
 						newChannel = new ChannelAnnouncement(channelName);
 					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -186,7 +187,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelAnnouncement newChannel = null;
 					if (!sender.hasPermission("networkchat.new.announcement")) {
-						CommandAPI.fail("You do not have permission to make new announcement channels.");
+						CommandUtils.fail(sender, "You do not have permission to make new announcement channels.");
 					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
@@ -194,7 +195,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 						newChannel = new ChannelAnnouncement(channelName);
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
 					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -208,7 +209,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelAnnouncement newChannel = null;
 					if (!sender.hasPermission("networkchat.new.announcement")) {
-						CommandAPI.fail("You do not have permission to make new announcement channels.");
+						CommandUtils.fail(sender, "You do not have permission to make new announcement channels.");
 					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
@@ -217,7 +218,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
 						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
 					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -352,17 +353,17 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
 		if (sender instanceof Player) {
 			if (!sender.hasPermission("networkchat.say")) {
-				CommandAPI.fail("You do not have permission to chat.");
+				CommandUtils.fail(sender, "You do not have permission to chat.");
 			}
 			if (!sender.hasPermission("networkchat.say.announcement")) {
-				CommandAPI.fail("You do not have permission to make announcements.");
+				CommandUtils.fail(sender, "You do not have permission to make announcements.");
 			}
 			if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
-				CommandAPI.fail("You do not have permission to talk in " + mName + ".");
+				CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
 			}
 
 			if (!mayChat(sender)) {
-				CommandAPI.fail("You do not have permission to chat in this channel.");
+				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 			}
 
 			if (sender.hasPermission("networkchat.transform.color")) {
@@ -399,7 +400,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
-			CommandAPI.fail("Could not send message.");
+			CommandUtils.fail(sender, "Could not send message.");
 		}
 	}
 

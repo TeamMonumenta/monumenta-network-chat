@@ -16,6 +16,7 @@ public class NetworkChatProperties {
 	private boolean mChatCommandCreateEnabled = true;
 	private boolean mChatCommandModifyEnabled = true;
 	private boolean mChatCommandDeleteEnabled = true;
+	private boolean mSudoEnabled = false;
 
 	public NetworkChatProperties() {
 		INSTANCE = this;
@@ -25,6 +26,11 @@ public class NetworkChatProperties {
 		if (INSTANCE == null) {
 			new NetworkChatProperties();
 		}
+	}
+
+	public static boolean getSudoEnabled() {
+		ensureInstance();
+		return INSTANCE.mSudoEnabled;
 	}
 
 	public static boolean getChatCommandCreateEnabled() {
@@ -63,6 +69,10 @@ public class NetworkChatProperties {
 			mChatCommandDeleteEnabled = config.getBoolean("ChatCommandDelate", mChatCommandDeleteEnabled);
 		}
 
+		if (config.isBoolean("SudoEnabled")) {
+			mSudoEnabled = config.getBoolean("SudoEnabled", mChatCommandDeleteEnabled);
+		}
+
 		plugin.getLogger().info("Properties:");
 		if (sender != null) {
 			sender.sendMessage("Properties:");
@@ -81,6 +91,7 @@ public class NetworkChatProperties {
 		out.add("mChatCommandCreateEnabled = " + mChatCommandCreateEnabled);
 		out.add("mChatCommandModifyEnabled = " + mChatCommandModifyEnabled);
 		out.add("mChatCommandDeleteEnabled = " + mChatCommandDeleteEnabled);
+		out.add("mSudoEnabled = " + mSudoEnabled);
 
 		return out;
 	}

@@ -12,6 +12,7 @@ import java.util.UUID;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
@@ -167,14 +168,14 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
 					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandAPI.fail("You do not have permission to make new local channels.");
+						CommandUtils.fail(sender, "You do not have permission to make new local channels.");
 					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
 						newChannel = new ChannelLocal(channelName);
 					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -188,7 +189,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
 					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandAPI.fail("You do not have permission to make new local channels.");
+						CommandUtils.fail(sender, "You do not have permission to make new local channels.");
 					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
@@ -196,7 +197,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 						newChannel = new ChannelLocal(channelName);
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
 					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -210,7 +211,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
 					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandAPI.fail("You do not have permission to make new local channels.");
+						CommandUtils.fail(sender, "You do not have permission to make new local channels.");
 					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
@@ -219,7 +220,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
 						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
 					} catch (Exception e) {
-						CommandAPI.fail("Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -358,17 +359,17 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
 		if (sender instanceof Player) {
 			if (!sender.hasPermission("networkchat.say")) {
-				CommandAPI.fail("You do not have permission to chat.");
+				CommandUtils.fail(sender, "You do not have permission to chat.");
 			}
 			if (!sender.hasPermission("networkchat.say.local")) {
-				CommandAPI.fail("You do not have permission to talk in local chat.");
+				CommandUtils.fail(sender, "You do not have permission to talk in local chat.");
 			}
 			if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
-				CommandAPI.fail("You do not have permission to talk in " + mName + ".");
+				CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
 			}
 
 			if (!mayChat(sender)) {
-				CommandAPI.fail("You do not have permission to chat in this channel.");
+				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 			}
 
 			if (sender.hasPermission("networkchat.transform.color")) {

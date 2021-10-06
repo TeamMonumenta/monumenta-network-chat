@@ -81,7 +81,7 @@ public class ChatCommand {
 						.withArguments(arguments)
 						.executes((sender, args) -> {
 							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
-								CommandAPI.fail("You do not have permission to set the default channels.");
+								CommandUtils.fail(sender, "You do not have permission to set the default channels.");
 							}
 							return ChannelManager.getDefaultChannels().command(sender, channelType, true);
 						})
@@ -104,7 +104,7 @@ public class ChatCommand {
 						.withArguments(arguments)
 						.executes((sender, args) -> {
 							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
-								CommandAPI.fail("You do not have permission to set the default channels.");
+								CommandUtils.fail(sender, "You do not have permission to set the default channels.");
 							}
 							return ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
 						})
@@ -119,13 +119,13 @@ public class ChatCommand {
 					.executes((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player)) {
-							CommandAPI.fail("This command can only be run as a player.");
+							CommandUtils.fail(sender, "This command can only be run as a player.");
 						}
 
 						Player target = (Player) callee;
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
 						String profileMessage = state.profileMessage();
 						if (profileMessage.isEmpty()) {
@@ -147,13 +147,13 @@ public class ChatCommand {
 					.executes((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player)) {
-							CommandAPI.fail("This command can only be run as a player.");
+							CommandUtils.fail(sender, "This command can only be run as a player.");
 						}
 
 						Player target = (Player) callee;
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
 						target.sendMessage(Component.text("Your profile message has been cleared.", NamedTextColor.GRAY));
 						state.profileMessage("");
@@ -170,13 +170,17 @@ public class ChatCommand {
 					.executes((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player)) {
-							CommandAPI.fail("This command can only be run as a player.");
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 						}
 
 						Player target = (Player) callee;
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
 						target.sendMessage(Component.text("Your profile message has been set to:", NamedTextColor.GRAY));
 						String profileMessage = (String)args[2];
@@ -196,13 +200,17 @@ public class ChatCommand {
 					.executes((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player)) {
-							CommandAPI.fail("This command can only be run as a player.");
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 						}
 
 						Player target = (Player) callee;
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
 						return state.defaultChannels().command(sender, channelType);
 					})
@@ -226,13 +234,17 @@ public class ChatCommand {
 					.executes((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player)) {
-							CommandAPI.fail("This command can only be run as a player.");
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 						}
 
 						Player target = (Player) callee;
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
 						return state.defaultChannels().command(sender, channelType, (String)args[3]);
 					})
@@ -280,15 +292,15 @@ public class ChatCommand {
 					Channel channel = ChannelManager.getChannel((String) args[2]);
 
 					if (channel == null) {
-						CommandAPI.fail("No such channel " + (String) args[2] + ".");
+						CommandUtils.fail(sender, "No such channel " + (String) args[2] + ".");
 					}
 
 					if (!channel.mayManage(sender)) {
-						CommandAPI.fail("You do not have permission to run this command.");
+						CommandUtils.fail(sender, "You do not have permission to run this command.");
 					}
 
 					if (!(channel instanceof ChannelAutoJoin)) {
-						CommandAPI.fail("This channel has auto join disabled.");
+						CommandUtils.fail(sender, "This channel has auto join disabled.");
 					}
 
 					sender.sendMessage("Channel " + (String) args[2] + " auto join: " + (((ChannelAutoJoin) channel).getAutoJoin() ? "enabled." : "disabled."));
@@ -311,15 +323,15 @@ public class ChatCommand {
 						Channel channel = ChannelManager.getChannel((String) args[3]);
 
 						if (channel == null) {
-							CommandAPI.fail("No such channel " + (String) args[3] + ".");
+							CommandUtils.fail(sender, "No such channel " + (String) args[3] + ".");
 						}
 
 						if (!channel.mayManage(sender)) {
-							CommandAPI.fail("You do not have permission to run this command.");
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
 						}
 
 						if (!(channel instanceof ChannelAutoJoin)) {
-							CommandAPI.fail("This channel has auto join disabled.");
+							CommandUtils.fail(sender, "This channel has auto join disabled.");
 						}
 
 						Boolean newAutoJoin = ((String) args[2]).equalsIgnoreCase("enabled");
@@ -434,7 +446,11 @@ public class ChatCommand {
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player)) {
-						CommandAPI.fail("This command can only be run as a player.");
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 					}
 
 					Player target = (Player) callee;
@@ -454,13 +470,17 @@ public class ChatCommand {
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player)) {
-						CommandAPI.fail("This command can only be run as a player.");
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 					}
 
 					Player target = (Player) callee;
 					PlayerState state = PlayerStateManager.getPlayerState(target);
 					if (state == null) {
-						CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 					}
 					ChannelSettings settings = state.channelSettings();
 					return settings.commandFlag(sender, (String) args[3]);
@@ -478,13 +498,17 @@ public class ChatCommand {
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player)) {
-						CommandAPI.fail("This command can only be run as a player.");
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 					}
 
 					Player target = (Player) callee;
 					PlayerState state = PlayerStateManager.getPlayerState(target);
 					if (state == null) {
-						CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 					}
 					ChannelSettings settings = state.channelSettings();
 					return settings.commandFlag(sender, (String) args[3], (String) args[4]);
@@ -504,19 +528,23 @@ public class ChatCommand {
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player)) {
-						CommandAPI.fail("This command can only be run as a player.");
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 					}
 
 					Player target = (Player) callee;
 					PlayerState state = PlayerStateManager.getPlayerState(target);
 					if (state == null) {
-						CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 					}
 
 					String channelName = (String) args[3];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
-						CommandAPI.fail("No such channel " + channelName + ".");
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 
 					ChannelSettings settings = state.channelSettings(channel);
@@ -538,19 +566,23 @@ public class ChatCommand {
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player)) {
-						CommandAPI.fail("This command can only be run as a player.");
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 					}
 
 					Player target = (Player) callee;
 					PlayerState state = PlayerStateManager.getPlayerState(target);
 					if (state == null) {
-						CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 					}
 
 					String channelName = (String) args[3];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
-						CommandAPI.fail("No such channel " + channelName + ".");
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 
 					ChannelSettings settings = state.channelSettings(channel);
@@ -573,7 +605,7 @@ public class ChatCommand {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
-							CommandAPI.fail("No such channel " + channelName + ".");
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
 						}
 
 						ChannelSettings settings = channel.channelSettings();
@@ -595,7 +627,7 @@ public class ChatCommand {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
-							CommandAPI.fail("No such channel " + channelName + ".");
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
 						}
 
 						ChannelSettings settings = channel.channelSettings();
@@ -620,7 +652,7 @@ public class ChatCommand {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
-						CommandAPI.fail("No such channel " + channelName + ".");
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 
 					ChannelPerms perms = channel.channelPerms();
@@ -643,10 +675,10 @@ public class ChatCommand {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
-						CommandAPI.fail("No such channel " + channelName + ".");
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 					if (!channel.mayManage(sender)) {
-						CommandAPI.fail("You do not have permission to manage channel " + channel.getName() + ".");
+						CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
 					}
 
 					ChannelPerms perms = channel.channelPerms();
@@ -673,16 +705,16 @@ public class ChatCommand {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
-						CommandAPI.fail("No such channel " + channelName + ".");
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 					if (!channel.mayManage(sender)) {
-						CommandAPI.fail("You do not have permission to manage channel " + channel.getName() + ".");
+						CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
 					}
 
 					String playerName = (String) args[4];
 					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 					if (playerId == null) {
-						CommandAPI.fail("No such player " + playerName + ".");
+						CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
 					ChannelPerms perms = channel.playerPerms(playerId);
 					return perms.commandFlag(sender, (String) args[5]);
@@ -703,16 +735,16 @@ public class ChatCommand {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
-						CommandAPI.fail("No such channel " + channelName + ".");
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 					if (!channel.mayManage(sender)) {
-						CommandAPI.fail("You do not have permission to manage channel " + channel.getName() + ".");
+						CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
 					}
 
 					String playerName = (String) args[4];
 					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 					if (playerId == null) {
-						CommandAPI.fail("No such player " + playerName + ".");
+						CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
 					ChannelPerms perms = channel.playerPerms(playerId);
 					int result = perms.commandFlag(sender, (String) args[5], (String) args[6]);
@@ -746,7 +778,7 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					if (!sender.hasPermission("networkchat.visibility.default")) {
-						CommandAPI.fail("You do not have permission to change the default message visibility.");
+						CommandUtils.fail(sender, "You do not have permission to change the default message visibility.");
 					}
 					int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
 					PlayerStateManager.saveSettings();
@@ -769,7 +801,7 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.executes((sender, args) -> {
 						if (!sender.hasPermission("networkchat.format.default")) {
-							CommandAPI.fail("You do not have permission to change the default channel formats.");
+							CommandUtils.fail(sender, "You do not have permission to change the default channel formats.");
 						}
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
@@ -792,13 +824,13 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.executes((sender, args) -> {
 						if (!sender.hasPermission("networkchat.format.default")) {
-							CommandAPI.fail("You do not have permission to change the default channel formats.");
+							CommandUtils.fail(sender, "You do not have permission to change the default channel formats.");
 						}
 						String id = (String) args[2];
 						String colorString = (String) args[3];
 						TextColor color = MessagingUtils.colorFromString(colorString);
 						if (color == null) {
-							CommandAPI.fail("No such color " + colorString);
+							CommandUtils.fail(sender, "No such color " + colorString);
 						}
 						NetworkChatPlugin.messageColor(id, color);
 						sender.sendMessage(Component.text(id + " set to " + MessagingUtils.colorToString(color), color));
@@ -822,7 +854,7 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.executes((sender, args) -> {
 						if (!sender.hasPermission("networkchat.format.default")) {
-							CommandAPI.fail("You do not have permission to change the default channel formats.");
+							CommandUtils.fail(sender, "You do not have permission to change the default channel formats.");
 						}
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
@@ -865,7 +897,7 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.executes((sender, args) -> {
 						if (!sender.hasPermission("networkchat.format.default")) {
-							CommandAPI.fail("You do not have permission to change the default channel formats.");
+							CommandUtils.fail(sender, "You do not have permission to change the default channel formats.");
 						}
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
@@ -978,15 +1010,15 @@ public class ChatCommand {
 	private static int getChannelPermission(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
-			CommandAPI.fail("No such channel " + channelName + ".");
+			CommandUtils.fail(sender, "No such channel " + channelName + ".");
 		}
 
 		if (!channel.mayManage(sender)) {
-			CommandAPI.fail("You do not have permission to run this command.");
+			CommandUtils.fail(sender,"You do not have permission to run this command.");
 		}
 
 		if (!(channel instanceof ChannelPermissionNode)) {
-			CommandAPI.fail("This channel has no permission");
+			CommandUtils.fail(sender, "This channel has no permission");
 		}
 
 		String perms = ((ChannelPermissionNode) channel).getChannelPermission();
@@ -1003,15 +1035,15 @@ public class ChatCommand {
 	private static int changeChannelPerms(CommandSender sender, String channelName, String newPerms) throws WrapperCommandSyntaxException {
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
-			CommandAPI.fail("No such channel " + channelName + ".");
+			CommandUtils.fail(sender, "No such channel " + channelName + ".");
 		}
 
 		if (!channel.mayManage(sender)) {
-			CommandAPI.fail("You do not have permission to change permission to channels.");
+			CommandUtils.fail(sender, "You do not have permission to change permission to channels.");
 		}
 
 		if (!(channel instanceof ChannelPermissionNode)) {
-			CommandAPI.fail("You can't change the permision of this channel");
+			CommandUtils.fail(sender, "You can't change the permision of this channel");
 		}
 
 		((ChannelPermissionNode) channel).setChannelPermission(newPerms);
@@ -1021,10 +1053,10 @@ public class ChatCommand {
 
 	private static int renameChannel(CommandSender sender, String oldChannelName, String newChannelName) throws WrapperCommandSyntaxException {
 		if (!sender.hasPermission("networkchat.rename")) {
-			CommandAPI.fail("You do not have permission to rename channels.");
+			CommandUtils.fail(sender, "You do not have permission to rename channels.");
 		}
 
-		// May call CommandAPI.fail()
+		// May call CommandUtils.fail(sender, )
 		ChannelManager.renameChannel(oldChannelName, newChannelName);
 		sender.sendMessage(Component.text("Channel " + oldChannelName + " renamed to " + newChannelName + ".", NamedTextColor.GRAY));
 		return 1;
@@ -1032,10 +1064,10 @@ public class ChatCommand {
 
 	private static int deleteChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		if (!sender.hasPermission("networkchat.delete.channel")) {
-			CommandAPI.fail("You do not have permission to delete channels.");
+			CommandUtils.fail(sender, "You do not have permission to delete channels.");
 		}
 
-		// May call CommandAPI.fail()
+		// May call CommandUtils.fail(sender, )
 		ChannelManager.deleteChannel(channelName);
 		sender.sendMessage(Component.text("Channel " + channelName + " deleted.", NamedTextColor.GRAY));
 		return 1;
@@ -1044,18 +1076,22 @@ public class ChatCommand {
 	private static int joinChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
-			CommandAPI.fail("This command can only be run as a player.");
+			CommandUtils.fail(sender, "This command can only be run as a player.");
+		}
+
+		if (!CommandUtils.checkSudoCommand(sender)) {
+			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
 
 		Player target = (Player) callee;
 		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
-			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 		}
 
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
-			CommandAPI.fail("No such channel " + channelName + ".");
+			CommandUtils.fail(sender, "No such channel " + channelName + ".");
 		}
 
 		playerState.setActiveChannel(channel);
@@ -1066,18 +1102,22 @@ public class ChatCommand {
 	private static int leaveChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
-			CommandAPI.fail("This command can only be run as a player.");
+			CommandUtils.fail(sender, "This command can only be run as a player.");
+		}
+
+		if (!CommandUtils.checkSudoCommand(sender)) {
+			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
 
 		Player target = (Player) callee;
 		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
-			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 		}
 
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
-			CommandAPI.fail("No such channel " + channelName + ".");
+			CommandUtils.fail(sender, "No such channel " + channelName + ".");
 		}
 
 		playerState.leaveChannel(channel);
@@ -1088,18 +1128,22 @@ public class ChatCommand {
 	private static int setActiveChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
-			CommandAPI.fail("Only players have an active channel.");
+			CommandUtils.fail(sender, "Only players have an active channel.");
 		}
-		Player player = (Player) callee;
 
+		if (!CommandUtils.checkSudoCommand(sender)) {
+			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+		}
+
+		Player player = (Player) callee;
 		PlayerState playerState = PlayerStateManager.getPlayerState(player);
 		if (playerState == null) {
-			CommandAPI.fail("You have no chat state. Please report this bug and reconnect to the server.");
+			CommandUtils.fail(sender, "You have no chat state. Please report this bug and reconnect to the server.");
 		}
 
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
-			CommandAPI.fail("No such channel " + channelName + ".");
+			CommandUtils.fail(sender, "No such channel " + channelName + ".");
 		}
 
 		playerState.setActiveChannel(channel);
@@ -1110,18 +1154,22 @@ public class ChatCommand {
 	private static int setActiveToDefault(CommandSender sender, String channelType) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
-			CommandAPI.fail("Only players have an active channel.");
+			CommandUtils.fail(sender, "Only players have an active channel.");
 		}
-		Player player = (Player) callee;
 
+		if (!CommandUtils.checkSudoCommand(sender)) {
+			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+		}
+
+		Player player = (Player) callee;
 		PlayerState playerState = PlayerStateManager.getPlayerState(player);
 		if (playerState == null) {
-			CommandAPI.fail("You have no chat state. Please report this bug and reconnect to the server.");
+			CommandUtils.fail(sender, "You have no chat state. Please report this bug and reconnect to the server.");
 		}
 
 		Channel channel = playerState.getDefaultChannel(channelType);
 		if (channel == null) {
-			CommandAPI.fail("No default for " + channelType + " channel type.");
+			CommandUtils.fail(sender, "No default for " + channelType + " channel type.");
 		}
 
 		playerState.setActiveChannel(channel);
@@ -1130,52 +1178,56 @@ public class ChatCommand {
 	}
 
 	private static int sendMessage(CommandSender sender, String channelName, String message) throws WrapperCommandSyntaxException {
-		CommandSender callee = CommandUtils.getCallee(sender);
-		if (callee instanceof Player && sender != callee) {
+		CommandSender caller = CommandUtils.getCaller(sender);
+		if (caller instanceof Player && sender != caller) {
 			sender.sendMessage(Component.text("Hey! It's not nice to put words in people's mouths! Where are your manners?", NamedTextColor.RED));
-			CommandAPI.fail("You cannot chat as another player.");
+			CommandUtils.fail(sender, "You cannot chat as another player.");
 		}
 
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
-			CommandAPI.fail("No such channel " + channelName + ".");
+			CommandUtils.fail(sender, "No such channel " + channelName + ".");
 		}
 
-		channel.sendMessage(callee, message);
+		channel.sendMessage(sender, message);
 		return 1;
 	}
 
 	private static int sendMessageInDefault(CommandSender sender, String channelType, String message) throws WrapperCommandSyntaxException {
-		CommandSender callee = CommandUtils.getCallee(sender);
-		if (callee instanceof Player && sender != callee) {
-			sender.sendMessage(Component.text("Hey! It's not nice to put words in people's mouths! Where are your manners?", NamedTextColor.RED));
-			CommandAPI.fail("You cannot chat as another player.");
+		CommandSender caller = CommandUtils.getCaller(sender);
+		if (caller instanceof Player && sender != caller) {
+			caller.sendMessage(Component.text("Hey! It's not nice to put words in people's mouths! Where are your manners?", NamedTextColor.RED));
+			CommandUtils.fail(sender, "You cannot chat as another player.");
 		}
 
 		Channel channel = null;
-		if (callee instanceof Player) {
-			channel = PlayerStateManager.getPlayerState((Player) callee).getDefaultChannel(channelType);
+		if (sender instanceof Player) {
+			channel = PlayerStateManager.getPlayerState((Player) sender).getDefaultChannel(channelType);
 		} else {
 			channel = ChannelManager.getDefaultChannel(channelType);
 		}
 		if (channel == null) {
-			CommandAPI.fail("No default for " + channelType + " channel type.");
+			CommandUtils.fail(sender, "No default for " + channelType + " channel type.");
 		}
 
-		channel.sendMessage(callee, message);
+		channel.sendMessage(sender, message);
 		return 1;
 	}
 
 	private static int pause(CommandSender sender) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
-			CommandAPI.fail("This command can only be run as a player.");
+			CommandUtils.fail(sender, "This command can only be run as a player.");
+		}
+
+		if (!CommandUtils.checkSudoCommand(sender)) {
+			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
 
 		Player target = (Player) callee;
 		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
-			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 		}
 
 		playerState.pauseChat();
@@ -1186,13 +1238,17 @@ public class ChatCommand {
 	private static int unpause(CommandSender sender) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
-			CommandAPI.fail("This command can only be run as a player.");
+			CommandUtils.fail(sender, "This command can only be run as a player.");
+		}
+
+		if (!CommandUtils.checkSudoCommand(sender)) {
+			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
 
 		Player target = (Player) callee;
 		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
-			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 		}
 
 		target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
@@ -1203,13 +1259,17 @@ public class ChatCommand {
 	private static int togglePause(CommandSender sender) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
-			CommandAPI.fail("This command can only be run as a player.");
+			CommandUtils.fail(sender, "This command can only be run as a player.");
+		}
+
+		if (!CommandUtils.checkSudoCommand(sender)) {
+			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
 
 		Player target = (Player) callee;
 		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
-			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 		}
 
 		if (playerState.isPaused()) {
@@ -1224,20 +1284,20 @@ public class ChatCommand {
 
 	private static int deleteMessage(CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
 		if (!sender.hasPermission("networkchat.delete.message")) {
-			CommandAPI.fail("You do not have permission to delete channels.");
+			CommandUtils.fail(sender, "You do not have permission to delete channels.");
 		}
 
 		UUID messageId;
 		try {
 			messageId = UUID.fromString(messageIdStr);
 		} catch (Exception e) {
-			CommandAPI.fail("Invalid message ID. Click a channel name to open the message GUI.");
+			CommandUtils.fail(sender, "Invalid message ID. Click a channel name to open the message GUI.");
 			return 0;
 		}
 
 		Message message = MessageManager.getMessage(messageId);
 		if (message == null) {
-			CommandAPI.fail("That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
+			CommandUtils.fail(sender, "That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
 		}
 		message.markDeleted();
 		sender.sendMessage(Component.text("Message deleted from this shard, chat not refreshed. This feature is WIP."));
@@ -1246,31 +1306,31 @@ public class ChatCommand {
 
 	private static void messageGui(String baseCommand, CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
 		if (!sender.hasPermission("networkchat.gui.message")) {
-			CommandAPI.fail("You do not have permission to open the message GUI.");
+			CommandUtils.fail(sender, "You do not have permission to open the message GUI.");
 		}
 
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
-			CommandAPI.fail("This command can only be run as a player.");
+			CommandUtils.fail(sender, "This command can only be run as a player.");
 		}
 
 		Player target = (Player) callee;
 		PlayerState playerState = PlayerStateManager.getPlayerState(target);
 		if (playerState == null) {
-			CommandAPI.fail(callee.getName() + " has no chat state and must relog.");
+			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 		}
 
 		UUID messageId;
 		try {
 			messageId = UUID.fromString(messageIdStr);
 		} catch (Exception e) {
-			CommandAPI.fail("Invalid message ID. Click a channel name to open the message GUI.");
+			CommandUtils.fail(sender, "Invalid message ID. Click a channel name to open the message GUI.");
 			return;
 		}
 
 		Message message = MessageManager.getMessage(messageId);
 		if (message == null) {
-			CommandAPI.fail("That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
+			CommandUtils.fail(sender, "That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
 		}
 		Component gui = Component.empty();
 
