@@ -19,6 +19,7 @@ import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import me.clip.placeholderapi.PlaceholderAPI;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -358,6 +359,8 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 			}
 		}
+
+		messageText = PlaceholderAPI.setPlaceholders(null, messageText);
 
 		Message message = Message.createMessage(this, sender, null, messageText);
 
