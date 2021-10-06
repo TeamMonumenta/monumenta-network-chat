@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,9 +14,11 @@ import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
+import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import net.kyori.adventure.audience.Audience;
@@ -451,6 +454,54 @@ public class ChatCommand {
 					Player target = (Player) callee;
 					target.displayName(null);
 					target.playerListName(null);
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("refresh"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+					}
+
+					Player target = (Player) callee;
+					RemotePlayerManager.refreshPlayerName(target);
+					return 1;
+				})
+				.register();
+
+			arguments.add(new EntitySelectorArgument("Player", EntitySelector.ONE_PLAYER));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					Player target = (Player) args[1];
+
+					RemotePlayerManager.refreshPlayerName(target);
+					return 1;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("refresh"));
+			arguments.add(new EntitySelectorArgument("Players", EntitySelector.MANY_PLAYERS));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+
+					@SuppressWarnings("unchecked")
+					Collection<Player> players = (Collection<Player>) args[1];
+
+					for (Player player : players) {
+						RemotePlayerManager.refreshPlayerName(player);
+					}
 					return 1;
 				})
 				.register();
