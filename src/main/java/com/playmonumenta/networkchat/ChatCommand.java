@@ -479,20 +479,6 @@ public class ChatCommand {
 				})
 				.register();
 
-			arguments.add(new EntitySelectorArgument("Player", EntitySelector.ONE_PLAYER));
-			new CommandAPICommand(baseCommand)
-				.withPermission(CommandPermission.OP)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					Player target = (Player) args[1];
-
-					RemotePlayerManager.refreshPlayerName(target);
-					return 1;
-				})
-				.register();
-
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("refresh"));
 			arguments.add(new EntitySelectorArgument("Players", EntitySelector.MANY_PLAYERS));
 			new CommandAPICommand(baseCommand)
 				.withPermission(CommandPermission.OP)
