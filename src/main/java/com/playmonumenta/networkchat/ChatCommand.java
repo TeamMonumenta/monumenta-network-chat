@@ -13,6 +13,7 @@ import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
@@ -480,6 +481,7 @@ public class ChatCommand {
 
 			arguments.add(new EntitySelectorArgument("Player", EntitySelector.ONE_PLAYER));
 			new CommandAPICommand(baseCommand)
+				.withPermission(CommandPermission.OP)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					Player target = (Player) args[1];
@@ -493,6 +495,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("refresh"));
 			arguments.add(new EntitySelectorArgument("Players", EntitySelector.MANY_PLAYERS));
 			new CommandAPICommand(baseCommand)
+				.withPermission(CommandPermission.OP)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 
