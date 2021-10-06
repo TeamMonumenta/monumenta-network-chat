@@ -16,7 +16,6 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
-import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
