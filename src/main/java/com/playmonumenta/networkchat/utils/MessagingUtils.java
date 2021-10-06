@@ -21,13 +21,12 @@ import me.clip.placeholderapi.PlaceholderAPI;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.transformation.TransformationType;
-import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
+import net.kyori.adventure.text.minimessage.transformation.TransformationRegistry;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
@@ -36,21 +35,66 @@ public class MessagingUtils {
 	public static final GsonComponentSerializer GSON_SERIALIZER = GsonComponentSerializer.gson();
 	public static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 	public static final PlainComponentSerializer PLAIN_SERIALIZER = PlainComponentSerializer.plain();
-	private static final MiniMessage SENDER_FMT_MINIMESSAGE = MiniMessage.builder()
-	    .removeDefaultTransformations()
-	    .markdownFlavor(DiscordFlavor.get())
-	    .transformation(TransformationType.COLOR)
-	    .transformation(TransformationType.DECORATION)
-	    .transformation(TransformationType.HOVER_EVENT)
-	    .transformation(TransformationType.CLICK_EVENT)
-	    .transformation(TransformationType.KEYBIND)
-	    .transformation(TransformationType.TRANSLATABLE)
-	    .transformation(TransformationType.INSERTION)
-	    .transformation(TransformationType.FONT)
-	    .transformation(TransformationType.GRADIENT)
-	    .transformation(TransformationType.RAINBOW)
-	    .transformation(TransformationType.RESET)
-	    .build();
+	public static final MiniMessage CHANNEL_HEADER_FMT_MINIMESSAGE = MiniMessage.builder()
+		.transformations(
+			TransformationRegistry.builder().clear()
+				.add(TransformationType.COLOR)
+				.add(TransformationType.DECORATION)
+				.build()
+		)
+		.build();
+	public static final MiniMessage SENDER_FMT_MINIMESSAGE = MiniMessage.builder()
+		.transformations(
+			TransformationRegistry.builder().clear()
+				.add(TransformationType.COLOR)
+				.add(TransformationType.DECORATION)
+				.add(TransformationType.HOVER_EVENT)
+				.add(TransformationType.CLICK_EVENT)
+				.add(TransformationType.KEYBIND)
+				.add(TransformationType.TRANSLATABLE)
+				.add(TransformationType.INSERTION)
+				.add(TransformationType.FONT)
+				.add(TransformationType.GRADIENT)
+				.add(TransformationType.RAINBOW)
+				.build()
+		)
+		.build();
+
+	public static MiniMessage getAllowedMiniMessage(CommandSender sender) {
+		TransformationRegistry.Builder transforms = TransformationRegistry.builder().clear();
+
+		if (sender != null && sender instanceof Player) {
+			if (sender.hasPermission("networkchat.transform.color")) {
+				transforms.add(TransformationType.COLOR);
+			}
+			if (sender.hasPermission("networkchat.transform.decoration")) {
+				transforms.add(TransformationType.DECORATION);
+			}
+			if (sender.hasPermission("networkchat.transform.keybind")) {
+				transforms.add(TransformationType.KEYBIND);
+			}
+			if (sender.hasPermission("networkchat.transform.font")) {
+				transforms.add(TransformationType.FONT);
+			}
+			if (sender.hasPermission("networkchat.transform.gradient")) {
+				transforms.add(TransformationType.GRADIENT);
+			}
+			if (sender.hasPermission("networkchat.transform.rainbow")) {
+				transforms.add(TransformationType.RAINBOW);
+			}
+		} else {
+			transforms.add(TransformationType.COLOR)
+				.add(TransformationType.DECORATION)
+				.add(TransformationType.KEYBIND)
+				.add(TransformationType.FONT)
+				.add(TransformationType.GRADIENT)
+				.add(TransformationType.RAINBOW);
+		}
+
+		return MiniMessage.builder()
+			.transformations(transforms.build())
+			.build();
+	}
 
 	public static String translatePlayerName(Player player, String message) {
 		return (message.replaceAll("@S", player.getName()));
@@ -61,7 +105,7 @@ public class MessagingUtils {
 			return entityComponent((Entity) sender);
 		}
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
-		    List.of(Template.of("sender_name", sender.getName())));
+			List.of(Template.of("sender_name", sender.getName())));
 	}
 
 	public static Component entityComponent(Entity entity) {
@@ -103,13 +147,13 @@ public class MessagingUtils {
 		}
 
 		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("entity")),
-		    List.of(Template.of("entity_type", type.toString()),
-		        Template.of("entity_uuid", (id == null) ? "" : id.toString()),
-		        Template.of("entity_name", entityName),
-		        Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
-		        Template.of("team_prefix", teamPrefix),
-		        Template.of("team_displayname", teamDisplayName),
-		        Template.of("team_suffix", teamSuffix)));
+			List.of(Template.of("entity_type", type.toString()),
+				Template.of("entity_uuid", (id == null) ? "" : id.toString()),
+				Template.of("entity_name", entityName),
+				Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+				Template.of("team_prefix", teamPrefix),
+				Template.of("team_displayname", teamDisplayName),
+				Template.of("team_suffix", teamSuffix)));
 	}
 
 	public static Component playerComponent(Player player) {
@@ -121,6 +165,7 @@ public class MessagingUtils {
 		Component teamSuffix;
 		if (playerTeam == null) {
 			color = null;
+			colorMiniMessage = "";
 			teamPrefix = Component.empty();
 			teamDisplayName = Component.empty();
 			teamSuffix = Component.empty();
@@ -135,6 +180,7 @@ public class MessagingUtils {
 				teamSuffix = playerTeam.suffix();
 			} catch (Exception e) {
 				color = null;
+				colorMiniMessage = "";
 				teamPrefix = Component.empty();
 				teamDisplayName = Component.translatable("chat.square_brackets", Component.text(playerTeam.getName()));
 				teamSuffix = Component.empty();
@@ -142,13 +188,15 @@ public class MessagingUtils {
 		}
 
 		Component profileMessage = PlayerStateManager.getPlayerState(player).profileMessageComponent();
-
-		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player")),
-		    List.of(Template.of("team_color", colorMiniMessage),
-		        Template.of("team_prefix", teamPrefix),
-		        Template.of("team_displayname", teamDisplayName),
-		        Template.of("team_suffix", teamSuffix),
-		        Template.of("profile_message", profileMessage)));
+		String postPapiProcessing = PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player"))
+			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
+			.replace("<hover:show_text:\"\"></hover>", "");
+		return SENDER_FMT_MINIMESSAGE.parse(postPapiProcessing,
+			List.of(Template.of("team_color", colorMiniMessage),
+				Template.of("team_prefix", teamPrefix),
+				Template.of("team_displayname", teamDisplayName),
+				Template.of("team_suffix", teamSuffix),
+				Template.of("profile_message", profileMessage)));
 	}
 
 	public static void sendStackTrace(CommandSender sender, Exception e) {
@@ -197,6 +245,9 @@ public class MessagingUtils {
 	}
 
 	public static String colorToString(TextColor color) {
+		if (color == null) {
+			return "#deadbe";
+		}
 		if (color instanceof NamedTextColor) {
 			return color.toString();
 		}
@@ -204,6 +255,9 @@ public class MessagingUtils {
 	}
 
 	public static String colorToMiniMessage(TextColor color) {
+		if (color == null) {
+			return "";
+		}
 		return "<" + colorToString(color) + ">";
 	}
 }

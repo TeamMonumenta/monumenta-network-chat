@@ -3,10 +3,8 @@ package com.playmonumenta.networkchat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonElement;
@@ -31,11 +29,7 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.transformation.Transformation;
-import net.kyori.adventure.text.minimessage.transformation.TransformationType;
-import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
 
 // A channel visible to all shards
 public class ChannelTeam extends Channel {
@@ -368,27 +362,7 @@ public class ChannelTeam extends Channel {
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("team", mTeamName);
 
-		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
-		if (sender.hasPermission("networkchat.transform.color")) {
-			allowedTransforms.add(TransformationType.COLOR);
-		}
-		if (sender.hasPermission("networkchat.transform.decoration")) {
-			allowedTransforms.add(TransformationType.DECORATION);
-		}
-		if (sender.hasPermission("networkchat.transform.keybind")) {
-			allowedTransforms.add(TransformationType.KEYBIND);
-		}
-		if (sender.hasPermission("networkchat.transform.font")) {
-			allowedTransforms.add(TransformationType.FONT);
-		}
-		if (sender.hasPermission("networkchat.transform.gradient")) {
-			allowedTransforms.add(TransformationType.GRADIENT);
-		}
-		if (sender.hasPermission("networkchat.transform.rainbow")) {
-			allowedTransforms.add(TransformationType.RAINBOW);
-		}
-
-		Message message = Message.createMessage(this, sender, extraData, messageText, true, allowedTransforms);
+		Message message = Message.createMessage(this, sender, extraData, messageText);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -456,13 +430,6 @@ public class ChannelTeam extends Channel {
 			teamSuffix = Component.empty();
 		}
 
-		MiniMessage minimessage = MiniMessage.builder()
-			.transformation(TransformationType.COLOR)
-			.transformation(TransformationType.DECORATION)
-			.markdown()
-			.markdownFlavor(DiscordFlavor.get())
-			.build();
-
 		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
@@ -476,7 +443,7 @@ public class ChannelTeam extends Channel {
 		}
 
 		Component fullMessage = Component.empty()
-		    .append(minimessage.parse(prefix, List.of(Template.of("sender", message.getSenderComponent()),
+		    .append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("sender", message.getSenderComponent()),
 		        Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
 		        Template.of("team_prefix", teamPrefix),
 		        Template.of("team_displayname", teamDisplayName),

@@ -3,10 +3,8 @@ package com.playmonumenta.networkchat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonElement;
@@ -31,11 +29,7 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.markdown.DiscordFlavor;
-import net.kyori.adventure.text.minimessage.transformation.Transformation;
-import net.kyori.adventure.text.minimessage.transformation.TransformationType;
 
 // A channel visible to all shards
 public class ChannelGlobal extends Channel implements ChannelPermissionNode, ChannelAutoJoin {
@@ -355,7 +349,6 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		Set<TransformationType<? extends Transformation>> allowedTransforms = new HashSet<>();
 		if (sender instanceof Player) {
 			if (!sender.hasPermission("networkchat.say")) {
 				CommandUtils.fail(sender, "You do not have permission to chat.");
@@ -370,35 +363,9 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			if (!mayChat(sender)) {
 				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 			}
-
-			if (sender.hasPermission("networkchat.transform.color")) {
-				allowedTransforms.add(TransformationType.COLOR);
-			}
-			if (sender.hasPermission("networkchat.transform.decoration")) {
-				allowedTransforms.add(TransformationType.DECORATION);
-			}
-			if (sender.hasPermission("networkchat.transform.keybind")) {
-				allowedTransforms.add(TransformationType.KEYBIND);
-			}
-			if (sender.hasPermission("networkchat.transform.font")) {
-				allowedTransforms.add(TransformationType.FONT);
-			}
-			if (sender.hasPermission("networkchat.transform.gradient")) {
-				allowedTransforms.add(TransformationType.GRADIENT);
-			}
-			if (sender.hasPermission("networkchat.transform.rainbow")) {
-				allowedTransforms.add(TransformationType.RAINBOW);
-			}
-		} else {
-			allowedTransforms.add(TransformationType.COLOR);
-			allowedTransforms.add(TransformationType.DECORATION);
-			allowedTransforms.add(TransformationType.KEYBIND);
-			allowedTransforms.add(TransformationType.FONT);
-			allowedTransforms.add(TransformationType.GRADIENT);
-			allowedTransforms.add(TransformationType.RAINBOW);
 		}
 
-		Message message = Message.createMessage(this, sender, null, messageText, true, allowedTransforms);
+		Message message = Message.createMessage(this, sender, null, messageText);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -425,13 +392,6 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	protected void showMessage(CommandSender recipient, Message message) {
-		MiniMessage minimessage = MiniMessage.builder()
-			.transformation(TransformationType.COLOR)
-			.transformation(TransformationType.DECORATION)
-			.markdown()
-			.markdownFlavor(DiscordFlavor.get())
-			.build();
-
 		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 			.replace("<message_gui_cmd>", message.getGuiCommand())
@@ -446,7 +406,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 
 		Component fullMessage = Component.empty()
-			.append(minimessage.parse(prefix, List.of(Template.of("channel_name", mName),
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", mName),
 				Template.of("sender", message.getSenderComponent()))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
