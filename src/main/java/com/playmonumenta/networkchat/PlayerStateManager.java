@@ -15,8 +15,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers.ChatType;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.ComponentConverter;
-import com.comphenix.protocol.wrappers.AdventureComponentConverter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -71,8 +69,6 @@ public class PlayerStateManager implements Listener {
 					List<UUID> uuids = packet.getUUIDs().getValues();
 					if (uuids.size() == 1) {
 						sender = uuids.get(0);
-					} else {
-						sender = new UUID(0, 0);
 					}
 					List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
 					if (messageParts.size() == 0) {
@@ -107,7 +103,7 @@ public class PlayerStateManager implements Listener {
 					} else {
 						messageType = MessageType.SYSTEM;
 					}
-					Message message = Message.createRawMessage(messageType, null, null, messageComponent);
+					Message message = Message.createRawMessage(messageType, sender, null, messageComponent);
 
 					PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
 					playerState.receiveExternalMessage(message);
