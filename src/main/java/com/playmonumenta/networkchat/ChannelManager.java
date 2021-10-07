@@ -289,6 +289,10 @@ public class ChannelManager implements Listener {
 	}
 
 	public static Channel getChannel(UUID channelId) {
+		if (channelId == null) {
+			// Null keys are invalid and throw NPE with ConcurrentSkipListMap
+			return null;
+		}
 		return mChannels.get(channelId);
 	}
 

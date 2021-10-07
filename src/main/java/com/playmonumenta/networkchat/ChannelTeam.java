@@ -362,7 +362,7 @@ public class ChannelTeam extends Channel {
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("team", mTeamName);
 
-		Message message = Message.createMessage(this, sender, extraData, messageText);
+		Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -449,7 +449,7 @@ public class ChannelTeam extends Channel {
 		        Template.of("team_displayname", teamDisplayName),
 		        Template.of("team_suffix", teamSuffix))))
 		    .append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
+		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}

@@ -471,7 +471,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("receiver", receiverId.toString());
 
-		Message message = Message.createMessage(this, sender, extraData, messageText);
+		Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -549,7 +549,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		    .append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("sender", message.getSenderComponent()),
 		        Template.of("receiver", receiverComp))))
 		    .append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
+		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
