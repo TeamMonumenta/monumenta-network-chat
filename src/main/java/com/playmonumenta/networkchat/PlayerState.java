@@ -21,8 +21,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Sound;
-import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 
 // TODO Track how many players are in a channel on this server/overall
@@ -133,11 +131,11 @@ public class PlayerState {
 					state.mWhisperChannelsByRecipient.put(recipientUuid, channelUuid);
 					state.mWhisperRecipientByChannels.put(channelUuid, recipientUuid);
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Could not load a whisper channel for player " + player.getName());
-					continue;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s whisperChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
+
 		try {
 			JsonPrimitive lastWhisperChannel = obj.getAsJsonPrimitive("lastWhisperChannel");
 			state.mLastWhisperChannel = UUID.fromString(lastWhisperChannel.getAsString());
@@ -153,8 +151,7 @@ public class PlayerState {
 				try {
 					state.mWatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Could not load a watched channel for player " + player.getName());
-					continue;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s watchedChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -167,8 +164,7 @@ public class PlayerState {
 				try {
 					state.mUnwatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Could not load an unwatched channel for player " + player.getName());
-					continue;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s unwatchetChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -192,8 +188,7 @@ public class PlayerState {
 					ChannelSettings channelSettings = ChannelSettings.fromJson(channelSettingJson.getAsJsonObject());
 					state.mChannelSettings.put(UUID.fromString(channelId), channelSettings);
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Could not load a channel's settings for player " + player.getName());
-					continue;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s channelSettings to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -540,12 +535,10 @@ public class PlayerState {
 		} else if (channel instanceof ChannelWhisper) {
 			shouldPlaySound = true;
 		}
-		// TODO Player default
 
 		if (shouldPlaySound) {
 			Player player = getPlayer();
-			// TODO Customize sound
-			player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 0.5f);
+			channelSettings.playSounds(player);
 		}
 	}
 
