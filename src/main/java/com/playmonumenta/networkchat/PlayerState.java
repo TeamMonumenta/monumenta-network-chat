@@ -37,7 +37,6 @@ public class PlayerState {
 
 	private Map<UUID, UUID> mWhisperChannelsByRecipient;
 	private Map<UUID, UUID> mWhisperRecipientByChannels;
-	private Map<UUID, Sound> mSoundByChannel;
 	private UUID mLastWhisperChannel;
 
 	// Channels not in these maps will use the default channel watch status.
@@ -56,7 +55,6 @@ public class PlayerState {
 
 		mWhisperChannelsByRecipient = new HashMap<>();
 		mWhisperRecipientByChannels = new HashMap<>();
-		mSoundByChannel = new HashMap<>();
 		mLastWhisperChannel = null;
 
 		mWatchedChannelIds = new HashMap<>();
@@ -104,22 +102,6 @@ public class PlayerState {
 					UUID channelUuid = UUID.fromString(channelIdJson.getAsString());
 					state.mWhisperChannelsByRecipient.put(recipientUuid, channelUuid);
 					state.mWhisperRecipientByChannels.put(channelUuid, recipientUuid);
-				} catch (Exception e) {
-					// TODO Log the error
-					continue;
-				}
-			}
-		}
-
-		JsonObject soundByChannelJson = obj.getAsJsonObject("soundByChannel");
-		if (soundByChannelJson != null) {
-			for (Map.Entry<String, JsonElement> soundChannelEntry : soundByChannelJson.entrySet()) {
-				String channelId = soundChannelEntry.getKey();
-				JsonElement soundJson = soundChannelEntry.getValue();
-				try {
-					UUID channelUUID = UUID.fromString(channelId);
-					Sound sound = Sound.valueOf(soundJson.getAsString());
-					state.mSoundByChannel.put(channelUUID, sound);
 				} catch (Exception e) {
 					// TODO Log the error
 					continue;
@@ -226,13 +208,6 @@ public class PlayerState {
 			}
 		}
 
-		JsonObject soundChannelJson = new JsonObject();
-		for (Map.Entry<UUID, Sound> soundChannelEntry : mSoundByChannel.entrySet()) {
-			UUID channelId = soundChannelEntry.getKey();
-			Sound sound = soundChannelEntry.getValue();
-			soundChannelJson.addProperty(channelId.toString(), sound.toString());
-		}
-
 		JsonObject result = new JsonObject();
 		result.addProperty("lastSaved", Instant.now().toEpochMilli());
 		result.addProperty("isPaused", mChatPaused);
@@ -251,7 +226,6 @@ public class PlayerState {
 		result.add("defaultChannelSettings", mDefaultChannelSettings.toJson());
 		result.add("defaultChannels", mDefaultChannels.toJson());
 		result.add("channelSettings", allChannelSettings);
-		result.add("soundByChannel", soundChannelJson);
 
 		return result;
 	}
@@ -499,20 +473,7 @@ public class PlayerState {
 
 		if (shouldPlaySound) {
 			Player player = getPlayer();
-			Sound defaultSound = Sound.ENTITY_PLAYER_LEVELUP;
-			Sound target = null;
-
-			if (mSoundByChannel.keySet().contains(channelId)) {
-				target = mSoundByChannel.get(channelId);
-				if (target == null) {
-					mSoundByChannel.remove(channelId);
-					target = defaultSound;
-				}
-			} else {
-				target = defaultSound;
-			}
-
-			player.playSound(player.getLocation(), target, SoundCategory.PLAYERS, 1.0f, 0.5f);
+			channelSettings.playSounds(player);
 		}
 	}
 

@@ -1,6 +1,8 @@
 package com.playmonumenta.networkchat;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -15,7 +17,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 // Settings for a given channel, same structure for channel default and player preference
 public class ChannelSettings {
@@ -66,9 +70,52 @@ public class ChannelSettings {
 		}
 	}
 
+	public static class CSound {
+		public Sound mSound;
+		public float mVolume;
+		public float mPitch;
+
+		public CSound(Sound sound) {
+			this(sound, 1, 1);
+		}
+
+		public CSound(Sound sound, float volume) {
+			this(sound, volume, 1);
+		}
+
+		public CSound(Sound sound, float volume, float pitch) {
+			mSound = sound;
+			mVolume = volume;
+			mPitch = pitch;
+		}
+
+		public void playSound(Player player) {
+			player.playSound(player.getLocation(), mSound, mVolume, mPitch);
+		}
+
+		public JsonObject toJson() {
+			JsonObject object = new JsonObject();
+			object.addProperty("mSound", mSound.toString());
+			object.addProperty("mVolume", mVolume);
+			object.addProperty("mPitch", mPitch);
+
+			return object;
+		}
+
+		public static CSound fromJson(JsonObject object) throws Exception {
+			Sound sound = Sound.valueOf(object.get("mSound").getAsString());
+			float volume = object.get("mVolume").getAsFloat();
+			float pitch = object.get("mPitch").getAsFloat();
+			if (sound == null) {
+				throw new Exception("Found sound equal to null for: " + object.get("mSound").getAsString());
+			}
+			return new CSound(sound, volume, pitch);
+		}
+	}
 	// TODO Allow specifying a sound.
 
 	private Map<FlagKey, Boolean> mFlags = new HashMap<>();
+	private List<CSound> mSounds = new ArrayList<>();
 
 	public static ChannelSettings fromJson(JsonObject object) {
 		ChannelSettings settings = new ChannelSettings();
@@ -85,6 +132,8 @@ public class ChannelSettings {
 					}
 				}
 			}
+
+
 		}
 		return settings;
 	}
@@ -98,6 +147,11 @@ public class ChannelSettings {
 				object.addProperty(keyStr, value);
 			}
 		}
+
+		if(!mSounds.isEmpty()) {
+			//object.add("SoundsList", value);
+		}
+
 		return object;
 	}
 
@@ -221,4 +275,19 @@ public class ChannelSettings {
 		CommandAPI.fail("No such setting: " + setting);
 		return 0;
 	}
+
+	public void playSounds(Player player) {
+		for(CSound sound : mSounds) {
+			sound.playSound(player);
+		}
+	}
+
+	public void addSound(Sound sound, float volume, float pitch) {
+		mSounds.add(new CSound(sound, volume, pitch));
+	}
+
+	public void clearSound() {
+		mSounds.clear();
+	}
+
 }
