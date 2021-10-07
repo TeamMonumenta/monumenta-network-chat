@@ -695,8 +695,8 @@ public class ChatCommand {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("my"));
 			arguments.add(new MultiLiteralArgument("sound"));
+			arguments.add(new MultiLiteralArgument("add"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
 			));
@@ -798,6 +798,45 @@ public class ChatCommand {
 					return 1;
 				})
 				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("settings"));
+			arguments.add(new MultiLiteralArgument("sound"));
+			arguments.add(new MultiLiteralArgument("clear"));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+			));
+			new CommandAPICommand(baseCommand)
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				CommandSender callee = CommandUtils.getCallee(sender);
+				if (!(callee instanceof Player)) {
+					CommandUtils.fail(sender, "This command can only be run as a player.");
+				}
+
+				if (!CommandUtils.checkSudoCommand(sender)) {
+					CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+				}
+
+				Player target = (Player) callee;
+				PlayerState state = PlayerStateManager.getPlayerState(target);
+				if (state == null) {
+					CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+				}
+
+				String channelName = (String) args[3];
+				Channel channel = ChannelManager.getChannel(channelName);
+				if (channel == null) {
+					CommandUtils.fail(sender, "No such channel " + channelName + ".");
+				}
+
+				ChannelSettings settings = state.channelSettings(channel);
+
+				settings.clearSound();
+
+				return 1;
+			})
+			.register();
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("settings"));
