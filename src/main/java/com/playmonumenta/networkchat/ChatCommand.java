@@ -1300,7 +1300,7 @@ public class ChatCommand {
 		}
 
 		if (!channel.mayManage(sender)) {
-			CommandUtils.fail(sender,"You do not have permission to run this command.");
+			CommandUtils.fail(sender, "You do not have permission to run this command.");
 		}
 
 		if (!(channel instanceof ChannelPermissionNode)) {
