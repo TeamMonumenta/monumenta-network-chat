@@ -99,13 +99,17 @@ public class Message implements AutoCloseable {
 	}
 
 	// Raw, non-channel messages (use sparingly)
-	protected static Message createRawMessage(MessageType messageType, JsonObject extraData, Component message) {
+	protected static Message createRawMessage(MessageType messageType, UUID senderId, JsonObject extraData, Component message) {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		UUID channelId = null;
-		UUID senderId = null;
+		if (senderId != null) {
+			if (senderId.getMostSignificantBits() == 0 && senderId.getLeastSignificantBits() == 0) {
+				senderId = null;
+			}
+		}
 		NamespacedKey senderType = null;
-		boolean senderIsPlayer = false;
+		boolean senderIsPlayer = (senderId != null);
 		String senderName = "";
 		Component senderComponent = Component.empty();
 		return new Message(id, instant, channelId, messageType, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);

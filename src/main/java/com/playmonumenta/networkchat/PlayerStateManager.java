@@ -107,7 +107,7 @@ public class PlayerStateManager implements Listener {
 					} else {
 						messageType = MessageType.SYSTEM;
 					}
-					Message message = Message.createRawMessage(messageType, null, messageComponent);
+					Message message = Message.createRawMessage(messageType, null, null, messageComponent);
 
 					PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
 					playerState.receiveExternalMessage(message);
