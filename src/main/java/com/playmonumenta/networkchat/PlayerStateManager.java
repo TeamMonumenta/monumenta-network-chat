@@ -2,12 +2,24 @@ package com.playmonumenta.networkchat;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.EnumWrappers.ChatType;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.ComponentConverter;
+import com.comphenix.protocol.wrappers.AdventureComponentConverter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
@@ -16,6 +28,7 @@ import com.playmonumenta.redissync.RedisAPI;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
 
+import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
@@ -42,6 +55,65 @@ public class PlayerStateManager implements Listener {
 	private PlayerStateManager(Plugin plugin) {
 		INSTANCE = this;
 		mPlugin = plugin;
+		ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin,
+		                                                                         ListenerPriority.NORMAL,
+		                                                                         PacketType.Play.Server.CHAT) {
+			@Override
+			public void onPacketSending(PacketEvent event) {
+				if (event.getPacketType().equals(PacketType.Play.Server.CHAT)) {
+					PacketContainer packet = event.getPacket();
+					ChatType chatType = packet.getChatTypes().getValues().get(0);
+					if (chatType.equals(ChatType.GAME_INFO)) {
+						// Ignore hotbar messages
+						return;
+					}
+					UUID sender = null;
+					List<UUID> uuids = packet.getUUIDs().getValues();
+					if (uuids.size() == 1) {
+						sender = uuids.get(0);
+					} else {
+						sender = new UUID(0, 0);
+					}
+					List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
+					if (messageParts.size() == 0) {
+						return;
+					}
+
+					Gson gson = new Gson();
+					String messageJsonStr;
+					JsonObject messageJson;
+					Component messageComponent = null;
+					WrappedChatComponent messagePart = messageParts.get(0);
+					if (messagePart != null) {
+						messageJsonStr = messagePart.getJson();
+						messageJson = gson.fromJson(messageJsonStr, JsonObject.class);
+						messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
+					} else {
+						List<Object> packetParts = packet.getModifier().getValues();
+						for (Object possiblyMessage : packetParts) {
+							if (possiblyMessage instanceof Component) {
+								messageComponent = (Component) possiblyMessage;
+								break;
+							}
+						}
+						if (messageComponent == null) {
+							return;
+						}
+					}
+
+					MessageType messageType;
+					if (chatType.equals(ChatType.CHAT)) {
+						messageType = MessageType.CHAT;
+					} else {
+						messageType = MessageType.SYSTEM;
+					}
+					Message message = Message.createRawMessage(messageType, null, messageComponent);
+
+					PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
+					playerState.receiveExternalMessage(message);
+				}
+			}
+		});
 		reload();
 	}
 

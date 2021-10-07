@@ -2,6 +2,6 @@ name: MonumentaNetworkChat
 main: com.playmonumenta.networkchat.NetworkChatPlugin
 version: 0.0.1
 api-version: 1.13
-depend: [CommandAPI,MonumentaNetworkRelay,MonumentaRedisSync,PlaceholderAPI]
+depend: [CommandAPI,MonumentaNetworkRelay,MonumentaRedisSync,PlaceholderAPI,ProtocolLib]
 softdepend: []
 commands:

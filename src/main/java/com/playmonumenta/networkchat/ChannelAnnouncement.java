@@ -362,7 +362,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 		messageText = PlaceholderAPI.setPlaceholders(null, messageText);
 
-		Message message = Message.createMessage(this, sender, null, messageText);
+		Message message = Message.createMessage(this, MessageType.SYSTEM, sender, null, messageText);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -397,7 +397,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		Component fullMessage = Component.empty()
 			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", mName))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(Identity.nil(), fullMessage, MessageType.SYSTEM);
+		recipient.sendMessage(Identity.nil(), fullMessage, message.getMessageType());
 		if (recipient instanceof Player) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}

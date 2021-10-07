@@ -5,8 +5,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 
+import net.kyori.adventure.audience.MessageType;
+import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -35,6 +38,7 @@ public class Message implements AutoCloseable {
 	private final UUID mId;
 	private final Instant mInstant;
 	private final UUID mChannelId;
+	private final MessageType mMessageType;
 	private final UUID mSenderId;
 	private final String mSenderName;
 	private final NamespacedKey mSenderType;
@@ -44,10 +48,21 @@ public class Message implements AutoCloseable {
 	private final Component mMessage;
 	private boolean mIsDeleted = false;
 
-	private Message(UUID id, Instant instant, UUID channelId, UUID senderId, String senderName, NamespacedKey senderType, boolean senderIsPlayer, Component senderComponent, JsonObject extraData, Component message) {
+	private Message(UUID id,
+	                Instant instant,
+	                UUID channelId,
+	                MessageType messageType,
+	                UUID senderId,
+	                String senderName,
+	                NamespacedKey senderType,
+	                boolean senderIsPlayer,
+	                Component senderComponent,
+	                JsonObject extraData,
+	                Component message) {
 		mId = id;
 		mInstant = instant;
 		mChannelId = channelId;
+		mMessageType = messageType;
 		mSenderId = senderId;
 		mSenderName = senderName;
 		mSenderType = senderType;
@@ -62,7 +77,7 @@ public class Message implements AutoCloseable {
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, Component message) {
+	protected static Message createMessage(Channel channel, MessageType messageType, CommandSender sender, JsonObject extraData, Component message) {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
@@ -74,13 +89,26 @@ public class Message implements AutoCloseable {
 		}
 		boolean senderIsPlayer = sender instanceof Player;
 		Component senderComponent = MessagingUtils.senderComponent(sender);
-		return new Message(id, instant, channelId, senderId, sender.getName(), senderType, senderIsPlayer, senderComponent, extraData, message);
+		return new Message(id, instant, channelId, messageType, senderId, sender.getName(), senderType, senderIsPlayer, senderComponent, extraData, message);
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(Channel channel, CommandSender sender, JsonObject extraData, String message) {
+	protected static Message createMessage(Channel channel, MessageType messageType, CommandSender sender, JsonObject extraData, String message) {
 		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).parse(message);
-		return Message.createMessage(channel, sender, extraData, messageComponent);
+		return Message.createMessage(channel, messageType, sender, extraData, messageComponent);
+	}
+
+	// Raw, non-channel messages (use sparingly)
+	protected static Message createRawMessage(MessageType messageType, JsonObject extraData, Component message) {
+		UUID id = UUID.randomUUID();
+		Instant instant = Instant.now();
+		UUID channelId = null;
+		UUID senderId = null;
+		NamespacedKey senderType = null;
+		boolean senderIsPlayer = false;
+		String senderName = "";
+		Component senderComponent = Component.empty();
+		return new Message(id, instant, channelId, messageType, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);
 	}
 
 	// For when receiving remote messages
@@ -95,7 +123,20 @@ public class Message implements AutoCloseable {
 		}
 
 		Instant instant = Instant.ofEpochMilli(object.get("instant").getAsLong());
-		UUID channelId = UUID.fromString(object.get("channelId").getAsString());
+		UUID channelId = null;
+		if (object.get("channelId") != null) {
+			channelId = UUID.fromString(object.get("channelId").getAsString());
+		}
+		MessageType messageType = MessageType.CHAT;
+		if (object.get("messageType") != null) {
+			String messageTypeName = object.get("messageType").getAsString();
+			for (MessageType possibleType : MessageType.values()) {
+				if (possibleType.name().equals(messageTypeName)) {
+					messageType = possibleType;
+					break;
+				}
+			}
+		}
 		UUID senderId = null;
 		if (object.get("senderId") != null) {
 			senderId = UUID.fromString(object.get("senderId").getAsString());
@@ -113,7 +154,7 @@ public class Message implements AutoCloseable {
 		}
 		Component message = GsonComponentSerializer.gson().deserializeFromTree(object.get("message"));
 
-		return new Message(id, instant, channelId, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);
+		return new Message(id, instant, channelId, messageType, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);
 	}
 
 	protected JsonObject toJson() {
@@ -121,8 +162,10 @@ public class Message implements AutoCloseable {
 
 		object.addProperty("id", mId.toString());
 		object.addProperty("instant", mInstant.toEpochMilli());
-		object.addProperty("channelId", mChannelId.toString());
-
+		if (mChannelId != null) {
+			object.addProperty("channelId", mChannelId.toString());
+		}
+		object.addProperty("messageType", mMessageType.name());
 		if (mSenderId != null) {
 			object.addProperty("senderId", mSenderId.toString());
 		}
@@ -175,6 +218,10 @@ public class Message implements AutoCloseable {
 		return mExtraData;
 	}
 
+	public MessageType getMessageType() {
+		return mMessageType;
+	}
+
 	public UUID getSenderId() {
 		return mSenderId;
 	}
@@ -204,20 +251,32 @@ public class Message implements AutoCloseable {
 	}
 
 	// Must be called from PlayerState to allow pausing messages.
-	// Returns false if the channel is not loaded.
-	protected boolean showMessage(CommandSender recipient) {
+	protected void showMessage(CommandSender recipient) {
 		if (mIsDeleted) {
-			return true;
+			return;
 		}
 		Channel channel = ChannelManager.getChannel(mChannelId);
 		if (channel == null) {
-			return false;
+			// Non-channel messages
+			if (mExtraData != null) {
+				JsonPrimitive shardJson = mExtraData.getAsJsonPrimitive("shard");
+				if (shardJson != null) {
+					String shard = shardJson.getAsString();
+					if (!shard.equals("*") && !shard.equals(RemotePlayerManager.getShardName())) {
+						return;
+					}
+				}
+			}
+			Identity senderId = Identity.nil();
+			if (mSenderId != null) {
+				senderId = Identity.identity(mSenderId);
+			}
+			recipient.sendMessage(senderId, mMessage, mMessageType);
+			return;
 		}
 		channel.showMessage(recipient, this);
-		return true;
 	}
 
-	// TODO apply on all shards, ensure chat is resent.
 	protected void markDeleted() {
 		mIsDeleted = true;
 	}

@@ -4,12 +4,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import com.destroystokyo.paper.ClientOption;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -25,6 +27,7 @@ import org.bukkit.entity.Player;
 public class PlayerState {
 	// From vanilla client limits
 	public static final int MAX_DISPLAYED_MESSAGES = 100;
+	private static final long MAX_OFFLINE_HISTORY_MILLIS = 10000;
 
 	private UUID mPlayerId;
 	private boolean mChatPaused;
@@ -41,6 +44,8 @@ public class PlayerState {
 	private Map<UUID, String> mWatchedChannelIds;
 	private Map<UUID, String> mUnwatchedChannelIds;
 
+	private boolean mIsReplayingChat = false;
+	private boolean mIsDisplayingMessage = false;
 	private List<Message> mSeenMessages;
 	private List<Message> mUnseenMessages;
 
@@ -67,18 +72,43 @@ public class PlayerState {
 	public static PlayerState fromJson(Player player, JsonObject obj) {
 		PlayerState state = new PlayerState(player);
 
-		// TODO for when message playback is implemented for transferring between servers.
-		/*
-		Instant lastLogin = null;
+		Instant now = Instant.now();
+		Long nowMillis = now.toEpochMilli();
+		Long lastLoginMillis = null;
 		JsonPrimitive lastLoginJson = obj.getAsJsonPrimitive("lastSaved");
 		if (lastLoginJson != null) {
 			try {
-				lastLogin = new Instant.ofEpochMilli(lastLoginJson.getAsLong());
+				lastLoginMillis = lastLoginJson.getAsLong();
 			} catch (NumberFormatException e) {
-				;
+				NetworkChatPlugin.getInstance().getLogger().warning("Could not get lastSaved time for player " + player.getName());
+			}
+
+			if (lastLoginMillis != null) {
+				Long millisOffline = nowMillis - lastLoginMillis;
+				NetworkChatPlugin.getInstance().getLogger().info(player.getName() + " was offline for " + Double.toString(millisOffline / 1000.0) + " seconds.");
+				if (millisOffline <= MAX_OFFLINE_HISTORY_MILLIS) {
+					JsonArray seenMessagesJson = obj.getAsJsonArray("seenMessages");
+					if (seenMessagesJson != null) {
+						for (JsonElement messageJson : seenMessagesJson) {
+							if (messageJson instanceof JsonObject) {
+								Message message = Message.fromJson((JsonObject) messageJson);
+								state.mSeenMessages.add(message);
+							}
+						}
+					}
+
+					JsonArray unseenMessagesJson = obj.getAsJsonArray("seenMessages");
+					if (seenMessagesJson != null) {
+						for (JsonElement messageJson : unseenMessagesJson) {
+							if (messageJson instanceof JsonObject) {
+								Message message = Message.fromJson((JsonObject) messageJson);
+								state.mUnseenMessages.add(message);
+							}
+						}
+					}
+				}
 			}
 		}
-		*/
 
 		JsonPrimitive isPausedJson = obj.getAsJsonPrimitive("isPaused");
 		if (isPausedJson != null) {
@@ -101,7 +131,7 @@ public class PlayerState {
 					state.mWhisperChannelsByRecipient.put(recipientUuid, channelUuid);
 					state.mWhisperRecipientByChannels.put(channelUuid, recipientUuid);
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting whisperChannels to object. Reason: " + e.getMessage());
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s whisperChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -121,7 +151,7 @@ public class PlayerState {
 				try {
 					state.mWatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting watchedChannels to object. Reason: " + e.getMessage());
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s watchedChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -134,7 +164,7 @@ public class PlayerState {
 				try {
 					state.mUnwatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting unwatchetChannels to object. Reason: " + e.getMessage());
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s unwatchetChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -158,7 +188,7 @@ public class PlayerState {
 					ChannelSettings channelSettings = ChannelSettings.fromJson(channelSettingJson.getAsJsonObject());
 					state.mChannelSettings.put(UUID.fromString(channelId), channelSettings);
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting channelSettings to object. Reason: " + e.getMessage());
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s channelSettings to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -202,6 +232,15 @@ public class PlayerState {
 			}
 		}
 
+		JsonArray seenMessages = new JsonArray();
+		for (Message message : mSeenMessages) {
+			seenMessages.add(message.toJson());
+		}
+		JsonArray unseenMessages = new JsonArray();
+		for (Message message : mUnseenMessages) {
+			unseenMessages.add(message.toJson());
+		}
+
 		JsonObject result = new JsonObject();
 		result.addProperty("lastSaved", Instant.now().toEpochMilli());
 		result.addProperty("isPaused", mChatPaused);
@@ -220,6 +259,8 @@ public class PlayerState {
 		result.add("defaultChannelSettings", mDefaultChannelSettings.toJson());
 		result.add("defaultChannels", mDefaultChannels.toJson());
 		result.add("channelSettings", allChannelSettings);
+		result.add("seenMessages", seenMessages);
+		result.add("unseenMessages", unseenMessages);
 
 		return result;
 	}
@@ -255,7 +296,7 @@ public class PlayerState {
 			return;
 		}
 
-		if (mChatPaused) {
+		if (mChatPaused || mIsReplayingChat) {
 			if (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
 				mUnseenMessages.remove(0);
 			}
@@ -264,20 +305,47 @@ public class PlayerState {
 			if (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
 				mSeenMessages.remove(0);
 			}
+			mIsDisplayingMessage = true;
 			message.showMessage(getPlayer());
+			mIsDisplayingMessage = false;
 			mSeenMessages.add(message);
 		}
 	}
 
+	public void receiveExternalMessage(Message message) {
+		if (mIsReplayingChat || mIsDisplayingMessage) {
+			return;
+		}
+		if (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+			mSeenMessages.remove(0);
+		}
+		mSeenMessages.add(message);
+	}
+
 	// Re-show chat with deleted messages removed, even while paused.
 	public void refreshChat() {
-		int blankMessages = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
-		for (int i = 0; i < blankMessages; ++i) {
+		mIsReplayingChat = true;
+		Iterator<Message> it = mSeenMessages.iterator();
+		while (it.hasNext()) {
+			Message message = it.next();
+			if (message.isDeleted()) {
+				it.remove();
+			}
+		}
+
+		int messageCount = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
+		for (int i = 0; i < messageCount; ++i) {
 			getPlayer().sendMessage(Component.empty());
 		}
 
+		mIsDisplayingMessage = true;
 		for (Message message : mSeenMessages) {
 			message.showMessage(getPlayer());
+		}
+		mIsDisplayingMessage = false;
+		mIsReplayingChat = false;
+		if (!mChatPaused) {
+			showUnseen();
 		}
 	}
 
@@ -295,11 +363,15 @@ public class PlayerState {
 			int newSeenStartIndex = mUnseenMessages.size() + mSeenMessages.size() - MAX_DISPLAYED_MESSAGES;
 			mSeenMessages = mSeenMessages.subList(newSeenStartIndex, MAX_DISPLAYED_MESSAGES);
 		}
+		showUnseen();
+	}
 
-		// Show all unseen messages
+	private void showUnseen() {
+		mIsDisplayingMessage = true;
 		for (Message message : mUnseenMessages) {
 			message.showMessage(getPlayer());
 		}
+		mIsDisplayingMessage = false;
 		mSeenMessages.addAll(mUnseenMessages);
 		mUnseenMessages.clear();
 

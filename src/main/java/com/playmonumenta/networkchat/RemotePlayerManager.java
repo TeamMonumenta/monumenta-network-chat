@@ -79,6 +79,10 @@ public class RemotePlayerManager implements Listener {
 		return INSTANCE;
 	}
 
+	public static String getShardName() {
+		return mShardName;
+	}
+
 	public static Set<String> onlinePlayerNames() {
 		return new ConcurrentSkipListSet<>(mPlayerIds.keySet());
 	}

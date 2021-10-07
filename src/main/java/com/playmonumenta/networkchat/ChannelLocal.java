@@ -46,10 +46,10 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	private boolean mAutoJoin = true;
 	private String mChannelPermission = null;
 
-	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) throws Exception {
+	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
-		mShardName = NetworkRelayAPI.getShardName();
+		mShardName = RemotePlayerManager.getShardName();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
@@ -57,10 +57,10 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		mPlayerPerms = new HashMap<>();
 	}
 
-	public ChannelLocal(String name) throws Exception {
+	public ChannelLocal(String name) {
 		mLastUpdate = Instant.now();
 		mId = UUID.randomUUID();
-		mShardName = NetworkRelayAPI.getShardName();
+		mShardName = RemotePlayerManager.getShardName();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
@@ -368,7 +368,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("fromShard", mShardName);
 
-		Message message = Message.createMessage(this, sender, extraData, messageText);
+		Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -419,7 +419,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", mName),
 				Template.of("sender", message.getSenderComponent()))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
+		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
