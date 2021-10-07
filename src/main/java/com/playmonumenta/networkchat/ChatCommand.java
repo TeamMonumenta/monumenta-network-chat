@@ -710,7 +710,7 @@ public class ChatCommand {
 					}
 
 					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+						CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
 					}
 
 					Player target = (Player) callee;
@@ -743,7 +743,7 @@ public class ChatCommand {
 					}
 
 					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+						CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
 					}
 
 					Player target = (Player) callee;
@@ -776,7 +776,7 @@ public class ChatCommand {
 					}
 
 					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+						CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
 					}
 
 					Player target = (Player) callee;
