@@ -1330,12 +1330,7 @@ public class ChatCommand {
 			return 0;
 		}
 
-		Message message = MessageManager.getMessage(messageId);
-		if (message == null) {
-			CommandUtils.fail(sender, "That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
-		}
-		message.markDeleted();
-		sender.sendMessage(Component.text("Message deleted from this shard, chat not refreshed. This feature is WIP."));
+		MessageManager.deleteMessage(messageId);
 		return 1;
 	}
 

@@ -365,7 +365,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			}
 		}
 
-		Message message = Message.createMessage(this, sender, null, messageText);
+		Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -409,7 +409,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", mName),
 				Template.of("sender", message.getSenderComponent()))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, MessageType.CHAT);
+		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
 			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
 		}
