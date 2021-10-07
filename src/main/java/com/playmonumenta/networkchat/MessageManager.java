@@ -76,7 +76,7 @@ public class MessageManager implements Listener {
 				mPlugin.getLogger().severe("Got " + NETWORK_CHAT_MESSAGE + " message with null data");
 				return;
 			}
-			receiveMessage(data);
+			receiveMessageHandler(data);
 			break;
 		case NETWORK_CHAT_DELETE_MESSAGE:
 			data = event.getData();
@@ -84,14 +84,14 @@ public class MessageManager implements Listener {
 				mPlugin.getLogger().severe("Got " + NETWORK_CHAT_DELETE_MESSAGE + " message with null data");
 				return;
 			}
-			deleteMessage(data);
+			deleteMessageHandler(data);
 			break;
 		default:
 			break;
 		}
 	}
 
-	public void receiveMessage(JsonObject object) {
+	public void receiveMessageHandler(JsonObject object) {
 		Message message = null;
 		try {
 			message = Message.fromJson(object);
@@ -109,7 +109,7 @@ public class MessageManager implements Listener {
 		}
 	}
 
-	public void deleteMessage(JsonObject object) {
+	public void deleteMessageHandler(JsonObject object) {
 		Message message = null;
 		try {
 			UUID messageId = UUID.fromString(object.getAsJsonPrimitive("id").getAsString());
