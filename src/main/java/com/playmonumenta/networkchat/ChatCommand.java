@@ -16,7 +16,9 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
+import dev.jorel.commandapi.arguments.FloatArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.SoundArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
@@ -29,6 +31,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
 
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -264,6 +267,109 @@ public class ChatCommand {
 						return changeChannelPerms(sender, (String) args[2], (String) args[3]);
 					})
 					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("sound"));
+				arguments.add(new MultiLiteralArgument("add"));
+				arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new SoundArgument("Sound"));
+				new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					if (!channel.mayManage(sender)) {
+						CommandUtils.fail(sender, "You have no permission to do this.");
+					}
+
+					ChannelSettings settings = channel.channelSettings();
+
+					settings.addSound((Sound) args[4], 1, 1);
+
+					return 1;
+				})
+				.register();
+
+				arguments.add(new FloatArgument("Volume", 0f));
+
+				new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					if (!channel.mayManage(sender)) {
+						CommandUtils.fail(sender, "You have no permission to do this.");
+					}
+
+					ChannelSettings settings = channel.channelSettings();
+
+					settings.addSound((Sound) args[4], (float) args[5], 1);
+
+					return 1;
+				})
+				.register();
+
+				arguments.add(new FloatArgument("Pitch", 0.5f, 1.5f));
+
+				new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					if (!channel.mayManage(sender)) {
+						CommandUtils.fail(sender, "You have no permission to do this.");
+					}
+
+					ChannelSettings settings = channel.channelSettings();
+
+					settings.addSound((Sound) args[4], (float) args[5], (float) args[6]);
+
+					return 1;
+				})
+				.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("sound"));
+				arguments.add(new MultiLiteralArgument("clear"));
+				arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+				));
+				new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					if (!channel.mayManage(sender)) {
+						CommandUtils.fail(sender, "You have no permission to do this.");
+					}
+
+					ChannelSettings settings = channel.channelSettings();
+
+					settings.clearSound();
+
+					return 1;
+				})
+				.register();
 			}
 
 			arguments.clear();
@@ -584,6 +690,112 @@ public class ChatCommand {
 
 					ChannelSettings settings = state.channelSettings(channel);
 					return settings.commandFlag(sender, (String) args[4]);
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("settings"));
+			arguments.add(new MultiLiteralArgument("my"));
+			arguments.add(new MultiLiteralArgument("sound"));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+			));
+			arguments.add(new SoundArgument("Notification sound"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+					}
+
+					Player target = (Player) callee;
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+					}
+
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					ChannelSettings settings = state.channelSettings(channel);
+
+					settings.addSound((Sound) args[4], 1, 1);
+
+					return 1;
+				})
+				.register();
+
+			arguments.add(new FloatArgument("Volume", 0f));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+					}
+
+					Player target = (Player) callee;
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+					}
+
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					ChannelSettings settings = state.channelSettings(channel);
+
+					settings.addSound((Sound) args[4], (Float)args[5], 1);
+
+					return 1;
+				})
+				.register();
+
+			arguments.add(new FloatArgument("Pitch", 0.5f, 1.5f));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+					}
+
+					Player target = (Player) callee;
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+					}
+
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					ChannelSettings settings = state.channelSettings(channel);
+
+					settings.addSound((Sound) args[4], (Float)args[5], (Float)args[6]);
+
+					return 1;
 				})
 				.register();
 

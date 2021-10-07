@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -112,7 +113,6 @@ public class ChannelSettings {
 			return new CSound(sound, volume, pitch);
 		}
 	}
-	// TODO Allow specifying a sound.
 
 	private Map<FlagKey, Boolean> mFlags = new HashMap<>();
 	private List<CSound> mSounds = new ArrayList<>();
@@ -133,7 +133,16 @@ public class ChannelSettings {
 				}
 			}
 
-
+			JsonArray cSoundsArray = object.getAsJsonArray("SoundsList");
+			if (cSoundsArray != null && cSoundsArray.size() > 0) {
+				cSoundsArray.forEach((element) -> {
+					try {
+						settings.mSounds.add(CSound.fromJson((JsonObject) element));
+					} catch (Exception e) {
+						NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting SoundsList to object. Reason: " + e.getMessage());
+					}
+				});
+			}
 		}
 		return settings;
 	}
@@ -149,7 +158,11 @@ public class ChannelSettings {
 		}
 
 		if(!mSounds.isEmpty()) {
-			//object.add("SoundsList", value);
+			JsonArray cSoundsArray = new JsonArray();
+			for (CSound sound : mSounds) {
+				cSoundsArray.add(sound.toJson());
+			}
+			object.add("SoundsList", cSoundsArray);
 		}
 
 		return object;

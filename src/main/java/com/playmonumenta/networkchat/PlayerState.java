@@ -19,8 +19,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Sound;
-import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 
 // TODO Track how many players are in a channel on this server/overall
@@ -103,8 +101,7 @@ public class PlayerState {
 					state.mWhisperChannelsByRecipient.put(recipientUuid, channelUuid);
 					state.mWhisperRecipientByChannels.put(channelUuid, recipientUuid);
 				} catch (Exception e) {
-					// TODO Log the error
-					continue;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting whisperChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -124,8 +121,7 @@ public class PlayerState {
 				try {
 					state.mWatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					// TODO Log the error
-					continue;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting watchedChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -138,8 +134,7 @@ public class PlayerState {
 				try {
 					state.mUnwatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					// TODO Log the error
-					continue;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting unwatchetChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -163,8 +158,7 @@ public class PlayerState {
 					ChannelSettings channelSettings = ChannelSettings.fromJson(channelSettingJson.getAsJsonObject());
 					state.mChannelSettings.put(UUID.fromString(channelId), channelSettings);
 				} catch (Exception e) {
-					// TODO Log the error
-					continue;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting channelSettings to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -469,7 +463,6 @@ public class PlayerState {
 		} else if (channel instanceof ChannelWhisper) {
 			shouldPlaySound = true;
 		}
-		// TODO Player default
 
 		if (shouldPlaySound) {
 			Player player = getPlayer();
