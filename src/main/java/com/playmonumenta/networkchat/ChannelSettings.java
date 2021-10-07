@@ -157,7 +157,7 @@ public class ChannelSettings {
 			}
 		}
 
-		if(!mSounds.isEmpty()) {
+		if (!mSounds.isEmpty()) {
 			JsonArray cSoundsArray = new JsonArray();
 			for (CSound sound : mSounds) {
 				cSoundsArray.add(sound.toJson());
@@ -290,7 +290,7 @@ public class ChannelSettings {
 	}
 
 	public void playSounds(Player player) {
-		for(CSound sound : mSounds) {
+		for (CSound sound : mSounds) {
 			sound.playSound(player);
 		}
 	}
