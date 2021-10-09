@@ -1465,8 +1465,9 @@ public class ChatCommand {
 
 	private static int sendMessage(CommandSender sender, String channelName, String message) throws WrapperCommandSyntaxException {
 		CommandSender caller = CommandUtils.getCaller(sender);
-		if (caller instanceof Player && sender != caller) {
-			sender.sendMessage(Component.text("Hey! It's not nice to put words in people's mouths! Where are your manners?", NamedTextColor.RED));
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (callee instanceof Player && callee != caller) {
+			caller.sendMessage(Component.text("Hey! It's not nice to put words in people's mouths! Where are your manners?", NamedTextColor.RED));
 			CommandUtils.fail(sender, "You cannot chat as another player.");
 		}
 
@@ -1481,11 +1482,11 @@ public class ChatCommand {
 
 	private static int sendMessageInDefault(CommandSender sender, String channelType, String message) throws WrapperCommandSyntaxException {
 		CommandSender caller = CommandUtils.getCaller(sender);
-		if (caller instanceof Player && sender != caller) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (callee instanceof Player && callee != caller) {
 			caller.sendMessage(Component.text("Hey! It's not nice to put words in people's mouths! Where are your manners?", NamedTextColor.RED));
 			CommandUtils.fail(sender, "You cannot chat as another player.");
 		}
-
 		Channel channel = null;
 		if (sender instanceof Player) {
 			channel = PlayerStateManager.getPlayerState((Player) sender).getDefaultChannel(channelType);
