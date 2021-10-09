@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,4 +97,34 @@ public class NetworkChatProperties {
 		return out;
 	}
 
+
+	public static void save(Plugin plugin) {
+		ensureInstance();
+		INSTANCE.saveConfig(plugin);
+	}
+
+	public void saveConfig(Plugin plugin) {
+		File configFile = new File(plugin.getDataFolder(), "config.yml");
+
+		if (!configFile.exists()) {
+			try {
+				configFile.createNewFile();
+			} catch (IOException e) {
+				plugin.getLogger().warning("Catch exeption during create new file for config.yml. Reason: " + e.getMessage());
+			}
+		}
+
+		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
+		config.set("ChatCommandCreate", mChatCommandCreateEnabled);
+		config.set("ChatCommandModify", mChatCommandModifyEnabled);
+		config.set("ChatCommandDelate", mChatCommandDeleteEnabled);
+		config.set("SudoEnabled", mChatCommandDeleteEnabled);
+
+		try {
+			config.save(configFile);
+		} catch (IOException e) {
+			plugin.getLogger().warning("Catch exeption while save config.yml. Reason: " + e.getMessage());
+		}
+	}
 }
