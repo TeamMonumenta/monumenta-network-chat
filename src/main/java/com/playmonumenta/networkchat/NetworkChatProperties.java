@@ -116,10 +116,21 @@ public class NetworkChatProperties {
 
 		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
-		config.set("ChatCommandCreate", mChatCommandCreateEnabled);
-		config.set("ChatCommandModify", mChatCommandModifyEnabled);
-		config.set("ChatCommandDelate", mChatCommandDeleteEnabled);
-		config.set("SudoEnabled", mChatCommandDeleteEnabled);
+		if (!config.contains("ChatCommandCreate")) {
+			config.set("ChatCommandCreate", mChatCommandCreateEnabled);
+		}
+
+		if (!config.contains("ChatCommandModify")) {
+			config.set("ChatCommandModify", mChatCommandModifyEnabled);
+		}
+
+		if (!config.contains("ChatCommandDelate")) {
+			config.set("ChatCommandDelate", mChatCommandDeleteEnabled);
+		}
+
+		if (!config.contains("SudoEnabled")) {
+			config.set("SudoEnabled", mSudoEnabled);
+		}
 
 		try {
 			config.save(configFile);
