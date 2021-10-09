@@ -129,6 +129,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 	@Override
 	public void onDisable() {
+		NetworkChatProperties.save(this);
 		INSTANCE = null;
 		getServer().getScheduler().cancelTasks(this);
 	}
