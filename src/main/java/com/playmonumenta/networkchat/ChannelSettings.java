@@ -303,4 +303,7 @@ public class ChannelSettings {
 		mSounds.clear();
 	}
 
+	public boolean soundEmpty() {
+		return mSounds.isEmpty();
+	}
 }
