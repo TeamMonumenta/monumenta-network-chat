@@ -541,10 +541,10 @@ public class PlayerState {
 
 			if (channelSettings != null && !channelSettings.soundEmpty()) {
 				channelSettings.playSounds(player);
-			} else if (!mDefaultChannelSettings.soundEmpty()) {
-				mDefaultChannelSettings.playSounds(player);
 			} else if (channel.channelSettings() != null && !channel.channelSettings().soundEmpty()) {
 				channel.channelSettings().playSounds(player);
+			} else if (!mDefaultChannelSettings.soundEmpty()) {
+				mDefaultChannelSettings.playSounds(player);
 			}
 
 		}
