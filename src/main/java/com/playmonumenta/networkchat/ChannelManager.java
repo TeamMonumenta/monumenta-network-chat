@@ -39,7 +39,6 @@ public class ChannelManager implements Listener {
 	public static final String NETWORK_CHAT_CHANNEL_UPDATE = "com.playmonumenta.networkchat.Channel.update";
 	private static final String REDIS_CHANNEL_NAME_TO_UUID_PATH = "networkchat:channel_name_to_uuids";
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
-	private static final String REDIS_CHANNEL_PARTICIPANTS_PATH = "networkchat:channel_participants";
 	private static final String REDIS_FORCELOADED_CHANNEL_PATH = "networkchat:forceloaded_channels";
 	private static final String REDIS_DEFAULT_CHANNELS_KEY = "default_channels";
 
@@ -352,7 +351,6 @@ public class ChannelManager implements Listener {
 		RedisAsyncCommands<String, String> redisAsync = RedisAPI.getInstance().async();
 		redisAsync.hdel(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName);
 		redisAsync.hdel(REDIS_CHANNELS_PATH, channelIdStr);
-		redisAsync.hdel(REDIS_CHANNEL_PARTICIPANTS_PATH, channelIdStr);
 		redisAsync.srem(REDIS_FORCELOADED_CHANNEL_PATH, channelIdStr);
 
 		// Broadcast to other shards
