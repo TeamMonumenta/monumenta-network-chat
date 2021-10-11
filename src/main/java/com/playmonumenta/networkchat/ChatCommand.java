@@ -1628,7 +1628,7 @@ public class ChatCommand {
 						.hoverEvent(Component.text("Rename channel", NamedTextColor.LIGHT_PURPLE))
 						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " rename " + channel.getName() + " ")));
 			}
-			if (target.hasPermission("networkchat.channel.delete")) {
+			if (target.hasPermission("networkchat.delete.channel")) {
 				gui = gui.append(Component.text(" "))
 					.append(Component.text("[]", NamedTextColor.RED)
 						.hoverEvent(Component.text("Delete channel", NamedTextColor.RED))
