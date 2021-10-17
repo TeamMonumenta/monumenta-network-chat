@@ -232,12 +232,14 @@ public class PlayerState {
 			}
 		}
 
+		List<Message> seenMessagesCopy = new ArrayList<Message>(mSeenMessages);
 		JsonArray seenMessages = new JsonArray();
-		for (Message message : mSeenMessages) {
+		for (Message message : seenMessagesCopy) {
 			seenMessages.add(message.toJson());
 		}
+		List<Message> unseenMessagesCopy = new ArrayList<Message>(mUnseenMessages);
 		JsonArray unseenMessages = new JsonArray();
-		for (Message message : mUnseenMessages) {
+		for (Message message : unseenMessagesCopy) {
 			unseenMessages.add(message.toJson());
 		}
 
