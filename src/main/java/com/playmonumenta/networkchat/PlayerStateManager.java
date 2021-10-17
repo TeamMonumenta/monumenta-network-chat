@@ -106,7 +106,10 @@ public class PlayerStateManager implements Listener {
 					Message message = Message.createRawMessage(messageType, sender, null, messageComponent);
 
 					PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
-					playerState.receiveExternalMessage(message);
+					if (playerState != null) {
+						// A message or two may get lost when a player first joins, and their chat state hasn't loaded yet.
+						playerState.receiveExternalMessage(message);
+					}
 				}
 			}
 		});
