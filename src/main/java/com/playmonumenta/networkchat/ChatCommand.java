@@ -297,7 +297,7 @@ public class ChatCommand {
 				})
 				.register();
 
-				arguments.add(new FloatArgument("Volume", 0f));
+				arguments.add(new FloatArgument("Volume", 0.0f, 1.0f));
 
 				new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -320,7 +320,7 @@ public class ChatCommand {
 				})
 				.register();
 
-				arguments.add(new FloatArgument("Pitch", 0.5f, 1.5f));
+				arguments.add(new FloatArgument("Pitch", 0.5f, 2.0f));
 
 				new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -729,7 +729,7 @@ public class ChatCommand {
 				})
 				.register();
 
-			arguments.add(new FloatArgument("Volume", 0f));
+			arguments.add(new FloatArgument("Volume", 0.0f, 1.0f));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -762,7 +762,7 @@ public class ChatCommand {
 				})
 				.register();
 
-			arguments.add(new FloatArgument("Pitch", 0.5f, 1.5f));
+			arguments.add(new FloatArgument("Pitch", 0.5f, 2.0f));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
