@@ -184,7 +184,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			));
 			arguments.add(new MultiLiteralArgument("invite"));
 			arguments.add(new StringArgument("Player").replaceSuggestions(info ->
-				RemotePlayerManager.onlinePlayerNames().toArray(new String[0])
+				RemotePlayerManager.visiblePlayerNames().toArray(new String[0])
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -222,7 +222,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			));
 			arguments.add(new MultiLiteralArgument("kick"));
 			arguments.add(new StringArgument("Player").replaceSuggestions(info ->
-				RemotePlayerManager.onlinePlayerNames().toArray(new String[0])
+				RemotePlayerManager.visiblePlayerNames().toArray(new String[0])
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)

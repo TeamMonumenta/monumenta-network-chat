@@ -25,6 +25,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -40,6 +41,7 @@ public class RemotePlayerManager implements Listener {
 	private static Map<UUID, String> mPlayerNames = new ConcurrentSkipListMap<>();
 	private static Map<UUID, String> mPlayerLocations = new ConcurrentSkipListMap<>();
 	private static Map<UUID, Component> mPlayerComponents = new ConcurrentSkipListMap<>();
+	private static Set<UUID> mVisiblePlayers = new ConcurrentSkipListSet<>();
 
 	private RemotePlayerManager(Plugin plugin) {
 		INSTANCE = this;
@@ -95,6 +97,40 @@ public class RemotePlayerManager implements Listener {
 		return mPlayerIds.containsKey(playerName);
 	}
 
+	public static Set<String> visiblePlayerNames() {
+		Set<String> results = new ConcurrentSkipListSet<>();
+		for (UUID playerId : mVisiblePlayers) {
+			results.add(getPlayerName(playerId));
+		}
+		return results;
+	}
+
+	private static boolean isLocalPlayerVisible(Player player) {
+		for (MetadataValue meta : player.getMetadata("vanished")) {
+			if (meta.asBoolean()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public static boolean isPlayerVisible(Player player) {
+		boolean cachedResult = isPlayerVisible(player.getUniqueId());
+		boolean currentResult = isLocalPlayerVisible(player);
+		if (cachedResult ^ currentResult) {
+			refreshLocalPlayer(player);
+		}
+		return currentResult;
+	}
+
+	public static boolean isPlayerVisible(UUID playerId) {
+		return mVisiblePlayers.contains(playerId);
+	}
+
+	public static boolean isPlayerVisible(String playerName) {
+		return mVisiblePlayers.contains(getPlayerId(playerName));
+	}
+
 	public static String getPlayerName(UUID playerUuid) {
 		return mPlayerNames.get(playerUuid);
 	}
@@ -126,7 +162,9 @@ public class RemotePlayerManager implements Listener {
 		// Local first
 		shardPlayers = new ConcurrentSkipListMap<>();
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			shardPlayers.put(player.getName(), mPlayerComponents.get(player.getUniqueId()));
+			if (isPlayerVisible(player)) {
+				shardPlayers.put(player.getName(), mPlayerComponents.get(player.getUniqueId()));
+			}
 		}
 		firstName = true;
 		Component line = Component.text(mShardName + ": ").color(NamedTextColor.BLUE);
@@ -149,7 +187,9 @@ public class RemotePlayerManager implements Listener {
 			for (Map.Entry<String, UUID> playerEntry : remotePlayers.entrySet()) {
 				String playerName = playerEntry.getKey();
 				UUID playerUuid = playerEntry.getValue();
-				shardPlayers.put(playerName, mPlayerComponents.get(playerUuid));
+				if (isPlayerVisible(playerUuid)) {
+					shardPlayers.put(playerName, mPlayerComponents.get(playerUuid));
+				}
 			}
 			firstName = true;
 			line = Component.text(remoteShardName + ": ").color(lightRow ? NamedTextColor.BLUE : NamedTextColor.DARK_BLUE);
@@ -166,24 +206,29 @@ public class RemotePlayerManager implements Listener {
 
 	public static void refreshLocalPlayers() {
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			refreshPlayerName(player);
+			refreshLocalPlayer(player);
 		}
 	}
 
 	// Run this on any player to update their displayed name
-	public static void refreshPlayerName(Player player) {
+	public static void refreshLocalPlayer(Player player) {
 		String playerName = player.getName();
 		UUID playerUuid = player.getUniqueId();
 		Component playerComponent = MessagingUtils.playerComponent(player);
+		boolean isHidden = !isLocalPlayerVisible(player);
 
+		if (isHidden) {
+			mVisiblePlayers.remove(playerUuid);
+		} else {
+			mVisiblePlayers.add(playerUuid);
+		}
 		mPlayerIds.put(playerName, playerUuid);
 		mPlayerNames.put(playerUuid, playerName);
 		mPlayerLocations.put(playerUuid, mShardName);
 		mPlayerComponents.put(playerUuid, playerComponent);
 
 		JsonObject remotePlayerData = new JsonObject();
-		remotePlayerData.addProperty("isRefresh", false);
-		remotePlayerData.addProperty("isHidden", false);
+		remotePlayerData.addProperty("isHidden", isHidden);
 		remotePlayerData.addProperty("isOnline", true);
 		remotePlayerData.addProperty("shard", mShardName);
 		remotePlayerData.addProperty("playerName", playerName);
@@ -200,9 +245,7 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	private void remotePlayerChange(JsonObject data) {
-		// A refresh does not trigger player join/leave messages; it's for shards coming online
-		//boolean isRefresh = true;
-		//boolean isHidden = false;
+		boolean isHidden = false;
 		boolean isOnline = false;
 		String remoteShardName;
 		String playerName;
@@ -211,8 +254,7 @@ public class RemotePlayerManager implements Listener {
 		String lastLocation = null;
 
 		try {
-			//isRefresh = data.get("isRefresh").getAsBoolean();
-			//isHidden = data.get("isHidden").getAsBoolean();
+			isHidden = data.get("isHidden").getAsBoolean();
 			isOnline = data.get("isOnline").getAsBoolean();
 			remoteShardName = data.get("shard").getAsString();
 			playerName = data.get("playerName").getAsString();
@@ -232,12 +274,18 @@ public class RemotePlayerManager implements Listener {
 		Map<String, UUID> remotePlayers = mRemotePlayers.get(remoteShardName);
 
 		if (isOnline) {
+			if (isHidden) {
+				mVisiblePlayers.remove(playerUuid);
+			} else {
+				mVisiblePlayers.add(playerUuid);
+			}
 			remotePlayers.put(playerName, playerUuid);
 			mPlayerLocations.put(playerUuid, remoteShardName);
 			mPlayerIds.put(playerName, playerUuid);
 			mPlayerNames.put(playerUuid, playerName);
 			mPlayerComponents.put(playerUuid, playerComponent);
 		} else if (remoteShardName.equals(lastLocation)) {
+			mVisiblePlayers.remove(playerUuid);
 			remotePlayers.remove(playerName);
 			mPlayerLocations.remove(playerUuid);
 			mPlayerIds.remove(playerName);
@@ -274,12 +322,14 @@ public class RemotePlayerManager implements Listener {
 	public void playerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
 		String command = event.getMessage().substring(1);
 
-		if (command.startsWith("team ")) {
+		if (command.startsWith("team ")
+		    || command.startsWith("pv ")
+		    || command.contains("vanish")) {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
 					for (Player player : Bukkit.getOnlinePlayers()) {
-						refreshPlayerName(player);
+						refreshLocalPlayer(player);
 					}
 				}
 			}.runTaskLater(mPlugin, 0);
@@ -289,7 +339,7 @@ public class RemotePlayerManager implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		refreshPlayerName(player);
+		refreshLocalPlayer(player);
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -298,15 +348,16 @@ public class RemotePlayerManager implements Listener {
 		String playerName = player.getName();
 		UUID playerUuid = player.getUniqueId();
 		Component playerComponent = MessagingUtils.playerComponent(player);
+		boolean isHidden = !isPlayerVisible(playerUuid);
 
+		mVisiblePlayers.remove(playerUuid);
 		mPlayerLocations.remove(playerUuid);
 		mPlayerIds.remove(playerName);
 		mPlayerNames.remove(playerUuid);
 		mPlayerComponents.remove(playerUuid);
 
 		JsonObject remotePlayerData = new JsonObject();
-		remotePlayerData.addProperty("isRefresh", false);
-		remotePlayerData.addProperty("isHidden", false);
+		remotePlayerData.addProperty("isHidden", isHidden);
 		remotePlayerData.addProperty("isOnline", false);
 		remotePlayerData.addProperty("shard", mShardName);
 		remotePlayerData.addProperty("playerName", playerName);

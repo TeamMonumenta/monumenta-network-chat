@@ -315,7 +315,11 @@ public class PlayerStateManager implements Listener {
 			event.setCancelled(true);
 			return;
 		}
-		channel.sendMessage(player, messageStr);
+		try {
+			channel.sendMessage(player, messageStr);
+		} catch (Exception ex) {
+			MessagingUtils.sendStackTrace(player, ex);
+		}
 		event.setCancelled(true);
 	}
 

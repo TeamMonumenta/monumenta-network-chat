@@ -571,12 +571,8 @@ public class ChatCommand {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
 					}
 
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
-					}
-
 					Player target = (Player) callee;
-					RemotePlayerManager.refreshPlayerName(target);
+					RemotePlayerManager.refreshLocalPlayer(target);
 					return 1;
 				})
 				.register();
@@ -591,7 +587,7 @@ public class ChatCommand {
 					Collection<Player> players = (Collection<Player>) args[1];
 
 					for (Player player : players) {
-						RemotePlayerManager.refreshPlayerName(player);
+						RemotePlayerManager.refreshLocalPlayer(player);
 					}
 					return 1;
 				})
