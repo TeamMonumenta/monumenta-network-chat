@@ -614,6 +614,6 @@ public class PlayerState {
 		} else {
 			mProfileMessage = profileMessage;
 		}
-		RemotePlayerManager.refreshPlayerName(getPlayer());
+		RemotePlayerManager.refreshLocalPlayer(getPlayer());
 	}
 }

@@ -156,7 +156,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 			arguments.clear();
 			arguments.add(new StringArgument("recipient").replaceSuggestions(info ->
-				RemotePlayerManager.onlinePlayerNames().toArray(new String[0])
+				RemotePlayerManager.visiblePlayerNames().toArray(new String[0])
 			));
 			new CommandAPICommand(command)
 				.withArguments(arguments)
@@ -167,7 +167,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 			arguments.clear();
 			arguments.add(new StringArgument("recipient").replaceSuggestions(info ->
-				RemotePlayerManager.onlinePlayerNames().toArray(new String[0])
+				RemotePlayerManager.visiblePlayerNames().toArray(new String[0])
 			));
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
@@ -464,8 +464,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		UUID senderId = ((Player) sender).getUniqueId();
 		UUID receiverId = getOtherParticipant(senderId);
 
-		if (RemotePlayerManager.getPlayerName(receiverId) == null) {
-			CommandAPI.fail("That player is not online.");
+		if (!RemotePlayerManager.isPlayerVisible(receiverId)) {
+			sender.sendMessage(Component.text("That player is not online.", NamedTextColor.RED));
 		}
 
 		JsonObject extraData = new JsonObject();
