@@ -12,6 +12,7 @@ import com.playmonumenta.networkrelay.DestOfflineEvent;
 import com.playmonumenta.networkrelay.DestOnlineEvent;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -136,6 +137,14 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	public static Component getPlayerComponent(UUID playerUuid) {
+		if (!isPlayerVisible(playerUuid)) {
+			// Note: offline players are not visible
+			String playerName = MonumentaRedisSyncAPI.cachedUuidToName(playerUuid);
+			if (playerName != null) {
+				return Component.text(playerName, NamedTextColor.RED)
+					.hoverEvent(Component.text("Offline", NamedTextColor.RED));
+			}
+		}
 		Component result = mPlayerComponents.get(playerUuid);
 		if (result == null) {
 			return Component.empty();
