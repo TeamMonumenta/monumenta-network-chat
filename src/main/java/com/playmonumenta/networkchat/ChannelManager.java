@@ -381,7 +381,7 @@ public class ChannelManager implements Listener {
 		}
 
 		// Mark the channel as loading
-		mPlugin.getLogger().info("Attempting to load channel " + channelId.toString() + ".");
+		mPlugin.getLogger().finer("Attempting to load channel " + channelId.toString() + ".");
 		ChannelLoading loadingChannel = new ChannelLoading(channelId);
 		mChannels.put(channelId, loadingChannel);
 
@@ -455,7 +455,7 @@ public class ChannelManager implements Listener {
 		if (channelJson != null) {
 			try {
 				channel = Channel.fromJson(channelJson);
-				mPlugin.getLogger().info("Channel " + channelId.toString() + " loaded, registering...");
+				mPlugin.getLogger().finer("Channel " + channelId.toString() + " loaded, registering...");
 				registerLoadedChannel(channel);
 			} catch (Exception e) {
 				mPlugin.getLogger().severe("Caught exception trying to load channel " + channelId.toString() + ":");
@@ -506,7 +506,7 @@ public class ChannelManager implements Listener {
 		JsonObject channelJson = channel.toJson();
 		String channelJsonStr = channelJson.toString();
 
-		mPlugin.getLogger().info("Saving channel " + channelIdStr + ".");
+		mPlugin.getLogger().finer("Saving channel " + channelIdStr + ".");
 		RedisAsyncCommands<String, String> redisAsync = RedisAPI.getInstance().async();
 		redisAsync.hset(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName, channelIdStr);
 		redisAsync.hset(REDIS_CHANNELS_PATH, channelIdStr, channelJsonStr);
@@ -519,7 +519,7 @@ public class ChannelManager implements Listener {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CHANNEL_UPDATE,
 			                                             wrappedChannelJson,
 			                                             NetworkChatPlugin.getMessageTtl());
-			mPlugin.getLogger().info("Broadcast channel " + channelIdStr + " changes.");
+			mPlugin.getLogger().finer("Broadcast channel " + channelIdStr + " changes.");
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
 		}
@@ -594,9 +594,9 @@ public class ChannelManager implements Listener {
 			logIdName = oldName;
 		}
 		if (channelData == null) {
-			mPlugin.getLogger().info("Got deletion notice for channel " + logIdName);
+			mPlugin.getLogger().finer("Got deletion notice for channel " + logIdName);
 		} else {
-			mPlugin.getLogger().info("Got update for channel " + logIdName);
+			mPlugin.getLogger().finer("Got update for channel " + logIdName);
 		}
 		Channel oldChannel = mChannels.get(channelId);
 		if (oldChannel != null) {
