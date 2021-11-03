@@ -4,8 +4,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -36,6 +38,9 @@ public class MessagingUtils {
 	public static final GsonComponentSerializer GSON_SERIALIZER = GsonComponentSerializer.gson();
 	public static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 	public static final PlainComponentSerializer PLAIN_SERIALIZER = PlainComponentSerializer.plain();
+	public static final Pattern REGEX_LEGACY_PREFIX = Pattern.compile("[&\u00a7]");
+	public static final Pattern REGEX_LEGACY_RGB_1 = Pattern.compile("(?<!<)[&\u00a7]?#([0-9a-fA-F]{6})(?!>)");
+	public static final Pattern REGEX_LEGACY_RGB_2 = Pattern.compile("(?<!<)[&\u00a7]#(([&\u00a7][0-9a-fA-F]){6})(?!>)");
 	public static final MiniMessage CHANNEL_HEADER_FMT_MINIMESSAGE = MiniMessage.builder()
 		.transformations(
 			TransformationRegistry.builder().clear()
@@ -60,6 +65,29 @@ public class MessagingUtils {
 				.build()
 		)
 		.build();
+
+	public static String legacyToMiniMessage(String legacy) {
+		String result = legacy;
+
+		result = REGEX_LEGACY_RGB_1.matcher(result).replaceAll("<#$1>");
+		result = REGEX_LEGACY_RGB_2.matcher(result).replaceAll(mr -> {
+			return "<#" + REGEX_LEGACY_PREFIX.matcher(mr.group(1)).replaceAll("") + ">";
+		});
+
+		for (ChatColor legacyFormat : ChatColor.values()) {
+			if (ChatColor.MAGIC.equals(legacyFormat)) {
+				result = result.replace("&" + legacyFormat.getChar(), "<obfuscated>");
+				result = result.replace(legacyFormat.toString(), "<obfuscated>");
+			} else if (ChatColor.UNDERLINE.equals(legacyFormat)) {
+				result = result.replace("&" + legacyFormat.getChar(), "<underlined>");
+				result = result.replace(legacyFormat.toString(), "<underlined>");
+			} else {
+				result = result.replace("&" + legacyFormat.getChar(), "<" + legacyFormat.name() + ">");
+				result = result.replace(legacyFormat.toString(), "<" + legacyFormat.name() + ">");
+			}
+		}
+		return result;
+	}
 
 	public static MiniMessage getAllowedMiniMessage(CommandSender sender) {
 		TransformationRegistry.Builder transforms = TransformationRegistry.builder().clear();
@@ -206,6 +234,8 @@ public class MessagingUtils {
 		String postPapiProcessing = PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player"))
 			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
 			.replace("<hover:show_text:\"\"></hover>", "");
+		postPapiProcessing = legacyToMiniMessage(postPapiProcessing);
+		com.playmonumenta.networkchat.NetworkChatPlugin.getInstance().getLogger().info(postPapiProcessing);
 		return SENDER_FMT_MINIMESSAGE.parse(postPapiProcessing,
 			List.of(Template.of("team_color", colorMiniMessage),
 				Template.of("team_prefix", teamPrefix),
