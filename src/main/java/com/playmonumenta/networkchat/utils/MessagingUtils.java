@@ -235,7 +235,6 @@ public class MessagingUtils {
 			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
 			.replace("<hover:show_text:\"\"></hover>", "");
 		postPapiProcessing = legacyToMiniMessage(postPapiProcessing);
-		com.playmonumenta.networkchat.NetworkChatPlugin.getInstance().getLogger().info(postPapiProcessing);
 		return SENDER_FMT_MINIMESSAGE.parse(postPapiProcessing,
 			List.of(Template.of("team_color", colorMiniMessage),
 				Template.of("team_prefix", teamPrefix),
