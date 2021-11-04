@@ -562,15 +562,19 @@ public class PlayerState {
 
 	protected void channelLoaded(UUID channelId) {
 		Channel loadedChannel = ChannelManager.getChannel(channelId);
+		String newChannelName = null;
+		if (loadedChannel != null) {
+			newChannelName = loadedChannel.getName();
+		}
 		String lastKnownName = mWatchedChannelIds.get(channelId);
 		if (lastKnownName != null) {
-			mWatchedChannelIds.put(channelId, loadedChannel.getName());
+			mWatchedChannelIds.put(channelId, newChannelName);
 		}
 		boolean showAlert = true;
 		if (lastKnownName == null) {
 			lastKnownName = mUnwatchedChannelIds.get(channelId);
 			if (lastKnownName != null) {
-				mUnwatchedChannelIds.put(channelId, loadedChannel.getName());
+				mUnwatchedChannelIds.put(channelId, newChannelName);
 			}
 		}
 		UUID whisperRecipientUuid = null;
@@ -592,9 +596,8 @@ public class PlayerState {
 				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is no longer available.", NamedTextColor.RED));
 			}
 		} else {
-			String newName = loadedChannel.getName();
-			if (showAlert && !newName.equals(lastKnownName)) {
-				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newName + ".", NamedTextColor.GRAY));
+			if (showAlert && !newChannelName.equals(lastKnownName)) {
+				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newChannelName + ".", NamedTextColor.GRAY));
 			}
 		}
 	}
