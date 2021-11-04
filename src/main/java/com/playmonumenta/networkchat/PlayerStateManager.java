@@ -236,7 +236,9 @@ public class PlayerStateManager implements Listener {
 		for (Channel channel : ChannelManager.getLoadedChannels()) {
 			if (!(channel instanceof ChannelInviteOnly)) {
 				if (!playerState.hasSeenChannelId(channel.getUniqueId())) {
-					playerState.joinChannel(channel);
+					if (channel.shouldAutoJoin(playerState)) {
+						playerState.joinChannel(channel);
+					}
 				}
 			} else if (!(channel instanceof ChannelWhisper)) {
 				ChannelInviteOnly channelInvOnly = (ChannelInviteOnly) channel;
