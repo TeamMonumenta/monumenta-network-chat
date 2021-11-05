@@ -85,7 +85,7 @@ public class PlayerState {
 
 			if (lastLoginMillis != null) {
 				Long millisOffline = nowMillis - lastLoginMillis;
-				NetworkChatPlugin.getInstance().getLogger().info(player.getName() + " was offline for " + Double.toString(millisOffline / 1000.0) + " seconds.");
+				NetworkChatPlugin.getInstance().getLogger().finer(player.getName() + " was offline for " + Double.toString(millisOffline / 1000.0) + " seconds.");
 				if (millisOffline <= MAX_OFFLINE_HISTORY_MILLIS) {
 					JsonArray seenMessagesJson = obj.getAsJsonArray("seenMessages");
 					if (seenMessagesJson != null) {
@@ -474,6 +474,7 @@ public class PlayerState {
 			mLastWhisperChannel = null;
 		}
 		mChannelSettings.remove(channelId);
+		mDefaultChannels.unsetChannel(channelId);
 	}
 
 	public Channel getDefaultChannel(String channelType) {
