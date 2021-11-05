@@ -218,6 +218,7 @@ public class ChannelManager implements Listener {
 		}
 		UUID channelId = channel.getUniqueId();
 		RedisAPI.getInstance().async().hset(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName, channelId.toString());
+		mChannelNames.put(channelId, channelName);
 		mChannelIdsByName.put(channelName, channelId);
 		mChannels.put(channelId, channel);
 		saveChannel(channel);
@@ -339,13 +340,6 @@ public class ChannelManager implements Listener {
 
 		UUID channelId = channel.getUniqueId();
 		String channelIdStr = channelId.toString();
-		for (PlayerState playerState : PlayerStateManager.getPlayerStates().values()) {
-			playerState.unregisterChannel(channelId);
-		}
-
-		mChannels.remove(channelId);
-		mChannelNames.remove(channelId);
-		mChannelIdsByName.remove(channelName);
 
 		// Update Redis
 		RedisAsyncCommands<String, String> redisAsync = RedisAPI.getInstance().async();
@@ -356,7 +350,7 @@ public class ChannelManager implements Listener {
 		// Broadcast to other shards
 		JsonObject wrappedChannelJson = new JsonObject();
 		wrappedChannelJson.addProperty("channelId", channelIdStr);
-		wrappedChannelJson.addProperty("channelLastUpdate", channel.lastModified().toEpochMilli());
+		wrappedChannelJson.addProperty("channelLastUpdate", Instant.now().toEpochMilli());
 		// "channelData" intentionally left out (null indicates delete)
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CHANNEL_UPDATE,
@@ -364,6 +358,28 @@ public class ChannelManager implements Listener {
 			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
+		}
+	}
+
+	private static void deleteChannelLocally(UUID channelId) {
+		String channelName = mChannelNames.get(channelId);
+		if (channelName != null && mChannelIdsByName.containsKey(channelName)) {
+			mChannelIdsByName.remove(channelName);
+		}
+
+		mDefaultChannels.unsetChannel(channelId);
+		if (mForceLoadedChannels.contains(channelId)) {
+			mForceLoadedChannels.remove(channelId);
+		}
+		if (mChannels.containsKey(channelId)) {
+			mChannels.remove(channelId);
+		}
+		if (mChannelNames.containsKey(channelId)) {
+			mChannelNames.remove(channelId);
+		}
+
+		for (PlayerState playerState : PlayerStateManager.getPlayerStates().values()) {
+			playerState.channelLoaded(channelId);
 		}
 	}
 
@@ -452,25 +468,16 @@ public class ChannelManager implements Listener {
 		}
 
 		Channel channel = null;
-		if (channelJson != null) {
-			try {
-				channel = Channel.fromJson(channelJson);
-				mPlugin.getLogger().finer("Channel " + channelId.toString() + " loaded, registering...");
-				registerLoadedChannel(channel);
-			} catch (Exception e) {
-				mPlugin.getLogger().severe("Caught exception trying to load channel " + channelId.toString() + ":");
-				StringWriter sw = new StringWriter();
-				PrintWriter pw = new PrintWriter(sw);
-				e.printStackTrace(pw);
-				mPlugin.getLogger().severe(sw.toString());
-			}
-		}
-		if (channel == null && oldChannel != null) {
-			PlayerStateManager.unregisterChannel(channelId);
-			mChannelIdsByName.remove(oldChannel.getName());
-			mChannelNames.remove(channelId);
-			mChannels.remove(channelId);
-			mForceLoadedChannels.remove(channelId);
+		try {
+			channel = Channel.fromJson(channelJson);
+			mPlugin.getLogger().finer("Channel " + channelId.toString() + " loaded, registering...");
+			registerLoadedChannel(channel);
+		} catch (Exception e) {
+			mPlugin.getLogger().severe("Caught exception trying to load channel " + channelId.toString() + ":");
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			mPlugin.getLogger().severe(sw.toString());
 		}
 
 		for (PlayerState playerState : playersToNotify) {
@@ -485,13 +492,10 @@ public class ChannelManager implements Listener {
 				mChannelIdsByName.remove(oldName);
 			}
 		}
-		if (channel == null) {
-			mChannelNames.remove(channelId);
-		} else {
-			String newName = channel.getName();
-			mChannelIdsByName.put(newName, channelId);
-			mChannelNames.put(channelId, newName);
-		}
+
+		String newName = channel.getName();
+		mChannelIdsByName.put(newName, channelId);
+		mChannelNames.put(channelId, newName);
 	}
 
 	public static void saveChannel(Channel channel) {
@@ -594,7 +598,7 @@ public class ChannelManager implements Listener {
 			logIdName = oldName;
 		}
 		if (channelData == null) {
-			mPlugin.getLogger().finer("Got deletion notice for channel " + logIdName);
+			mPlugin.getLogger().info("Got deletion notice for channel " + logIdName);
 		} else {
 			mPlugin.getLogger().finer("Got update for channel " + logIdName);
 		}
@@ -626,16 +630,17 @@ public class ChannelManager implements Listener {
 				mChannelIdsByName.remove(oldName);
 				mChannelIdsByName.put(newName, channelId);
 				mChannelNames.put(channelId, newName);
-			} else {
-				// Delete the channel's name locally
-				mChannelIdsByName.remove(oldName);
-				mChannelNames.remove(channelId);
+				mPlugin.getLogger().info("Renamed channel " + oldName + " to " + newName);
 			}
 
 			return;
 		}
 
-		loadChannelApply(channelId, channelData);
+		if (channelData == null) {
+			deleteChannelLocally(channelId);
+		} else {
+			loadChannelApply(channelId, channelData);
+		}
 	}
 
 	@EventHandler(priority = EventPriority.LOW)

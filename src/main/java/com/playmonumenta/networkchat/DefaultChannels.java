@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -92,6 +93,17 @@ public class DefaultChannels {
 				mDefaultsByType.remove(key);
 			} else {
 				mDefaultsByType.put(key, value);
+			}
+		}
+	}
+
+	public void unsetChannel(UUID channelId) {
+		Iterator<Map.Entry<String, UUID>> it = mDefaultsByType.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<String, UUID> entry = it.next();
+			UUID entryDefault = entry.getValue();
+			if (channelId.equals(entryDefault)) {
+				it.remove();
 			}
 		}
 	}

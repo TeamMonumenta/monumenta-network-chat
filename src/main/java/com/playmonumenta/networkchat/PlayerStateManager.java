@@ -203,8 +203,6 @@ public class PlayerStateManager implements Listener {
 			UUID playerId = playerStateEntry.getKey();
 			Player player = Bukkit.getPlayer(playerId);
 			PlayerState playerState = playerStateEntry.getValue();
-			// TODO Make this fancier, and display the old name.
-			player.sendMessage("Channel " + channelId.toString() + " has been removed.");
 			playerState.unregisterChannel(channelId);
 		}
 	}
