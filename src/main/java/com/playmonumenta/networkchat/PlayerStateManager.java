@@ -17,6 +17,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ChatType;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -83,7 +84,12 @@ public class PlayerStateManager implements Listener {
 					if (messagePart != null) {
 						messageJsonStr = messagePart.getJson();
 						messageJson = gson.fromJson(messageJsonStr, JsonObject.class);
-						messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
+						try {
+							messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
+						} catch (JsonParseException e) {
+							// This is the fault of some other plugin, with no way to trace it. Silently ignore it.
+							return;
+						}
 					} else {
 						List<Object> packetParts = packet.getModifier().getValues();
 						for (Object possiblyMessage : packetParts) {
