@@ -17,8 +17,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 
 import org.bukkit.command.CommandSender;
 
-// Permissions to listen or talk in a channel
-public class ChannelPerms {
+// Access to listen or talk in a channel
+public class ChannelAccess {
 	public enum FlagKey {
 		MAY_CHAT("may_chat"),
 		MAY_LISTEN("may_listen");
@@ -68,8 +68,8 @@ public class ChannelPerms {
 
 	private Map<FlagKey, Boolean> mFlags = new HashMap<>();
 
-	public static ChannelPerms fromJson(JsonObject object) {
-		ChannelPerms perms = new ChannelPerms();
+	public static ChannelAccess fromJson(JsonObject object) {
+		ChannelAccess perms = new ChannelAccess();
 		if (object != null) {
 			for (Map.Entry<String, JsonElement> permsEntry : object.entrySet()) {
 				String key = permsEntry.getKey();

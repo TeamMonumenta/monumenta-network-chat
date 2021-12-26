@@ -40,8 +40,8 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	private String mShardName;
 	private String mName;
 	private ChannelSettings mDefaultSettings;
-	private ChannelPerms mDefaultPerms;
-	private Map<UUID, ChannelPerms> mPlayerPerms;
+	private ChannelAccess mDefaultAccess;
+	private Map<UUID, ChannelAccess> mPlayerAccess;
 	private boolean mAutoJoin = true;
 	private String mChannelPermission = null;
 
@@ -52,8 +52,8 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
-		mDefaultPerms = new ChannelPerms();
-		mPlayerPerms = new HashMap<>();
+		mDefaultAccess = new ChannelAccess();
+		mPlayerAccess = new HashMap<>();
 	}
 
 	public ChannelLocal(String name) {
@@ -63,8 +63,8 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
-		mDefaultPerms = new ChannelPerms();
-		mPlayerPerms = new HashMap<>();
+		mDefaultAccess = new ChannelAccess();
+		mPlayerAccess = new HashMap<>();
 	}
 
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
@@ -87,25 +87,31 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			channel.mDefaultSettings = ChannelSettings.fromJson(defaultSettingsJson);
 		}
 
-		JsonObject defaultPermsJson = channelJson.getAsJsonObject("defaultPerms");
-		if (defaultPermsJson != null) {
-			channel.mDefaultPerms = ChannelPerms.fromJson(defaultPermsJson);
+		JsonObject defaultAccessJson = channelJson.getAsJsonObject("defaultAccess");
+		if (defaultAccessJson == null) {
+			defaultAccessJson = channelJson.getAsJsonObject("defaultPerms");
+		}
+		if (defaultAccessJson != null) {
+			channel.mDefaultAccess = ChannelAccess.fromJson(defaultAccessJson);
 		}
 
-		JsonObject allPlayerPermsJson = channelJson.getAsJsonObject("playerPerms");
-		if (defaultPermsJson != null) {
-			for (Map.Entry<String, JsonElement> playerPermEntry : allPlayerPermsJson.entrySet()) {
+		JsonObject allPlayerAccessJson = channelJson.getAsJsonObject("playerAccess");
+		if (allPlayerAccessJson == null) {
+			allPlayerAccessJson = channelJson.getAsJsonObject("playerPerms");
+		}
+		if (allPlayerAccessJson != null) {
+			for (Map.Entry<String, JsonElement> playerPermEntry : allPlayerAccessJson.entrySet()) {
 				UUID playerId;
-				JsonObject playerPermsJson;
+				JsonObject playerAccessJson;
 				try {
 					playerId = UUID.fromString(playerPermEntry.getKey());
-					playerPermsJson = playerPermEntry.getValue().getAsJsonObject();
+					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
 					NetworkChatPlugin.getInstance().getLogger().warning("Catch exeption during converting json to channel local reason: " + e.getMessage());
 					continue;
 				}
-				ChannelPerms playerPerms = ChannelPerms.fromJson(playerPermsJson);
-				channel.mPlayerPerms.put(playerId, playerPerms);
+				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
+				channel.mPlayerAccess.put(playerId, playerAccess);
 			}
 		}
 
@@ -123,12 +129,12 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	}
 
 	public JsonObject toJson() {
-		JsonObject allPlayerPermsJson = new JsonObject();
-		for (Map.Entry<UUID, ChannelPerms> playerPermEntry : mPlayerPerms.entrySet()) {
+		JsonObject allPlayerAccessJson = new JsonObject();
+		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
 			UUID channelId = playerPermEntry.getKey();
-			ChannelPerms channelPerms = playerPermEntry.getValue();
-			if (!channelPerms.isDefault()) {
-				allPlayerPermsJson.add(channelId.toString(), channelPerms.toJson());
+			ChannelAccess channelAccess = playerPermEntry.getValue();
+			if (!channelAccess.isDefault()) {
+				allPlayerAccessJson.add(channelId.toString(), channelAccess.toJson());
 			}
 		}
 
@@ -142,8 +148,8 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			result.addProperty("channelPermission", mChannelPermission);
 		}
 		result.add("defaultSettings", mDefaultSettings.toJson());
-		result.add("defaultPerms", mDefaultPerms.toJson());
-		result.add("playerPerms", allPlayerPermsJson);
+		result.add("defaultAccess", mDefaultAccess.toJson());
+		result.add("playerAccess", allPlayerAccessJson);
 		return result;
 	}
 
@@ -260,27 +266,27 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		return null;
 	}
 
-	public ChannelPerms channelPerms() {
-		return mDefaultPerms;
+	public ChannelAccess channelAccess() {
+		return mDefaultAccess;
 	}
 
-	public ChannelPerms playerPerms(UUID playerId) {
+	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
 		}
-		ChannelPerms perms = mPlayerPerms.get(playerId);
-		if (perms == null) {
-			perms = new ChannelPerms();
-			mPlayerPerms.put(playerId, perms);
+		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
+		if (playerAccess == null) {
+			playerAccess = new ChannelAccess();
+			mPlayerAccess.put(playerId, playerAccess);
 		}
-		return perms;
+		return playerAccess;
 	}
 
-	public void clearPlayerPerms(UUID playerId) {
+	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
 		}
-		mPlayerPerms.remove(playerId);
+		mPlayerAccess.remove(playerId);
 	}
 
 	public String getShardName() {
@@ -306,12 +312,12 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			return true;
 		}
 
-		ChannelPerms playerPerms = mPlayerPerms.get(((Player) sender).getUniqueId());
-		if (playerPerms == null) {
-			if (mDefaultPerms.mayChat() != null && !mDefaultPerms.mayChat()) {
+		ChannelAccess playerAccess = mPlayerAccess.get(((Player) sender).getUniqueId());
+		if (playerAccess == null) {
+			if (mDefaultAccess.mayChat() != null && !mDefaultAccess.mayChat()) {
 				return false;
 			}
-		} else if (playerPerms.mayChat() != null && !playerPerms.mayChat()) {
+		} else if (playerAccess.mayChat() != null && !playerAccess.mayChat()) {
 			return false;
 		}
 
@@ -335,12 +341,12 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 
 		UUID playerId = ((Player) sender).getUniqueId();
 
-		ChannelPerms playerPerms = mPlayerPerms.get(playerId);
-		if (playerPerms == null) {
-			if (mDefaultPerms.mayListen() != null && !mDefaultPerms.mayListen()) {
+		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
+		if (playerAccess == null) {
+			if (mDefaultAccess.mayListen() != null && !mDefaultAccess.mayListen()) {
 				return false;
 			}
-		} else if (playerPerms.mayListen() != null && !playerPerms.mayListen()) {
+		} else if (playerAccess.mayListen() != null && !playerAccess.mayListen()) {
 			return false;
 		}
 

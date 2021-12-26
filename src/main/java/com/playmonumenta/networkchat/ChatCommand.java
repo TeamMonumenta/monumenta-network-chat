@@ -917,13 +917,13 @@ public class ChatCommand {
 
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("permissions"));
+			arguments.add(new MultiLiteralArgument("access"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 			));
 			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -933,20 +933,20 @@ public class ChatCommand {
 						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 
-					ChannelPerms perms = channel.channelPerms();
+					ChannelAccess perms = channel.channelAccess();
 					return perms.commandFlag(sender, (String) args[4]);
 				})
 				.register();
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("permissions"));
+			arguments.add(new MultiLiteralArgument("access"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 			));
 			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagKeys()));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagValues()));
+			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -959,7 +959,7 @@ public class ChatCommand {
 						CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
 					}
 
-					ChannelPerms perms = channel.channelPerms();
+					ChannelAccess perms = channel.channelAccess();
 					int result = perms.commandFlag(sender, (String) args[4], (String) args[5]);
 					ChannelManager.saveChannel(channel);
 					return result;
@@ -967,7 +967,7 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("permissions"));
+			arguments.add(new MultiLiteralArgument("access"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
@@ -976,7 +976,7 @@ public class ChatCommand {
 			arguments.add(new StringArgument("name").replaceSuggestions(info ->
 				MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new)
 			));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -994,19 +994,19 @@ public class ChatCommand {
 					if (playerId == null) {
 						CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
-					ChannelPerms perms = channel.playerPerms(playerId);
+					ChannelAccess perms = channel.playerAccess(playerId);
 					return perms.commandFlag(sender, (String) args[5]);
 				})
 				.register();
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("permissions"));
+			arguments.add(new MultiLiteralArgument("access"));
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info -> ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])));
 			arguments.add(new MultiLiteralArgument("player"));
 			arguments.add(new StringArgument("name").replaceSuggestions(info -> MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new)));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagKeys()));
-			arguments.add(new MultiLiteralArgument(ChannelPerms.getFlagValues()));
+			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -1024,10 +1024,10 @@ public class ChatCommand {
 					if (playerId == null) {
 						CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
-					ChannelPerms perms = channel.playerPerms(playerId);
+					ChannelAccess perms = channel.playerAccess(playerId);
 					int result = perms.commandFlag(sender, (String) args[5], (String) args[6]);
 					if (perms.isDefault()) {
-						channel.clearPlayerPerms(playerId);
+						channel.resetPlayerAccess(playerId);
 					}
 					ChannelManager.saveChannel(channel);
 					return result;
