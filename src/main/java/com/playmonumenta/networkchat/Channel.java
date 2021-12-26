@@ -71,15 +71,15 @@ public abstract class Channel {
 		return null;
 	}
 
-	public ChannelPerms channelPerms() {
+	public ChannelAccess channelAccess() {
 		return null;
 	}
 
-	public ChannelPerms playerPerms(UUID playerId) {
+	public ChannelAccess playerAccess(UUID playerId) {
 		return null;
 	}
 
-	public void clearPlayerPerms(UUID playerId) {}
+	public void resetPlayerAccess(UUID playerId) {}
 
 	public boolean shouldAutoJoin(PlayerState state) {
 		return mayListen(state.getPlayer());
