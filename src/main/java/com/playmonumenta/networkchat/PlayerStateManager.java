@@ -16,6 +16,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers.ChatType;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -33,6 +34,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -40,6 +42,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerStateManager implements Listener {
 	private static final String IDENTIFIER = "NetworkChat";
@@ -48,6 +51,7 @@ public class PlayerStateManager implements Listener {
 	private static PlayerStateManager INSTANCE = null;
 	private static Plugin mPlugin = null;
 	private static Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
+	private static Map<UUID, PlayerChatHistory> mPlayerChatHistories = new HashMap<>();
 	private static MessageVisibility mMessageVisibility = new MessageVisibility();
 	private static boolean mIsDefaultChatPlugin = true;
 
@@ -195,6 +199,27 @@ public class PlayerStateManager implements Listener {
 		return mPlayerStates.get(playerId);
 	}
 
+	public static Map<UUID, PlayerChatHistory> getPlayerChatHistories() {
+		return new HashMap<>(mPlayerChatHistories);
+	}
+
+	public static PlayerChatHistory getPlayerChatHistory(Player player) {
+		return mPlayerChatHistories.get(player.getUniqueId());
+	}
+
+	public static PlayerChatHistory getPlayerChatHistory(UUID playerId) {
+		return mPlayerChatHistories.get(playerId);
+	}
+
+	public static PlayerChatHistory getOrCreatePlayerChatHistory(UUID playerId) {
+		PlayerChatHistory playerHistory = mPlayerChatHistories.get(playerId);
+		if (playerHistory == null) {
+			playerHistory = new PlayerChatHistory(playerId);
+			mPlayerChatHistories.put(playerId, playerHistory);
+		}
+		return playerHistory;
+	}
+
 	public static boolean isAnyParticipantLocal(Set<UUID> participants) {
 		if (participants == null) {
 			return true;
@@ -218,13 +243,15 @@ public class PlayerStateManager implements Listener {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
 
+		getOrCreatePlayerChatHistory(playerId);
+
 		// Load player chat state, if it exists.
 		JsonObject data = MonumentaRedisSyncAPI.getPlayerPluginData(playerId, IDENTIFIER);
 		PlayerState playerState;
 		if (data == null) {
 			playerState = new PlayerState(player);
 			mPlayerStates.put(playerId, playerState);
-			mPlugin.getLogger().info("No chat state for for player " + player.getName());
+			mPlugin.getLogger().info("Created new chat state for for player " + player.getName());
 		} else {
 			try {
 				playerState = PlayerState.fromJson(player, data);
@@ -293,6 +320,17 @@ public class PlayerStateManager implements Listener {
 				ChannelManager.unloadChannel(channel);
 			}
 		}
+
+		// Broadcast the player's current chat history
+		PlayerChatHistory oldChatHistory = mPlayerChatHistories.get(playerId);
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY,
+			                                             oldChatHistory.toJson(),
+			                                             PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
+		} catch (Exception e) {
+			mPlugin.getLogger().severe("Failed to broadcast " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY);
+			mPlayerChatHistories.remove(playerId);
+		}
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -329,6 +367,34 @@ public class PlayerStateManager implements Listener {
 		event.setCancelled(true);
 	}
 
+	// This should only happen when a player logs out on another shard on the network.
+	// If they log in here, their chat history will be loaded.
+	// If they log in elsewhere, or don't log back in, the history is discarded after a delay.
+	public void handleRemotePlayerChatHistoryMessage(JsonObject data) {
+		JsonElement playerIdJson = data.get("playerId");
+		if (playerIdJson != null) {
+			try {
+				final UUID playerId = UUID.fromString(playerIdJson.getAsString());
+
+				getOrCreatePlayerChatHistory(playerId).updateFromJson(data);
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerId);
+						if (!offlinePlayer.isOnline()) {
+							if (mPlayerChatHistories.containsKey(playerId)) {
+								mPlayerChatHistories.remove(playerId);
+							}
+				        }
+					}
+				}.runTaskLater(mPlugin, 20 * PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
+			} catch (Exception e) {
+				mPlugin.getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with invalid data");
+				return;
+			}
+		}
+	}
+
 	@EventHandler(priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
@@ -336,13 +402,21 @@ public class PlayerStateManager implements Listener {
 		case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE:
 			data = event.getData();
 			if (data == null) {
-				mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
+				mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " with null data");
 				return;
 			}
 			JsonObject playerEventSettingsJson = data.getAsJsonObject(REDIS_PLAYER_EVENT_SETTINGS_KEY);
 			if (playerEventSettingsJson != null) {
 				loadSettings(playerEventSettingsJson);
 			}
+			break;
+		case PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY:
+			data = event.getData();
+			if (data == null) {
+				mPlugin.getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with null data");
+				return;
+			}
+			handleRemotePlayerChatHistoryMessage(data);
 			break;
 		default:
 			break;

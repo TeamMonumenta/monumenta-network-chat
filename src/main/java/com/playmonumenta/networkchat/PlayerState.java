@@ -97,7 +97,7 @@ public class PlayerState {
 						}
 					}
 
-					JsonArray unseenMessagesJson = obj.getAsJsonArray("seenMessages");
+					JsonArray unseenMessagesJson = obj.getAsJsonArray("unseenMessages");
 					if (seenMessagesJson != null) {
 						for (JsonElement messageJson : unseenMessagesJson) {
 							if (messageJson instanceof JsonObject) {
@@ -275,6 +275,10 @@ public class PlayerState {
 		return Bukkit.getPlayer(mPlayerId);
 	}
 
+	public PlayerChatHistory getPlayerChatHistory() {
+		return PlayerStateManager.getPlayerChatHistory(mPlayerId);
+	}
+
 	public ChannelSettings channelSettings() {
 		return mDefaultChannelSettings;
 	}
@@ -294,61 +298,21 @@ public class PlayerState {
 	}
 
 	public void receiveMessage(Message message) {
-		if (message.isDeleted()) {
-			return;
-		}
-
-		if (mChatPaused || mIsReplayingChat) {
-			if (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
-				mUnseenMessages.remove(0);
-			}
-			mUnseenMessages.add(message);
-		} else {
-			if (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
-				mSeenMessages.remove(0);
-			}
-			mIsDisplayingMessage = true;
-			message.showMessage(getPlayer());
-			mIsDisplayingMessage = false;
-			mSeenMessages.add(message);
-		}
+		getPlayerChatHistory().receiveMessage(message);
 	}
 
 	public void receiveExternalMessage(Message message) {
-		if (mIsReplayingChat || mIsDisplayingMessage) {
-			return;
-		}
-		if (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
-			mSeenMessages.remove(0);
-		}
-		mSeenMessages.add(message);
+		getPlayerChatHistory().receiveExternalMessage(message);
 	}
 
 	// Re-show chat with deleted messages removed, even while paused.
 	public void refreshChat() {
-		mIsReplayingChat = true;
-		Iterator<Message> it = mSeenMessages.iterator();
-		while (it.hasNext()) {
-			Message message = it.next();
-			if (message.isDeleted()) {
-				it.remove();
-			}
-		}
+		getPlayerChatHistory().refreshChat();
+	}
 
-		int messageCount = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
-		for (int i = 0; i < messageCount; ++i) {
-			getPlayer().sendMessage(Component.empty());
-		}
-
-		mIsDisplayingMessage = true;
-		for (Message message : mSeenMessages) {
-			message.showMessage(getPlayer());
-		}
-		mIsDisplayingMessage = false;
-		mIsReplayingChat = false;
-		if (!mChatPaused) {
-			showUnseen();
-		}
+	// For use from PlayerChatHistory
+	protected void setPauseState(boolean isPaused) {
+		mChatPaused = isPaused;
 	}
 
 	public boolean isPaused() {
@@ -360,24 +324,7 @@ public class PlayerState {
 	}
 
 	public void unpauseChat() {
-		// Delete old seen messages
-		if (mUnseenMessages.size() + mSeenMessages.size() > MAX_DISPLAYED_MESSAGES) {
-			int newSeenStartIndex = mUnseenMessages.size() + mSeenMessages.size() - MAX_DISPLAYED_MESSAGES;
-			mSeenMessages = mSeenMessages.subList(newSeenStartIndex, MAX_DISPLAYED_MESSAGES);
-		}
-		showUnseen();
-	}
-
-	private void showUnseen() {
-		mIsDisplayingMessage = true;
-		for (Message message : mUnseenMessages) {
-			message.showMessage(getPlayer());
-		}
-		mIsDisplayingMessage = false;
-		mSeenMessages.addAll(mUnseenMessages);
-		mUnseenMessages.clear();
-
-		mChatPaused = false;
+		getPlayerChatHistory().unpauseChat();
 	}
 
 	public void setActiveChannel(Channel channel) {
