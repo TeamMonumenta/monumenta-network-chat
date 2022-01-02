@@ -1,24 +1,15 @@
 package com.playmonumenta.networkchat;
 
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
-import com.destroystokyo.paper.ClientOption;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -137,8 +128,9 @@ public class PlayerChatHistory {
 		}
 
 		int messageCount = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
+		Component emptyMessage = Component.empty();
 		for (int i = 0; i < messageCount; ++i) {
-			getPlayer().sendMessage(Component.empty());
+			getPlayer().sendMessage(emptyMessage);
 		}
 
 		mIsDisplayingMessage = true;
