@@ -37,7 +37,6 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 
 	private UUID mId;
 	private Instant mLastUpdate;
-	private String mShardName;
 	private String mName;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
@@ -48,7 +47,6 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
-		mShardName = RemotePlayerManager.getShardName();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
@@ -59,7 +57,6 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	public ChannelLocal(String name) {
 		mLastUpdate = Instant.now();
 		mId = UUID.randomUUID();
-		mShardName = RemotePlayerManager.getShardName();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
@@ -75,8 +72,9 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
 		Instant lastUpdate = Instant.now();
-		if (channelJson.get("lastUpdate") != null) {
-			lastUpdate = Instant.ofEpochMilli(channelJson.get("lastUpdate").getAsLong());
+		JsonElement lastUpdateJson = channelJson.get("lastUpdate");
+		if (lastUpdateJson != null) {
+			lastUpdate = Instant.ofEpochMilli(lastUpdateJson.getAsLong());
 		}
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
@@ -289,10 +287,6 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		mPlayerAccess.remove(playerId);
 	}
 
-	public String getShardName() {
-		return mShardName;
-	}
-
 	public boolean shouldAutoJoin(PlayerState state) {
 		return mAutoJoin && mayListen(state.getPlayer());
 	}
@@ -371,7 +365,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 
 		JsonObject extraData = new JsonObject();
-		extraData.addProperty("fromShard", mShardName);
+		extraData.addProperty("fromShard", RemotePlayerManager.getShardName());
 
 		Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
 
@@ -385,10 +379,21 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 
 	public void distributeMessage(Message message) {
 		JsonObject extraData = message.getExtraData();
-		if (extraData == null
-		    || extraData.getAsJsonPrimitive("fromShard") == null
-		    || !extraData.getAsJsonPrimitive("fromShard").isString()
-		    || !mShardName.equals(extraData.getAsJsonPrimitive("fromShard").getAsString())) {
+		if (extraData == null) {
+			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with no fromShard, ignoring.");
+			return;
+		}
+		JsonElement fromShardJsonElement = extraData.get("fromShard");
+		if (!fromShardJsonElement.isJsonPrimitive()) {
+			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
+			return;
+		}
+		JsonPrimitive fromShardJsonPrimitive = fromShardJsonElement.getAsJsonPrimitive();
+		if (!fromShardJsonPrimitive.isString()) {
+			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
+			return;
+		}
+		if (!RemotePlayerManager.getShardName().equals(fromShardJsonPrimitive.getAsString())) {
 			// TODO Chat spy here
 			return;
 		}

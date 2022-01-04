@@ -72,8 +72,9 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
 		Instant lastUpdate = Instant.now();
-		if (channelJson.get("lastUpdate") != null) {
-			lastUpdate = Instant.ofEpochMilli(channelJson.get("lastUpdate").getAsLong());
+		JsonElement lastUpdateJson = channelJson.get("lastUpdate");
+		if (lastUpdateJson != null) {
+			lastUpdate = Instant.ofEpochMilli(lastUpdateJson.getAsLong());
 		}
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 

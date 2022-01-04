@@ -77,8 +77,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
 		Instant lastUpdate = Instant.now();
-		if (channelJson.get("lastUpdate") != null) {
-			lastUpdate = Instant.ofEpochMilli(channelJson.get("lastUpdate").getAsLong());
+		JsonElement lastUpdateJson = channelJson.get("lastUpdate");
+		if (lastUpdateJson != null) {
+			lastUpdate = Instant.ofEpochMilli(lastUpdateJson.getAsLong());
 		}
 
 		JsonArray participantsJson = channelJson.getAsJsonArray("participants");
@@ -496,7 +497,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		try {
 			receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 		} catch (Exception e) {
-			// Could not read receiver from message
+			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
 			return;
 		}
 		UUID senderUuid = message.getSenderId();
@@ -509,7 +510,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private void distributeMessageToPlayer(UUID playerId, UUID otherId, Message message) {
 		PlayerState state = PlayerStateManager.getPlayerStates().get(playerId);
 		if (state == null) {
-			// Player is not on this shard
+			NetworkChatPlugin.getInstance().getLogger().finer("Receiver not on this shard.");
 			return;
 		}
 		state.setWhisperChannel(otherId, this);
@@ -536,6 +537,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			UUID receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 			receiverComp = RemotePlayerManager.getPlayerComponent(receiverUuid);
 		} catch (Exception e) {
+			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
 			receiverComp = Component.text("ErrorLoadingName");
 		}
 

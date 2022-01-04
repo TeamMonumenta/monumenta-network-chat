@@ -52,10 +52,13 @@ public class RemotePlayerManager implements Listener {
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to get shard name");
 		}
+		if (mShardName == null) {
+			throw new RuntimeException("Got null shard name");
+		}
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
 				if (shard.equals(mShardName)) {
-					return;
+					continue;
 				}
 				mRemotePlayers.put(shard, new ConcurrentSkipListMap<>());
 			}
