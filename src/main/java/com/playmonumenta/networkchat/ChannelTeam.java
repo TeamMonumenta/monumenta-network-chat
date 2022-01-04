@@ -71,8 +71,9 @@ public class ChannelTeam extends Channel {
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
 		Instant lastUpdate = Instant.now();
-		if (channelJson.get("lastUpdate") != null) {
-			lastUpdate = Instant.ofEpochMilli(channelJson.get("lastUpdate").getAsLong());
+		JsonElement lastUpdateJson = channelJson.get("lastUpdate");
+		if (lastUpdateJson != null) {
+			lastUpdate = Instant.ofEpochMilli(lastUpdateJson.getAsLong());
 		}
 
 		String teamName = channelJson.getAsJsonPrimitive("team").getAsString();
@@ -387,12 +388,12 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			// Could not read team from message
+			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
 			return;
 		}
 		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
 		if (team == null) {
-			// No such team on this server
+			NetworkChatPlugin.getInstance().getLogger().finer("No such team " + teamName + " on this shard, ignoring.");
 			return;
 		}
 
@@ -415,7 +416,7 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			// Could not read team from message
+			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
 			return;
 		}
 

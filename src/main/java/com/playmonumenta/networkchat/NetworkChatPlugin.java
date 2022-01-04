@@ -70,7 +70,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 		mMessageColors.putAll(mDefaultMessageColors);
 		mMessageFormats.putAll(mDefaultMessageFormats);
-		RemotePlayerManager.refreshLocalPlayers();
 
 		ChatCommand.register();
 	}
