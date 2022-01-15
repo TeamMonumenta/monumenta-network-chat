@@ -250,6 +250,10 @@ public class Message implements AutoCloseable {
 		return mMessage;
 	}
 
+	public String getPlainMessage() {
+		return MessagingUtils.plainText(mMessage);
+	}
+
 	public boolean isDeleted() {
 		return mIsDeleted;
 	}

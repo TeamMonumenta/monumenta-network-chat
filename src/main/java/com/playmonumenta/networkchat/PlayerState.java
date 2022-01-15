@@ -421,24 +421,35 @@ public class PlayerState {
 		return true;
 	}
 
-	public void playMessageSound(Channel channel) {
+	public void playMessageSound(Message message) {
 		boolean shouldPlaySound = false;
+
+		Channel channel = message.getChannel();
+		Player player = getPlayer();
+		String plainMessage = message.getPlainMessage();
+		if (plainMessage.contains("@" + player.getName())) {
+			shouldPlaySound == true;
+		} else if (channel instanceof ChannelLocal && plainMessage.contains("@here")) {
+			shouldPlaySound == true;
+		} else if (plainMessage.contains("@everyone")) {
+			shouldPlaySound == true;
+		}
 
 		UUID channelId = channel.getUniqueId();
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
-		if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
-			shouldPlaySound = channelSettings.messagesPlaySound();
-		} else if (channel.channelSettings() != null && channel.channelSettings().messagesPlaySound() != null) {
-			shouldPlaySound = channel.channelSettings().messagesPlaySound();
-		} else if (mDefaultChannelSettings.messagesPlaySound() != null) {
-			shouldPlaySound = mDefaultChannelSettings.messagesPlaySound();
-		} else if (channel instanceof ChannelWhisper) {
-			shouldPlaySound = true;
+		if (!shouldPlaySound) {
+			if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
+				shouldPlaySound = channelSettings.messagesPlaySound();
+			} else if (channel.channelSettings() != null && channel.channelSettings().messagesPlaySound() != null) {
+				shouldPlaySound = channel.channelSettings().messagesPlaySound();
+			} else if (mDefaultChannelSettings.messagesPlaySound() != null) {
+				shouldPlaySound = mDefaultChannelSettings.messagesPlaySound();
+			} else if (channel instanceof ChannelWhisper) {
+				shouldPlaySound = true;
+			}
 		}
 
 		if (shouldPlaySound) {
-			Player player = getPlayer();
-
 			if (channelSettings != null && !channelSettings.soundEmpty()) {
 				channelSettings.playSounds(player);
 			} else if (channel.channelSettings() != null && !channel.channelSettings().soundEmpty()) {
