@@ -17,6 +17,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 // TODO Track how many players are in a channel on this server/overall
@@ -432,19 +433,21 @@ public class PlayerState {
 		} else if (plainMessage.contains("@everyone")) {
 			shouldPlaySound = true;
 		}
+		if (shouldPlaySound) {
+			player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.1f, 0.5f);
+			return;
+		}
 
 		UUID channelId = channel.getUniqueId();
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
-		if (!shouldPlaySound) {
-			if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
-				shouldPlaySound = channelSettings.messagesPlaySound();
-			} else if (channel.channelSettings() != null && channel.channelSettings().messagesPlaySound() != null) {
-				shouldPlaySound = channel.channelSettings().messagesPlaySound();
-			} else if (mDefaultChannelSettings.messagesPlaySound() != null) {
-				shouldPlaySound = mDefaultChannelSettings.messagesPlaySound();
-			} else if (channel instanceof ChannelWhisper) {
-				shouldPlaySound = true;
-			}
+		if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
+			shouldPlaySound = channelSettings.messagesPlaySound();
+		} else if (channel.channelSettings() != null && channel.channelSettings().messagesPlaySound() != null) {
+			shouldPlaySound = channel.channelSettings().messagesPlaySound();
+		} else if (mDefaultChannelSettings.messagesPlaySound() != null) {
+			shouldPlaySound = mDefaultChannelSettings.messagesPlaySound();
+		} else if (channel instanceof ChannelWhisper) {
+			shouldPlaySound = true;
 		}
 
 		if (shouldPlaySound) {
