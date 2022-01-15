@@ -429,8 +429,6 @@ public class PlayerState {
 		String plainMessage = message.getPlainMessage();
 		if (plainMessage.contains("@" + player.getName())) {
 			shouldPlaySound == true;
-		} else if (channel instanceof ChannelLocal && plainMessage.contains("@here")) {
-			shouldPlaySound == true;
 		} else if (plainMessage.contains("@everyone")) {
 			shouldPlaySound == true;
 		}
