@@ -428,9 +428,9 @@ public class PlayerState {
 		Player player = getPlayer();
 		String plainMessage = message.getPlainMessage();
 		if (plainMessage.contains("@" + player.getName())) {
-			shouldPlaySound == true;
+			shouldPlaySound = true;
 		} else if (plainMessage.contains("@everyone")) {
-			shouldPlaySound == true;
+			shouldPlaySound = true;
 		}
 
 		UUID channelId = channel.getUniqueId();
