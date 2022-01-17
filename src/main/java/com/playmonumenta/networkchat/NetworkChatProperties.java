@@ -66,8 +66,8 @@ public class NetworkChatProperties {
 			mChatCommandModifyEnabled = config.getBoolean("ChatCommandModify", mChatCommandModifyEnabled);
 		}
 
-		if (config.isBoolean("ChatCommandDelate")) {
-			mChatCommandDeleteEnabled = config.getBoolean("ChatCommandDelate", mChatCommandDeleteEnabled);
+		if (config.isBoolean("ChatCommandDelete")) {
+			mChatCommandDeleteEnabled = config.getBoolean("ChatCommandDelete", mChatCommandDeleteEnabled);
 		}
 
 		if (config.isBoolean("SudoEnabled")) {
@@ -124,8 +124,8 @@ public class NetworkChatProperties {
 			config.set("ChatCommandModify", mChatCommandModifyEnabled);
 		}
 
-		if (!config.contains("ChatCommandDelate")) {
-			config.set("ChatCommandDelate", mChatCommandDeleteEnabled);
+		if (!config.contains("ChatCommandDelete")) {
+			config.set("ChatCommandDelete", mChatCommandDeleteEnabled);
 		}
 
 		if (!config.contains("SudoEnabled")) {

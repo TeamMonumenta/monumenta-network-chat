@@ -406,7 +406,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(Identity.nil(), fullMessage, message.getMessageType());
 		if (recipient instanceof Player) {
-			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
+			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(message);
 		}
 	}
 

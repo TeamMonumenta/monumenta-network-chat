@@ -17,6 +17,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 // TODO Track how many players are in a channel on this server/overall
@@ -421,8 +422,21 @@ public class PlayerState {
 		return true;
 	}
 
-	public void playMessageSound(Channel channel) {
+	public void playMessageSound(Message message) {
 		boolean shouldPlaySound = false;
+
+		Channel channel = message.getChannel();
+		Player player = getPlayer();
+		String plainMessage = message.getPlainMessage();
+		if (plainMessage.contains("@" + player.getName())) {
+			shouldPlaySound = true;
+		} else if (plainMessage.contains("@everyone")) {
+			shouldPlaySound = true;
+		}
+		if (shouldPlaySound) {
+			player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.1f, 0.5f);
+			return;
+		}
 
 		UUID channelId = channel.getUniqueId();
 		ChannelSettings channelSettings = mChannelSettings.get(channelId);
@@ -437,8 +451,6 @@ public class PlayerState {
 		}
 
 		if (shouldPlaySound) {
-			Player player = getPlayer();
-
 			if (channelSettings != null && !channelSettings.soundEmpty()) {
 				channelSettings.playSounds(player);
 			} else if (channel.channelSettings() != null && !channel.channelSettings().soundEmpty()) {
