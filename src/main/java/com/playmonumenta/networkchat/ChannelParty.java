@@ -550,7 +550,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
-			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(this);
+			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(message);
 		}
 	}
 }
