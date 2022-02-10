@@ -362,6 +362,14 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			if (!mayChat(sender)) {
 				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 			}
+
+			if (messageText.contains("@")) {
+				if (messageText.contains("@everyone") && !sender.hasPermission("networkchat.ping.everyone")) {
+					CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+				} else if (!sender.hasPermission("networkchat.ping.player")) {
+					CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
+				}
+			}
 		}
 
 		JsonObject extraData = new JsonObject();

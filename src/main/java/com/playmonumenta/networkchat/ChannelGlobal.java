@@ -370,6 +370,14 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			if (!mayChat(sender)) {
 				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 			}
+
+			if (messageText.contains("@")) {
+				if (messageText.contains("@everyone") && !sender.hasPermission("networkchat.ping.everyone")) {
+					CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+				} else if (!sender.hasPermission("networkchat.ping.player")) {
+					CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
+				}
+			}
 		}
 
 		Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
