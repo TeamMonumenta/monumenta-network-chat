@@ -22,6 +22,7 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import me.clip.placeholderapi.PlaceholderAPI;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -45,6 +46,10 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	private boolean mAutoJoin = true;
 	private String mChannelPermission = null;
 
+	public ChannelAnnouncement(String name) {
+		this (UUID.randomUUID(), Instant.now(), name);
+	}
+
 	private ChannelAnnouncement(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
@@ -52,20 +57,12 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 		mDefaultSettings = new ChannelSettings();
 		mDefaultSettings.messagesPlaySound(true);
+		mDefaultSettings.addSound(Sound.ENTITY_PLAYER_LEVELUP, 1, 0.5f);
 
 		mDefaultAccess = new ChannelAccess();
 		mPlayerAccess = new HashMap<>();
 	}
 
-	public ChannelAnnouncement(String name) {
-		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
-		mName = name;
-
-		mDefaultSettings = new ChannelSettings();
-		mDefaultAccess = new ChannelAccess();
-		mPlayerAccess = new HashMap<>();
-	}
 
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
