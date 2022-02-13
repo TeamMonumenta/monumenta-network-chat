@@ -85,12 +85,6 @@ public class RemotePlayerManager implements Listener {
 	private static Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();
 	private static Map<UUID, RemotePlayerState> mPlayersByUuid = new ConcurrentSkipListMap<>();
 	private static Map<String, RemotePlayerState> mPlayersByName = new ConcurrentSkipListMap<>();
-
-	private static Map<String, Map<String, UUID>> mRemotePlayers = new ConcurrentSkipListMap<>();
-	private static Map<String, UUID> mPlayerIds = new ConcurrentSkipListMap<>();
-	private static Map<UUID, String> mPlayerNames = new ConcurrentSkipListMap<>();
-	private static Map<UUID, String> mPlayerLocations = new ConcurrentSkipListMap<>();
-	private static Map<UUID, Component> mPlayerComponents = new ConcurrentSkipListMap<>();
 	private static Set<UUID> mVisiblePlayers = new ConcurrentSkipListSet<>();
 
 	private RemotePlayerManager(Plugin plugin) {
