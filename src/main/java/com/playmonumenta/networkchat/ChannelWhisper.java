@@ -2,7 +2,6 @@ package com.playmonumenta.networkchat;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +21,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -45,29 +45,22 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private ChannelAccess mDefaultAccess;
 	private Map<UUID, ChannelAccess> mPlayerAccess;
 
+	public ChannelWhisper(UUID from, UUID to) {
+		this(UUID.randomUUID(), Instant.now(), List.of(from, to));
+	}
+
 	private ChannelWhisper(UUID channelId, Instant lastUpdate, List<UUID> participants) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
 		mParticipants = new ArrayList<>(participants);
 
 		mDefaultSettings = new ChannelSettings();
+		mDefaultSettings.addSound(Sound.ENTITY_PLAYER_LEVELUP, 1, 0.5f);
 		mDefaultAccess = new ChannelAccess();
 		mPlayerAccess = new HashMap<>();
 	}
 
-	public ChannelWhisper(UUID from, UUID to) {
-		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
-		List<UUID> participants = new ArrayList<>();
-		participants.add(from);
-		participants.add(to);
-		Collections.sort(participants);
-		mParticipants = new ArrayList<>(participants);
 
-		mDefaultSettings = new ChannelSettings();
-		mDefaultAccess = new ChannelAccess();
-		mPlayerAccess = new HashMap<>();
-	}
 
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
