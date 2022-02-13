@@ -14,6 +14,8 @@ import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
+import javax.annotation.Nullable;
+
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -79,9 +81,9 @@ public class RemotePlayerManager implements Listener {
 	public static final String REMOTE_PLAYER_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.remoteplayer";
 	public static final String REFRESH_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.refresh";
 
-	private static RemotePlayerManager INSTANCE = null;
-	private static Plugin mPlugin = null;
-	private static String mShardName = null;
+	private static @Nullable RemotePlayerManager INSTANCE = null;
+	private static Plugin mPlugin;
+	private static @Nullable String mShardName = null;
 	private static Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();
 	private static Map<UUID, RemotePlayerState> mPlayersByUuid = new ConcurrentSkipListMap<>();
 	private static Map<String, RemotePlayerState> mPlayersByName = new ConcurrentSkipListMap<>();
@@ -117,7 +119,7 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
-	public static RemotePlayerManager getInstance() {
+	public static @Nullable RemotePlayerManager getInstance() {
 		return INSTANCE;
 	}
 
@@ -128,7 +130,7 @@ public class RemotePlayerManager implements Listener {
 		return INSTANCE;
 	}
 
-	public static String getShardName() {
+	public static @Nullable String getShardName() {
 		return mShardName;
 	}
 
@@ -175,11 +177,15 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	public static boolean isPlayerVisible(String playerName) {
-		return mVisiblePlayers.contains(getPlayerId(playerName));
+		@Nullable UUID playerId = getPlayerId(playerName);
+		if (playerId == null) {
+		    return false;
+		}
+		return isPlayerVisible(playerId);
 	}
 
-	public static String getPlayerName(UUID playerUuid) {
-		RemotePlayerState remotePlayerState = mPlayersByUuid.get(playerUuid);
+	public static @Nullable String getPlayerName(UUID playerUuid) {
+		@Nullable RemotePlayerState remotePlayerState = mPlayersByUuid.get(playerUuid);
 		if (remotePlayerState == null) {
 		    return null;
 		}
@@ -187,10 +193,10 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	public static Component getPlayerComponent(UUID playerUuid) {
-		RemotePlayerState remotePlayerState = mPlayersByUuid.get(playerUuid);
+		@Nullable RemotePlayerState remotePlayerState = mPlayersByUuid.get(playerUuid);
 		if (remotePlayerState == null || remotePlayerState.mIsHidden) {
 			// Note: offline players are not visible
-			String playerName = MonumentaRedisSyncAPI.cachedUuidToName(playerUuid);
+			@Nullable String playerName = MonumentaRedisSyncAPI.cachedUuidToName(playerUuid);
 			if (playerName != null) {
 				return Component.text(playerName, NamedTextColor.RED)
 					.hoverEvent(Component.text("Offline", NamedTextColor.RED));
@@ -200,12 +206,12 @@ public class RemotePlayerManager implements Listener {
 		return remotePlayerState.mComponent;
 	}
 
-	public static UUID getPlayerId(String playerName) {
+	public static @Nullable UUID getPlayerId(String playerName) {
 		return MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 	}
 
-	public static String getPlayerShard(UUID playerId) {
-		RemotePlayerState remotePlayerState = mPlayersByUuid.get(playerId);
+	public static @Nullable String getPlayerShard(UUID playerId) {
+		@Nullable RemotePlayerState remotePlayerState = mPlayersByUuid.get(playerId);
 		if (remotePlayerState == null) {
 		    return null;
 		}
@@ -223,7 +229,7 @@ public class RemotePlayerManager implements Listener {
 		// Local first
 		shardPlayers = new ConcurrentSkipListMap<>();
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			RemotePlayerState remotePlayerState = mPlayersByUuid.get(player.getUniqueId());
+			@Nullable RemotePlayerState remotePlayerState = mPlayersByUuid.get(player.getUniqueId());
 			if (remotePlayerState != null && !remotePlayerState.mIsHidden) {
 			    shardPlayers.put(remotePlayerState.mName, remotePlayerState.mComponent);
 			}
@@ -299,18 +305,20 @@ public class RemotePlayerManager implements Listener {
 			return;
 		}
 
-		RemotePlayerState lastRemotePlayerState = mPlayersByUuid.get(remotePlayerState.mUuid);
-		String lastLocation = lastRemotePlayerState.mShard;
-		Map<String, RemotePlayerState> lastShardRemotePlayers = mRemotePlayersByShard.get(lastLocation);
-		if (lastShardRemotePlayers != null) {
-		    lastShardRemotePlayers.remove(lastRemotePlayerState.mName);
+		@Nullable RemotePlayerState lastRemotePlayerState = mPlayersByUuid.get(remotePlayerState.mUuid);
+		if (lastRemotePlayerState != null) {
+		    String lastLocation = lastRemotePlayerState.mShard;
+		    @Nullable Map<String, RemotePlayerState> lastShardRemotePlayers = mRemotePlayersByShard.get(lastLocation);
+		    if (lastShardRemotePlayers != null) {
+		        lastShardRemotePlayers.remove(lastRemotePlayerState.mName);
+		    }
+		    mPlayersByUuid.remove(lastRemotePlayerState.mUuid);
+		    mPlayersByName.remove(lastRemotePlayerState.mName);
+		    mVisiblePlayers.remove(lastRemotePlayerState.mUuid);
 		}
-		mPlayersByUuid.remove(lastRemotePlayerState.mUuid);
-		mPlayersByName.remove(lastRemotePlayerState.mName);
-		mVisiblePlayers.remove(lastRemotePlayerState.mUuid);
 
 		if (remotePlayerState.mIsOnline) {
-		    Map<String, RemotePlayerState> shardRemotePlayers = mRemotePlayersByShard.get(remotePlayerState.mShard);
+		    @Nullable Map<String, RemotePlayerState> shardRemotePlayers = mRemotePlayersByShard.get(remotePlayerState.mShard);
 		    if (shardRemotePlayers != null) {
 		        shardRemotePlayers.put(remotePlayerState.mName, remotePlayerState);
 		    }
@@ -341,7 +349,7 @@ public class RemotePlayerManager implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void destOfflineEvent(DestOfflineEvent event) throws Exception {
 		String remoteShardName = event.getDest();
-		Map<String, RemotePlayerState> remotePlayers = mRemotePlayersByShard.get(remoteShardName);
+		@Nullable Map<String, RemotePlayerState> remotePlayers = mRemotePlayersByShard.get(remoteShardName);
 		if (remotePlayers == null) {
 			return;
 		}
@@ -366,9 +374,7 @@ public class RemotePlayerManager implements Listener {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
-					for (Player player : Bukkit.getOnlinePlayers()) {
-						refreshLocalPlayer(player);
-					}
+					refreshLocalPlayers();
 				}
 			}.runTaskLater(mPlugin, 0);
 		}
@@ -395,7 +401,7 @@ public class RemotePlayerManager implements Listener {
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) throws Exception {
 		switch (event.getChannel()) {
 		case REMOTE_PLAYER_CHANNEL:
-			JsonObject data = event.getData();
+			@Nullable JsonObject data = event.getData();
 			if (data == null) {
 				mPlugin.getLogger().severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with null data");
 				return;
