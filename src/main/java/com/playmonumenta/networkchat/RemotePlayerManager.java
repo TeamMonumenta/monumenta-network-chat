@@ -325,7 +325,7 @@ public class RemotePlayerManager implements Listener {
 		    mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		    mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		    if (!remotePlayerState.mIsHidden) {
-		        mVisiblePlayers.add(lastRemotePlayerState.mUuid);
+		        mVisiblePlayers.add(remotePlayerState.mUuid);
 		    }
 		} else {
 			// Double check if the remote offline player is actually online locally (shard transfer race condition)
