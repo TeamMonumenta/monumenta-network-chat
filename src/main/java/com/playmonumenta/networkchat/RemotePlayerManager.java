@@ -41,22 +41,26 @@ public class RemotePlayerManager implements Listener {
 		public final boolean mIsOnline;
 		public final String mShard;
 
-	    public RemotePlayerState(Player player, boolean isOnline) {
+	    public RemotePlayerState(Plugin plugin, Player player, boolean isOnline) {
 		    mUuid = player.getUniqueId();
 		    mName = player.getName();
 		    mComponent = MessagingUtils.playerComponent(player);
 		    mIsHidden = !RemotePlayerManager.isLocalPlayerVisible(player);
 		    mIsOnline = isOnline;
 		    mShard = RemotePlayerManager.getShardName();
+
+			plugin.getLogger().info("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
-	    public RemotePlayerState(JsonObject remoteData) throws Exception {
+	    public RemotePlayerState(Plugin plugin, JsonObject remoteData) throws Exception {
 			mUuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 			mName = remoteData.get("playerName").getAsString();
 			mComponent = MessagingUtils.fromJson(remoteData.get("playerComponent"));
 			mIsHidden = remoteData.get("isHidden").getAsBoolean();
 			mIsOnline = remoteData.get("isOnline").getAsBoolean();
 			mShard = remoteData.get("shard").getAsString();
+
+			plugin.getLogger().info("Recieved RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
 	    public void broadcast() {
@@ -280,7 +284,7 @@ public class RemotePlayerManager implements Listener {
 
 	// Run this on any player to update their displayed name
 	public static void refreshLocalPlayer(Player player) {
-		RemotePlayerState remotePlayerState = new RemotePlayerState(player, true);
+		RemotePlayerState remotePlayerState = new RemotePlayerState(mPlugin, player, true);
 
 		mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
@@ -297,7 +301,7 @@ public class RemotePlayerManager implements Listener {
 		RemotePlayerState remotePlayerState;
 
 		try {
-			remotePlayerState = new RemotePlayerState(data);
+			remotePlayerState = new RemotePlayerState(mPlugin, data);
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with invalid data");
 			mPlugin.getLogger().severe(data.toString());
@@ -389,7 +393,7 @@ public class RemotePlayerManager implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
-		RemotePlayerState remotePlayerState = new RemotePlayerState(player, false);
+		RemotePlayerState remotePlayerState = new RemotePlayerState(mPlugin, player, false);
 
 		mPlayersByUuid.remove(remotePlayerState.mUuid);
 		mPlayersByName.remove(remotePlayerState.mName);
