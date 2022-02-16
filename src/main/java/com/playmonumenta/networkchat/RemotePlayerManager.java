@@ -286,6 +286,7 @@ public class RemotePlayerManager implements Listener {
 	public static void refreshLocalPlayer(Player player) {
 		RemotePlayerState remotePlayerState = new RemotePlayerState(mPlugin, player, true);
 
+		unregisterPlayer(remotePlayerState.mUuid);
 		mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		if (remotePlayerState.mIsHidden) {
@@ -295,6 +296,20 @@ public class RemotePlayerManager implements Listener {
 		}
 
 		remotePlayerState.broadcast();
+	}
+
+	private static void unregisterPlayer(UUID playerId) {
+		@Nullable RemotePlayerState lastRemotePlayerState = mPlayersByUuid.get(playerId);
+		if (lastRemotePlayerState != null) {
+		    String lastLocation = lastRemotePlayerState.mShard;
+		    @Nullable Map<String, RemotePlayerState> lastShardRemotePlayers = mRemotePlayersByShard.get(lastLocation);
+		    if (lastShardRemotePlayers != null) {
+		        lastShardRemotePlayers.remove(lastRemotePlayerState.mName);
+		    }
+		    mPlayersByUuid.remove(playerId);
+		    mPlayersByName.remove(lastRemotePlayerState.mName);
+		    mVisiblePlayers.remove(playerId);
+		}
 	}
 
 	private void remotePlayerChange(JsonObject data) {
@@ -309,18 +324,7 @@ public class RemotePlayerManager implements Listener {
 			return;
 		}
 
-		@Nullable RemotePlayerState lastRemotePlayerState = mPlayersByUuid.get(remotePlayerState.mUuid);
-		if (lastRemotePlayerState != null) {
-		    String lastLocation = lastRemotePlayerState.mShard;
-		    @Nullable Map<String, RemotePlayerState> lastShardRemotePlayers = mRemotePlayersByShard.get(lastLocation);
-		    if (lastShardRemotePlayers != null) {
-		        lastShardRemotePlayers.remove(lastRemotePlayerState.mName);
-		    }
-		    mPlayersByUuid.remove(lastRemotePlayerState.mUuid);
-		    mPlayersByName.remove(lastRemotePlayerState.mName);
-		    mVisiblePlayers.remove(lastRemotePlayerState.mUuid);
-		}
-
+		unregisterPlayer(remotePlayerState.mUuid);
 		if (remotePlayerState.mIsOnline) {
 		    @Nullable Map<String, RemotePlayerState> shardRemotePlayers = mRemotePlayersByShard.get(remotePlayerState.mShard);
 		    if (shardRemotePlayers != null) {
@@ -331,13 +335,6 @@ public class RemotePlayerManager implements Listener {
 		    if (!remotePlayerState.mIsHidden) {
 		        mVisiblePlayers.add(remotePlayerState.mUuid);
 		    }
-		} else {
-			// Double check if the remote offline player is actually online locally (shard transfer race condition)
-			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (remotePlayerState.mUuid.equals(player.getUniqueId())) {
-				    refreshLocalPlayer(player);
-				}
-			}
 		}
 	}
 
@@ -394,10 +391,7 @@ public class RemotePlayerManager implements Listener {
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		RemotePlayerState remotePlayerState = new RemotePlayerState(mPlugin, player, false);
-
-		mPlayersByUuid.remove(remotePlayerState.mUuid);
-		mPlayersByName.remove(remotePlayerState.mName);
-
+		unregisterPlayer(remotePlayerState.mUuid);
 		remotePlayerState.broadcast();
 	}
 
