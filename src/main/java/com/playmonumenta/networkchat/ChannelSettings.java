@@ -135,13 +135,13 @@ public class ChannelSettings {
 
 			JsonArray cSoundsArray = object.getAsJsonArray("SoundsList");
 			if (cSoundsArray != null && cSoundsArray.size() > 0) {
-				cSoundsArray.forEach((element) -> {
+				for (JsonElement element : cSoundsArray) {
 					try {
-						settings.mSounds.add(CSound.fromJson((JsonObject) element));
+						settings.mSounds.add(CSound.fromJson(element.getAsJsonObject()));
 					} catch (Exception e) {
-						NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting SoundsList to object. Reason: " + e.getMessage());
+						NetworkChatPlugin.getInstance().getLogger().warning("Caught an exception while converting SoundsList to object. Reason: " + e.getMessage());
 					}
-				});
+				}
 			}
 		}
 		return settings;
