@@ -86,7 +86,7 @@ public class RemotePlayerManager implements Listener {
 	public static final String REFRESH_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.refresh";
 
 	private static @Nullable RemotePlayerManager INSTANCE = null;
-	private static Plugin mPlugin;
+	private static Plugin mPlugin = null;
 	private static @Nullable String mShardName = null;
 	private static Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();
 	private static Map<UUID, RemotePlayerState> mPlayersByUuid = new ConcurrentSkipListMap<>();
@@ -109,6 +109,7 @@ public class RemotePlayerManager implements Listener {
 				if (shard.equals(mShardName)) {
 					continue;
 				}
+				mPlugin.getLogger().info("Registering shard " + shard);
 				mRemotePlayersByShard.put(shard, new ConcurrentSkipListMap<>());
 			}
 		} catch (Exception e) {
@@ -284,9 +285,11 @@ public class RemotePlayerManager implements Listener {
 
 	// Run this on any player to update their displayed name
 	public static void refreshLocalPlayer(Player player) {
+		mPlugin.getLogger().info("Refreshing local player " + player.getName());
 		RemotePlayerState remotePlayerState = new RemotePlayerState(mPlugin, player, true);
 
 		unregisterPlayer(remotePlayerState.mUuid);
+		mPlugin.getLogger().info("Registering player " + remotePlayerState.mName);
 		mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		if (remotePlayerState.mIsHidden) {
@@ -301,6 +304,7 @@ public class RemotePlayerManager implements Listener {
 	private static void unregisterPlayer(UUID playerId) {
 		@Nullable RemotePlayerState lastRemotePlayerState = mPlayersByUuid.get(playerId);
 		if (lastRemotePlayerState != null) {
+		    mPlugin.getLogger().info("Unregistering player " + lastRemotePlayerState.mName);
 		    String lastLocation = lastRemotePlayerState.mShard;
 		    @Nullable Map<String, RemotePlayerState> lastShardRemotePlayers = mRemotePlayersByShard.get(lastLocation);
 		    if (lastShardRemotePlayers != null) {
@@ -330,11 +334,18 @@ public class RemotePlayerManager implements Listener {
 		    if (shardRemotePlayers != null) {
 		        shardRemotePlayers.put(remotePlayerState.mName, remotePlayerState);
 		    }
+		    mPlugin.getLogger().info("Registering player " + remotePlayerState.mName);
 		    mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		    mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		    if (!remotePlayerState.mIsHidden) {
 		        mVisiblePlayers.add(remotePlayerState.mUuid);
 		    }
+		} else if (!mShardName.equals(remotePlayerState.mShard)) {
+			mPlugin.getLogger().info("Detected race condition, triggering refresh on " + remotePlayerState.mName);
+			@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayerState.mUuid);
+			if (localPlayer != null) {
+				refreshLocalPlayer(localPlayer);
+			}
 		}
 	}
 
@@ -344,6 +355,7 @@ public class RemotePlayerManager implements Listener {
 		if (mShardName.equals(remoteShardName)) {
 			return;
 		}
+		mPlugin.getLogger().info("Registering shard " + remoteShardName);
 		mRemotePlayersByShard.put(remoteShardName, new ConcurrentSkipListMap<>());
 	}
 
@@ -354,13 +366,13 @@ public class RemotePlayerManager implements Listener {
 		if (remotePlayers == null) {
 			return;
 		}
-		mRemotePlayersByShard.remove(remoteShardName);
-		for (Map.Entry<String, RemotePlayerState> playerDetails : remotePlayers.entrySet()) {
-			String playerName = playerDetails.getKey();
+		mPlugin.getLogger().info("Unregistering shard " + remoteShardName);
+		Map<String, RemotePlayerState> remotePlayersCopy = new ConcurrentSkipListMap<>(remotePlayers);
+		for (Map.Entry<String, RemotePlayerState> playerDetails : remotePlayersCopy.entrySet()) {
 			RemotePlayerState remotePlayerState = playerDetails.getValue();
-			mPlayersByUuid.remove(remotePlayerState.mUuid);
-			mPlayersByName.remove(playerName);
+			unregisterPlayer(remotePlayerState.mUuid);
 		}
+		mRemotePlayersByShard.remove(remoteShardName);
 	}
 
 	// Player ran a command
