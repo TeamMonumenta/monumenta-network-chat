@@ -235,4 +235,12 @@ public class ChatFilter {
 		}
 		return component;
 	}
+
+	public String run(CommandSender sender, String plainText) {
+		Component component = Component.text(plainText);
+		for (ChatFilterPattern filterPattern : mFilters.values()) {
+			component = filterPattern.run(sender, component);
+		}
+		return MessagingUtils.plainText(component);
+	}
 }
