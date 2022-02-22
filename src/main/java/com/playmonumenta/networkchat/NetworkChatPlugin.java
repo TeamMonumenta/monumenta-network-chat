@@ -81,11 +81,12 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 				                        "LOG4J_EXPLOIT",
 				                        false,
-				                        "{jndi:.*}",
+				                        "\\{jndi:.*\\}",
 				                        true);
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
+		mGlobalChatFilter.getFilter("LOG4J_EXPLOIT").command("say @S attempted a Log4J exploit!");
 
 		ChatCommand.register();
 	}

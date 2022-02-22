@@ -13,6 +13,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
@@ -26,6 +27,7 @@ import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
+import org.apache.commons.lang.mutable.MutableBoolean;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -130,32 +132,46 @@ public class ChatFilter {
 		}
 
 		public Component run(CommandSender sender, Component component) {
+			final MutableBoolean foundMatch = new MutableBoolean(false);
+
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
 				.match(mPattern)
 				.replacement((MatchResult match, TextComponent.Builder textBuilder) -> {
+					foundMatch.setValue(true);
 					String content = textBuilder.content();
-					Component result = textBuilder.build();
-					sender.sendMessage(Component.text("Found match for " + mId));
-					sender.sendMessage(result);
-
-					if (mCommand != null) {
-						String command = mCommand.replace("@S", sender.getName());
-						if (sender instanceof Entity) {
-							command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
-						}
-						final String finishedCommand = command;
-						Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(NetworkChatPlugin.getInstance(), new Runnable() {
-							@Override
-							public void run() {
-								Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand);
-							}
-						}, 0);
-					}
+					content = mPattern.matcher(content).replaceAll(mReplacementMiniMessage);
+					Component result = MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(content);
 
 					return result;
 				})
 				.build();
-			return component.replaceText(replacementConfig);
+
+			Component result = component.replaceText(replacementConfig);
+
+			String plainText = MessagingUtils.plainText(result);
+			String plainReplacement = mPattern.matcher(plainText).replaceAll(mReplacementMiniMessage);
+			if (!plainText.equals(plainReplacement)) {
+				foundMatch.setValue(true);
+				result = MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(plainReplacement);
+			}
+
+			if (foundMatch.isTrue()) {
+				if (mCommand != null) {
+					String command = mCommand.replace("@S", sender.getName());
+					if (sender instanceof Entity) {
+						command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
+					}
+					final String finishedCommand = command;
+					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(NetworkChatPlugin.getInstance(), new Runnable() {
+						@Override
+						public void run() {
+							Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand);
+						}
+					}, 0);
+				}
+			}
+
+			return result;
 		}
 	}
 
