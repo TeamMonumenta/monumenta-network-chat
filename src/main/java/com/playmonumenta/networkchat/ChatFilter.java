@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -18,28 +20,43 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import javax.annotation.Nullable;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentLike;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 
 // A collection of regex to filter chat
 public class ChatFilter {
 	public static class ChatFilterPattern {
 		private final String mId;
+		private final boolean mIsLiteral;
 		private final String mPatternString;
 		private final Pattern mPattern;
 		private final boolean mIsBadWord;
 		private String mReplacementMiniMessage;
 		private @Nullable String mCommand = null;
 
-		public ChatFilterPattern(CommandSender sender, String id, String regex, boolean isBadWord) throws WrapperCommandSyntaxException {
+		public ChatFilterPattern(CommandSender sender,
+		                         String id,
+		                         boolean isLiteral,
+		                         String regex,
+		                         boolean isBadWord) throws WrapperCommandSyntaxException {
 			mId = id;
+			mIsLiteral = isLiteral;
 			mPatternString = regex;
 			mIsBadWord = isBadWord;
 			Pattern pattern = null;
 			try {
-				pattern = Pattern.compile(mPatternString, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+				int flags = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+				if (mIsLiteral) {
+					flags |= Pattern.LITERAL;
+				}
+				pattern = Pattern.compile(mPatternString, flags);
 			} catch (PatternSyntaxException e) {
 				sender.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
 				CommandAPI.fail("Could not load chat filter " + mId);
@@ -56,6 +73,7 @@ public class ChatFilter {
 
 		public static ChatFilterPattern fromJson(CommandSender sender, JsonObject object) throws Exception {
 			String id = object.get("mId").getAsString();
+			boolean isLiteral = object.get("mIsLiteral").getAsBoolean();
 			String regex = object.get("mPatternString").getAsString();
 			boolean isBadWord = object.get("mIsBadWord").getAsBoolean();
 			String replacementMiniMessage = object.get("mReplacementMiniMessage").getAsString();
@@ -64,7 +82,7 @@ public class ChatFilter {
 				command = object.get("mCommand").getAsString();
 			}
 
-			ChatFilterPattern pattern = new ChatFilterPattern(sender, id, regex, isBadWord);
+			ChatFilterPattern pattern = new ChatFilterPattern(sender, id, isLiteral, regex, isBadWord);
 			pattern.mReplacementMiniMessage = replacementMiniMessage;
 			pattern.mCommand = command;
 			return pattern;
@@ -73,6 +91,7 @@ public class ChatFilter {
 		public JsonObject toJson() {
 			JsonObject object = new JsonObject();
 			object.addProperty("mId", mId);
+			object.addProperty("mIsLiteral", mIsLiteral);
 			object.addProperty("mPatternString", mPatternString);
 			object.addProperty("mIsBadWord", mIsBadWord);
 			object.addProperty("mReplacementMiniMessage", mReplacementMiniMessage);
@@ -110,7 +129,28 @@ public class ChatFilter {
 			mCommand = command;
 		}
 
-		// TODO Actual replacement here
+		public Component run(CommandSender sender, Component component) {
+			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
+				.match(mPattern)
+				.replacement((MatchResult match, TextComponent.Builder textBuilder) -> {
+					String content = textBuilder.content();
+					Component result = textBuilder.build();
+					sender.sendMessage(Component.text("Found match for " + mId));
+					sender.sendMessage(result);
+
+					if (mCommand != null) {
+						String command = mCommand.replace("@S", sender.getName());
+						if (sender instanceof Entity) {
+							command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
+						}
+						Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
+					}
+
+					return result;
+				})
+				.build();
+			return component.replaceText(replacementConfig);
+		}
 	}
 
 	private Map<String, ChatFilterPattern> mFilters = new HashMap<>();
@@ -144,5 +184,33 @@ public class ChatFilter {
 			object.add("filters", filters);
 		}
 		return object;
+	}
+
+	public void addFilter(CommandSender sender,
+	                      String id,
+	                      boolean isLiteral,
+	                      String regex,
+	                      boolean isBadWord) throws WrapperCommandSyntaxException {
+		ChatFilterPattern filterPattern = new ChatFilterPattern(sender, id, isLiteral, regex, isBadWord);
+		mFilters.put(id, filterPattern);
+	}
+
+	public void removeFilter(String id) {
+		mFilters.remove(id);
+	}
+
+	public Map<String, ChatFilterPattern> getFilters() {
+		return new HashMap<>(mFilters);
+	}
+
+	public @Nullable ChatFilterPattern getFilter(String id) {
+		return mFilters.get(id);
+	}
+
+	public Component run(CommandSender sender, Component component) {
+		for (ChatFilterPattern filterPattern : mFilters.values()) {
+			component = filterPattern.run(sender, component);
+		}
+		return component;
 	}
 }
