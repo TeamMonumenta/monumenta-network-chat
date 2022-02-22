@@ -143,7 +143,13 @@ public class ChatFilter {
 						if (sender instanceof Entity) {
 							command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
 						}
-						Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
+						final String finishedCommand = command;
+						Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(NetworkChatPlugin.getInstance(), new Runnable() {
+							@Override
+							public void run() {
+								Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand);
+							}
+						}, 0);
 					}
 
 					return result;
