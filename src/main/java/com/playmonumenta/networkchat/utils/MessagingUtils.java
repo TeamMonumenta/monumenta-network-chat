@@ -136,21 +136,7 @@ public class MessagingUtils {
 			return entityComponent((Entity) sender);
 		}
 		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
-			TemplateResolver.templates(Template.template("sender_name", sender.getName()), Template.template("item", () -> {
-				if (!sender.hasPermission("networkchat.transform.item")) {
-					return Component.empty();
-				}
-
-				if (!(sender instanceof Player)) { // FIXME never a player at this point
-					return Component.empty();
-				}
-				Player player = (Player) sender;
-				ItemStack item = player.getInventory().getItemInMainHand();
-				if (item != null && item.getType() != Material.AIR) {
-					return item.displayName().hoverEvent(item);
-				}
-				return Component.empty();
-			})));
+			TemplateResolver.templates(Template.template("sender_name", sender.getName())));
 	}
 
 	public static Component entityComponent(Entity entity) {
@@ -242,7 +228,18 @@ public class MessagingUtils {
 				Template.template("team_prefix", teamPrefix),
 				Template.template("team_displayname", teamDisplayName),
 				Template.template("team_suffix", teamSuffix),
-				Template.template("profile_message", profileMessage)));
+				Template.template("profile_message", profileMessage),
+				Template.template("item", () -> {
+					if (!player.hasPermission("networkchat.transform.item")) {
+						return Component.empty();
+					}
+
+					ItemStack item = player.getInventory().getItemInMainHand();
+					if (item != null && item.getType() != Material.AIR) {
+						return item.displayName().hoverEvent(item);
+					}
+					return Component.empty();
+			})));
 	}
 
 	public static void sendStackTrace(CommandSender sender, Exception e) {
