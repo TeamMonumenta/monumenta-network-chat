@@ -23,7 +23,7 @@ public class PlayerChatHistory {
 	public static final int MAX_DISPLAYED_MESSAGES = 100;
 	protected static final long MAX_OFFLINE_HISTORY_SECONDS = 10;
 
-	private UUID mPlayerId;
+	private final UUID mPlayerId;
 	private boolean mIsReplayingChat = false;
 	private boolean mIsDisplayingMessage = false;
 	private List<Message> mSeenMessages = new ArrayList<Message>(MAX_DISPLAYED_MESSAGES);
@@ -119,13 +119,7 @@ public class PlayerChatHistory {
 	// Re-show chat with deleted messages removed, even while paused.
 	public void refreshChat() {
 		mIsReplayingChat = true;
-		Iterator<Message> it = mSeenMessages.iterator();
-		while (it.hasNext()) {
-			Message message = it.next();
-			if (message.isDeleted()) {
-				it.remove();
-			}
-		}
+		mSeenMessages.removeIf(Message::isDeleted);
 
 		int messageCount = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
 		Component emptyMessage = Component.empty();

@@ -22,6 +22,7 @@ import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -37,13 +38,13 @@ import net.kyori.adventure.text.minimessage.Template;
 public class ChannelParty extends Channel implements ChannelInviteOnly {
 	public static final String CHANNEL_CLASS_ID = "party";
 
-	private UUID mId;
+	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
-	private Set<UUID> mParticipants;
+	private final Set<UUID> mParticipants;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
-	private Map<UUID, ChannelAccess> mPlayerAccess;
+	private final Map<UUID, ChannelAccess> mPlayerAccess;
 
 	private ChannelParty(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
@@ -553,8 +554,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 
 		Component fullMessage = Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", mName),
-				Template.of("sender", message.getSenderComponent()))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName),
+				Template.template("sender", message.getSenderComponent()))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {

@@ -23,7 +23,7 @@ public class MessageVisibility {
 		JOIN("join"),
 		DEATH("death");
 
-		String mKey;
+		final String mKey;
 
 		VisibilityKey(String s) {
 			mKey = s;
@@ -49,7 +49,7 @@ public class MessageVisibility {
 		SELF("self"),
 		NEVER("never");
 
-		String mValue;
+		final String mValue;
 
 		VisibilityValue(String s) {
 			mValue = s;
@@ -68,7 +68,7 @@ public class MessageVisibility {
 		}
 	}
 
-	private Map<VisibilityKey, VisibilityValue> mVisibilities = new HashMap<>();
+	private final Map<VisibilityKey, VisibilityValue> mVisibilities = new HashMap<>();
 
 	public static MessageVisibility fromJson(JsonObject object) {
 		MessageVisibility settings = new MessageVisibility();

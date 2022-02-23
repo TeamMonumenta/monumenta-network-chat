@@ -14,8 +14,8 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 public class ChannelFuture extends Channel {
 	public static final String CHANNEL_CLASS_ID = "future";
 
-	private String mType;
-	private UUID mId;
+	private final String mType;
+	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
 

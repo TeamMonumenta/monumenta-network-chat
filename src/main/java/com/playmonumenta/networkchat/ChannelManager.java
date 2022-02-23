@@ -45,10 +45,10 @@ public class ChannelManager implements Listener {
 	private static ChannelManager INSTANCE = null;
 	private static Plugin mPlugin = null;
 	private static DefaultChannels mDefaultChannels = new DefaultChannels();
-	private static Set<UUID> mForceLoadedChannels = new ConcurrentSkipListSet<>();
-	private static Map<String, UUID> mChannelIdsByName = new ConcurrentSkipListMap<>();
-	private static Map<UUID, String> mChannelNames = new ConcurrentSkipListMap<>();
-	private static Map<UUID, Channel> mChannels = new ConcurrentSkipListMap<>();
+	private static final Set<UUID> mForceLoadedChannels = new ConcurrentSkipListSet<>();
+	private static final Map<String, UUID> mChannelIdsByName = new ConcurrentSkipListMap<>();
+	private static final Map<UUID, String> mChannelNames = new ConcurrentSkipListMap<>();
+	private static final Map<UUID, Channel> mChannels = new ConcurrentSkipListMap<>();
 
 	private static class ForceloadStreamingChannel implements ValueStreamingChannel<String> {
 		public void onValue(String value /*Channel UUID*/) {
@@ -363,23 +363,17 @@ public class ChannelManager implements Listener {
 
 	private static void deleteChannelLocally(UUID channelId) {
 		String channelName = mChannelNames.get(channelId);
-		if (channelName != null && mChannelIdsByName.containsKey(channelName)) {
+		if (channelName != null) {
 			mChannelIdsByName.remove(channelName);
 		}
 
 		mDefaultChannels.unsetChannel(channelId);
-		if (mForceLoadedChannels.contains(channelId)) {
-			mForceLoadedChannels.remove(channelId);
-		}
-		if (mChannels.containsKey(channelId)) {
-			mChannels.remove(channelId);
-		}
-		if (mChannelNames.containsKey(channelId)) {
-			mChannelNames.remove(channelId);
-		}
+		mForceLoadedChannels.remove(channelId);
+		mChannels.remove(channelId);
+		mChannelNames.remove(channelId);
 
 		for (PlayerState playerState : PlayerStateManager.getPlayerStates().values()) {
-			playerState.channelLoaded(channelId);
+			playerState.channelUpdated(channelId, null);
 		}
 	}
 
@@ -416,7 +410,7 @@ public class ChannelManager implements Listener {
 		if (channel instanceof ChannelLoading) {
 			((ChannelLoading) channel).addWaitingPlayerState(playerState);
 		} else if (!(channel instanceof ChannelFuture)) {
-			playerState.channelLoaded(channelId);
+			playerState.channelUpdated(channelId, channel);
 		}
 	}
 
@@ -440,8 +434,8 @@ public class ChannelManager implements Listener {
 		if (channelData == null) {
 			// No channel was found, alert the player it was deleted.
 			mPlugin.getLogger().warning("Channel " + channelId.toString() + " was not found.");
-			PlayerStateManager.unregisterChannel(channelId);
 			mChannels.remove(channelId);
+			PlayerStateManager.unregisterChannel(channelId);
 			if (loadingChannel != null) {
 				loadingChannel.finishLoading();
 			}
@@ -467,7 +461,7 @@ public class ChannelManager implements Listener {
 			}
 		}
 
-		Channel channel = null;
+		Channel channel;
 		try {
 			channel = Channel.fromJson(channelJson);
 			mPlugin.getLogger().finer("Channel " + channelId.toString() + " loaded, registering...");
@@ -478,16 +472,17 @@ public class ChannelManager implements Listener {
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
 			mPlugin.getLogger().severe(sw.toString());
+			return;
 		}
 
 		for (PlayerState playerState : playersToNotify) {
-			playerState.channelLoaded(channelId);
+			playerState.channelUpdated(channelId, channel);
 		}
 
 		if (oldChannel != null) {
 			// Clean up old name if needed
 			String oldName = oldChannel.getName();
-			if (channel == null || !channel.getName().equals(oldName)) {
+			if (!channel.getName().equals(oldName)) {
 				// Remove the old name
 				mChannelIdsByName.remove(oldName);
 			}
@@ -571,9 +566,9 @@ public class ChannelManager implements Listener {
 	}
 
 	private static void networkRelayChannelUpdate(JsonObject data) {
-		UUID channelId = null;
-		Instant channelLastUpdate = null;
-		JsonObject channelData = null;
+		UUID channelId;
+		Instant channelLastUpdate;
+		JsonObject channelData;
 		Set<UUID> participants = null;
 		boolean shouldLoad = true;
 		try {
@@ -617,7 +612,7 @@ public class ChannelManager implements Listener {
 		if (oldChannel == null && !shouldLoad) {
 			// Channel wasn't loaded, and doesn't need to be loaded.
 
-			String newName = null;
+			String newName;
 			if (channelData != null) {
 				// Rename (possibly new) channel locally
 				try {

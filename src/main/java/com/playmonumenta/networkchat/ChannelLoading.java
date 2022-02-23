@@ -17,9 +17,9 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 public class ChannelLoading extends Channel {
 	public static final String CHANNEL_CLASS_ID = "loading";
 
-	private UUID mId;
-	private Set<PlayerState> mAwaitingPlayers = new HashSet<>();
-	private List<Message> mQueuedMessages = new ArrayList<>();
+	private final UUID mId;
+	private final Set<PlayerState> mAwaitingPlayers = new HashSet<>();
+	private final List<Message> mQueuedMessages = new ArrayList<>();
 
 	/* Note: This channel type may only be created by this plugin while waiting for Redis data.
 	 * This is why it is the only channel whose constructor is protected, and has no name. */
@@ -73,18 +73,18 @@ public class ChannelLoading extends Channel {
 
 	// Notify the player the channel has finish loading, or failed to load.
 	protected void finishLoading() {
+		Channel channel = ChannelManager.getChannel(mId);
+
+		// Update awaiting player states regardless of load success (will show deletion on failure)
 		for (PlayerState playerState : mAwaitingPlayers) {
-			playerState.channelLoaded(mId);
+			playerState.channelUpdated(mId, channel);
 		}
 
 		// If the newly loaded channel is valid, distribute messages that were missed
-		Channel channel = ChannelManager.getChannel(mId);
-		if (channel == null
-		    || channel instanceof ChannelFuture) {
-			return;
-		}
-		for (Message message : mQueuedMessages) {
-			channel.distributeMessage(message);
+		if (channel != null && !(channel instanceof ChannelFuture)) {
+			for (Message message : mQueuedMessages) {
+				channel.distributeMessage(message);
+			}
 		}
 	}
 }
