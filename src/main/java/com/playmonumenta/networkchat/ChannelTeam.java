@@ -18,6 +18,7 @@ import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -36,12 +37,12 @@ public class ChannelTeam extends Channel {
 	public static final String CHANNEL_CLASS_ID = "team";
 	private static final String[] TEAM_COMMANDS = {"teammsg", "tm"};
 
-	private UUID mId;
+	private final UUID mId;
 	private Instant mLastUpdate;
-	private String mTeamName;
+	private final String mTeamName;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
-	private Map<UUID, ChannelAccess> mPlayerAccess;
+	private final Map<UUID, ChannelAccess> mPlayerAccess;
 
 	private ChannelTeam(UUID channelId, Instant lastUpdate, String teamName) {
 		mId = channelId;
@@ -458,11 +459,11 @@ public class ChannelTeam extends Channel {
 		}
 
 		Component fullMessage = Component.empty()
-		    .append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("sender", message.getSenderComponent()),
-		        Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
-		        Template.of("team_prefix", teamPrefix),
-		        Template.of("team_displayname", teamDisplayName),
-		        Template.of("team_suffix", teamSuffix))))
+		    .append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("sender", message.getSenderComponent()),
+		        Template.template("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+		        Template.template("team_prefix", teamPrefix),
+		        Template.template("team_displayname", teamDisplayName),
+		        Template.template("team_suffix", teamSuffix))))
 		    .append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {

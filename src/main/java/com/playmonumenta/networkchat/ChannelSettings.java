@@ -28,7 +28,7 @@ public class ChannelSettings {
 		IS_LISTENING("is_listening"),
 		MESSAGES_PLAY_SOUND("messages_play_sound");
 
-		String mKey;
+		final String mKey;
 
 		FlagKey(String s) {
 			mKey = s;
@@ -52,7 +52,7 @@ public class ChannelSettings {
 		FALSE("false"),
 		TRUE("true");
 
-		String mValue;
+		final String mValue;
 
 		FlagValue(String s) {
 			mValue = s;
@@ -72,7 +72,7 @@ public class ChannelSettings {
 	}
 
 	public static class CSound {
-		public Sound mSound;
+		public final Sound mSound;
 		public float mVolume;
 		public float mPitch;
 
@@ -114,8 +114,8 @@ public class ChannelSettings {
 		}
 	}
 
-	private Map<FlagKey, Boolean> mFlags = new HashMap<>();
-	private List<CSound> mSounds = new ArrayList<>();
+	private final Map<FlagKey, Boolean> mFlags = new HashMap<>();
+	private final List<CSound> mSounds = new ArrayList<>();
 
 	public static ChannelSettings fromJson(JsonObject object) {
 		ChannelSettings settings = new ChannelSettings();

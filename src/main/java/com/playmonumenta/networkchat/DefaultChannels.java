@@ -27,7 +27,7 @@ public class DefaultChannels {
 		ChannelGlobal.CHANNEL_CLASS_ID,
 		ChannelParty.CHANNEL_CLASS_ID);
 
-	private Map<String, UUID> mDefaultsByType = new HashMap<>();
+	private final Map<String, UUID> mDefaultsByType = new HashMap<>();
 
 	public static DefaultChannels fromJson(JsonObject object) {
 		DefaultChannels defaults = new DefaultChannels();

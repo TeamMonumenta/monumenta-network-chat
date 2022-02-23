@@ -1240,7 +1240,7 @@ public class ChatCommand {
 
 		Set<String> usedShortcuts = new HashSet<>();
 		for (String channelType : DefaultChannels.CHANNEL_TYPES) {
-			if (channelType.equals("default")) {
+			if (channelType.equals(DefaultChannels.DEFAULT_CHANNEL)) {
 				continue;
 			}
 
@@ -1262,7 +1262,7 @@ public class ChatCommand {
 				.register();
 
 			String shortcut = channelType.substring(0, 1);
-			if (usedShortcuts.contains(shortcut)) {
+			if (!usedShortcuts.add(shortcut)) {
 				continue;
 			}
 
@@ -1321,7 +1321,7 @@ public class ChatCommand {
 		}
 
 		if (!(channel instanceof ChannelPermissionNode)) {
-			CommandUtils.fail(sender, "You can't change the permision of this channel");
+			CommandUtils.fail(sender, "You can't change the permission of this channel");
 		}
 
 		((ChannelPermissionNode) channel).setChannelPermission(newPerms);
@@ -1630,16 +1630,16 @@ public class ChatCommand {
 						.hoverEvent(Component.text("Delete channel", NamedTextColor.RED))
 						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete channel " + channel.getName())));
 			}
-		}
 
-		if (message.senderIsPlayer()) {
-			String fromName = message.getSenderName();
+			if (message.senderIsPlayer()) {
+				String fromName = message.getSenderName();
 
-			if (channel.mayManage(target)) {
-				gui = gui.append(Component.text(" "))
-					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-						.hoverEvent(Component.text("Sender channel permissions", NamedTextColor.LIGHT_PURPLE))
-						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " permissions channel " + channel.getName() + " player " + fromName + " ")));
+				if (channel.mayManage(target)) {
+					gui = gui.append(Component.text(" "))
+						.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
+							.hoverEvent(Component.text("Sender channel permissions", NamedTextColor.LIGHT_PURPLE))
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " permissions channel " + channel.getName() + " player " + fromName + " ")));
+				}
 			}
 		}
 

@@ -16,20 +16,21 @@ public abstract class Channel {
 	public static Channel fromJson(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 
-		if (channelClassId.equals(ChannelAnnouncement.CHANNEL_CLASS_ID)) {
-			return ChannelAnnouncement.fromJsonInternal(channelJson);
-		} else if (channelClassId.equals(ChannelGlobal.CHANNEL_CLASS_ID)) {
-			return ChannelGlobal.fromJsonInternal(channelJson);
-		} else if (channelClassId.equals(ChannelLocal.CHANNEL_CLASS_ID)) {
-			return ChannelLocal.fromJsonInternal(channelJson);
-		} else if (channelClassId.equals(ChannelParty.CHANNEL_CLASS_ID)) {
-			return ChannelParty.fromJsonInternal(channelJson);
-		} else if (channelClassId.equals(ChannelTeam.CHANNEL_CLASS_ID)) {
-			return ChannelTeam.fromJsonInternal(channelJson);
-		} else if (channelClassId.equals(ChannelWhisper.CHANNEL_CLASS_ID)) {
-			return ChannelWhisper.fromJsonInternal(channelJson);
-		} else {
-			return ChannelFuture.fromJsonInternal(channelJson);
+		switch (channelClassId) {
+			case ChannelAnnouncement.CHANNEL_CLASS_ID:
+				return ChannelAnnouncement.fromJsonInternal(channelJson);
+			case ChannelGlobal.CHANNEL_CLASS_ID:
+				return ChannelGlobal.fromJsonInternal(channelJson);
+			case ChannelLocal.CHANNEL_CLASS_ID:
+				return ChannelLocal.fromJsonInternal(channelJson);
+			case ChannelParty.CHANNEL_CLASS_ID:
+				return ChannelParty.fromJsonInternal(channelJson);
+			case ChannelTeam.CHANNEL_CLASS_ID:
+				return ChannelTeam.fromJsonInternal(channelJson);
+			case ChannelWhisper.CHANNEL_CLASS_ID:
+				return ChannelWhisper.fromJsonInternal(channelJson);
+			default:
+				return ChannelFuture.fromJsonInternal(channelJson);
 		}
 	}
 

@@ -20,22 +20,24 @@ import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
+import javax.annotation.Nullable;
+
 // TODO Track how many players are in a channel on this server/overall
 public class PlayerState {
-	private UUID mPlayerId;
+	private final UUID mPlayerId;
 	private boolean mChatPaused;
 	private UUID mActiveChannelId;
 	private ChannelSettings mDefaultChannelSettings = new ChannelSettings();
 	private DefaultChannels mDefaultChannels = new DefaultChannels();
-	private Map<UUID, ChannelSettings> mChannelSettings;
+	private final Map<UUID, ChannelSettings> mChannelSettings;
 
-	private Map<UUID, UUID> mWhisperChannelsByRecipient;
-	private Map<UUID, UUID> mWhisperRecipientByChannels;
+	private final Map<UUID, UUID> mWhisperChannelsByRecipient;
+	private final Map<UUID, UUID> mWhisperRecipientByChannels;
 	private UUID mLastWhisperChannel;
 
 	// Channels not in these maps will use the default channel watch status.
-	private Map<UUID, String> mWatchedChannelIds;
-	private Map<UUID, String> mUnwatchedChannelIds;
+	private final Map<UUID, String> mWatchedChannelIds;
+	private final Map<UUID, String> mUnwatchedChannelIds;
 
 	private String mProfileMessage = "";
 
@@ -69,7 +71,7 @@ public class PlayerState {
 			}
 
 			if (lastLoginMillis != null) {
-				Long millisOffline = nowMillis - lastLoginMillis;
+				long millisOffline = nowMillis - lastLoginMillis;
 				NetworkChatPlugin.getInstance().getLogger().finer(player.getName() + " was offline for " + Double.toString(millisOffline / 1000.0) + " seconds.");
 			}
 		}
@@ -358,6 +360,7 @@ public class PlayerState {
 
 	// For channel deletion
 	public void unregisterChannel(UUID channelId) {
+		channelUpdated(channelId, null);
 		if (channelId.equals(mActiveChannelId)) {
 			unsetActiveChannel();
 		}
@@ -470,11 +473,16 @@ public class PlayerState {
 		return channels;
 	}
 
-	protected void channelLoaded(UUID channelId) {
-		Channel loadedChannel = ChannelManager.getChannel(channelId);
+	/**
+	 * Sends a message to the player if the channel was renamed or deleted.
+	 *
+	 * @param channelId ID of the updated channel
+	 * @param channel Channel that has changed. null if deleted.
+	 */
+	protected void channelUpdated(UUID channelId, @Nullable Channel channel) {
 		String newChannelName = null;
-		if (loadedChannel != null) {
-			newChannelName = loadedChannel.getName();
+		if (channel != null) {
+			newChannelName = channel.getName();
 		}
 		String lastKnownName = mWatchedChannelIds.get(channelId);
 		if (lastKnownName != null) {
@@ -487,7 +495,7 @@ public class PlayerState {
 				mUnwatchedChannelIds.put(channelId, newChannelName);
 			}
 		}
-		UUID whisperRecipientUuid = null;
+		UUID whisperRecipientUuid;
 		if (lastKnownName == null) {
 			whisperRecipientUuid = mWhisperRecipientByChannels.get(channelId);
 			if (whisperRecipientUuid != null) {
@@ -498,7 +506,7 @@ public class PlayerState {
 		if (lastKnownName == null) {
 			return;
 		}
-		if (loadedChannel == null) {
+		if (channel == null) {
 			// Channel was deleted
 			unregisterChannel(channelId);
 			// TODO Group deleted channel messages together.
