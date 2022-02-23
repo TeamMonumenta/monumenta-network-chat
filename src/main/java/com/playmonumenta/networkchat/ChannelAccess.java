@@ -23,7 +23,7 @@ public class ChannelAccess {
 		MAY_CHAT("may_chat"),
 		MAY_LISTEN("may_listen");
 
-		String mKey;
+		final String mKey;
 
 		FlagKey(String s) {
 			mKey = s;
@@ -47,7 +47,7 @@ public class ChannelAccess {
 		FALSE("false"),
 		TRUE("true");
 
-		String mValue;
+		final String mValue;
 
 		FlagValue(String s) {
 			mValue = s;

@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -133,18 +135,18 @@ public class MessagingUtils {
 		if (sender instanceof Entity) {
 			return entityComponent((Entity) sender);
 		}
-		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
-			List.of(Template.of("sender_name", sender.getName()), Template.of("item", () -> {
+		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
+			TemplateResolver.templates(Template.template("sender_name", sender.getName()), Template.template("item", () -> {
 				if (!sender.hasPermission("networkchat.transform.item")) {
 					return Component.empty();
 				}
 
-				if (!(sender instanceof Player)) {
+				if (!(sender instanceof Player)) { // FIXME never a player at this point
 					return Component.empty();
 				}
 				Player player = (Player) sender;
 				ItemStack item = player.getInventory().getItemInMainHand();
-				if (item != null) {
+				if (item != null && item.getType() != Material.AIR) {
 					return item.displayName().hoverEvent(item);
 				}
 				return Component.empty();
@@ -189,14 +191,14 @@ public class MessagingUtils {
 			}
 		}
 
-		return SENDER_FMT_MINIMESSAGE.parse(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("entity")),
-			List.of(Template.of("entity_type", type.toString()),
-				Template.of("entity_uuid", (id == null) ? "" : id.toString()),
-				Template.of("entity_name", entityName),
-				Template.of("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
-				Template.of("team_prefix", teamPrefix),
-				Template.of("team_displayname", teamDisplayName),
-				Template.of("team_suffix", teamSuffix)));
+		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("entity")),
+			TemplateResolver.templates(Template.template("entity_type", type.toString()),
+				Template.template("entity_uuid", (id == null) ? "" : id.toString()),
+				Template.template("entity_name", entityName),
+				Template.template("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+				Template.template("team_prefix", teamPrefix),
+				Template.template("team_displayname", teamDisplayName),
+				Template.template("team_suffix", teamSuffix)));
 	}
 
 	public static Component playerComponent(Player player) {
@@ -235,12 +237,12 @@ public class MessagingUtils {
 			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
 			.replace("<hover:show_text:\"\"></hover>", "");
 		postPapiProcessing = legacyToMiniMessage(postPapiProcessing);
-		return SENDER_FMT_MINIMESSAGE.parse(postPapiProcessing,
-			List.of(Template.of("team_color", colorMiniMessage),
-				Template.of("team_prefix", teamPrefix),
-				Template.of("team_displayname", teamDisplayName),
-				Template.of("team_suffix", teamSuffix),
-				Template.of("profile_message", profileMessage)));
+		return SENDER_FMT_MINIMESSAGE.deserialize(postPapiProcessing,
+			TemplateResolver.templates(Template.template("team_color", colorMiniMessage),
+				Template.template("team_prefix", teamPrefix),
+				Template.template("team_displayname", teamDisplayName),
+				Template.template("team_suffix", teamSuffix),
+				Template.template("profile_message", profileMessage)));
 	}
 
 	public static void sendStackTrace(CommandSender sender, Exception e) {
@@ -251,7 +253,7 @@ public class MessagingUtils {
 		} else {
 			formattedMessage = Component.text("An error occured without a set message. Hover for stack trace.");
 		}
-		formattedMessage.color(NamedTextColor.RED);
+		formattedMessage = formattedMessage.color(NamedTextColor.RED);
 
 		// Get the first 300 characters of the stacktrace and send them to the player
 		StringWriter sw = new StringWriter();
@@ -261,7 +263,7 @@ public class MessagingUtils {
 		sStackTrace = sStackTrace.substring(0, Math.min(sStackTrace.length(), 300));
 
 		TextComponent textStackTrace = Component.text(sStackTrace.replace("\t", "  "), NamedTextColor.RED);
-		formattedMessage.hoverEvent(textStackTrace);
+		formattedMessage = formattedMessage.hoverEvent(textStackTrace);
 		sender.sendMessage(formattedMessage);
 
 		e.printStackTrace();

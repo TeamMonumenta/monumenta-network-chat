@@ -21,8 +21,8 @@ public class MessageManager implements Listener {
 
 	private static MessageManager INSTANCE = null;
 	private static Plugin mPlugin = null;
-	private static Cleaner mCleaner = Cleaner.create();
-	private static Map<UUID, WeakReference<Message>> mMessages = new HashMap<>();
+	private static final Cleaner mCleaner = Cleaner.create();
+	private static final Map<UUID, WeakReference<Message>> mMessages = new HashMap<>();
 
 	private MessageManager(Plugin plugin) {
 		INSTANCE = this;
@@ -110,7 +110,7 @@ public class MessageManager implements Listener {
 	}
 
 	public void deleteMessageHandler(JsonObject object) {
-		Message message = null;
+		Message message;
 		try {
 			UUID messageId = UUID.fromString(object.getAsJsonPrimitive("id").getAsString());
 			message = getMessage(messageId);

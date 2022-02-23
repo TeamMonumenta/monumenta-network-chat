@@ -52,7 +52,7 @@ public class RemotePlayerManager implements Listener {
 			plugin.getLogger().info("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
-	    public RemotePlayerState(Plugin plugin, JsonObject remoteData) throws Exception {
+	    public RemotePlayerState(Plugin plugin, JsonObject remoteData) {
 			mUuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 			mName = remoteData.get("playerName").getAsString();
 			mComponent = MessagingUtils.fromJson(remoteData.get("playerComponent"));
@@ -88,10 +88,10 @@ public class RemotePlayerManager implements Listener {
 	private static @Nullable RemotePlayerManager INSTANCE = null;
 	private static Plugin mPlugin = null;
 	private static @Nullable String mShardName = null;
-	private static Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();
-	private static Map<UUID, RemotePlayerState> mPlayersByUuid = new ConcurrentSkipListMap<>();
-	private static Map<String, RemotePlayerState> mPlayersByName = new ConcurrentSkipListMap<>();
-	private static Set<UUID> mVisiblePlayers = new ConcurrentSkipListSet<>();
+	private static final Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();
+	private static final Map<UUID, RemotePlayerState> mPlayersByUuid = new ConcurrentSkipListMap<>();
+	private static final Map<String, RemotePlayerState> mPlayersByName = new ConcurrentSkipListMap<>();
+	private static final Set<UUID> mVisiblePlayers = new ConcurrentSkipListSet<>();
 
 	private RemotePlayerManager(Plugin plugin) {
 		INSTANCE = this;

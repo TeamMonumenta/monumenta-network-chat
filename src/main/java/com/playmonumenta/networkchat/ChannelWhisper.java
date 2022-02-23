@@ -20,6 +20,7 @@ import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
@@ -38,12 +39,12 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private static final String[] WHISPER_COMMANDS = {"msg", "tell", "w"};
 	private static final String REPLY_COMMAND = "r";
 
-	private UUID mId;
+	private final UUID mId;
 	private Instant mLastUpdate;
-	private List<UUID> mParticipants;
+	private final List<UUID> mParticipants;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
-	private Map<UUID, ChannelAccess> mPlayerAccess;
+	private final Map<UUID, ChannelAccess> mPlayerAccess;
 
 	public ChannelWhisper(UUID from, UUID to) {
 		this(UUID.randomUUID(), Instant.now(), List.of(from, to));
@@ -501,7 +502,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	private void distributeMessageToPlayer(UUID playerId, UUID otherId, Message message) {
-		PlayerState state = PlayerStateManager.getPlayerStates().get(playerId);
+		PlayerState state = PlayerStateManager.getPlayerState(playerId);
 		if (state == null) {
 			NetworkChatPlugin.getInstance().getLogger().finer("Receiver not on this shard.");
 			return;
@@ -547,8 +548,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		}
 
 		Component fullMessage = Component.empty()
-		    .append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("sender", message.getSenderComponent()),
-		        Template.of("receiver", receiverComp))))
+		    .append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("sender", message.getSenderComponent()),
+		        Template.template("receiver", receiverComp))))
 		    .append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {

@@ -20,6 +20,7 @@ import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -35,12 +36,12 @@ import net.kyori.adventure.text.minimessage.Template;
 public class ChannelLocal extends Channel implements ChannelPermissionNode, ChannelAutoJoin {
 	public static final String CHANNEL_CLASS_ID = "local";
 
-	private UUID mId;
+	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
-	private Map<UUID, ChannelAccess> mPlayerAccess;
+	private final Map<UUID, ChannelAccess> mPlayerAccess;
 	private boolean mAutoJoin = true;
 	private String mChannelPermission = null;
 
@@ -434,8 +435,8 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 
 		Component fullMessage = Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", mName),
-				Template.of("sender", message.getSenderComponent()))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName),
+				Template.template("sender", message.getSenderComponent()))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
 		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {

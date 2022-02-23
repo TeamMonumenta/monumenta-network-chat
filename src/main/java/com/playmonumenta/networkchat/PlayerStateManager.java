@@ -50,8 +50,8 @@ public class PlayerStateManager implements Listener {
 
 	private static PlayerStateManager INSTANCE = null;
 	private static Plugin mPlugin = null;
-	private static Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
-	private static Map<UUID, PlayerChatHistory> mPlayerChatHistories = new HashMap<>();
+	private static final Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
+	private static final Map<UUID, PlayerChatHistory> mPlayerChatHistories = new HashMap<>();
 	private static MessageVisibility mMessageVisibility = new MessageVisibility();
 	private static boolean mIsDefaultChatPlugin = true;
 
@@ -231,15 +231,13 @@ public class PlayerStateManager implements Listener {
 
 	public static void unregisterChannel(UUID channelId) {
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : mPlayerStates.entrySet()) {
-			UUID playerId = playerStateEntry.getKey();
-			Player player = Bukkit.getPlayer(playerId);
 			PlayerState playerState = playerStateEntry.getValue();
 			playerState.unregisterChannel(channelId);
 		}
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
-	public void playerJoinEvent(PlayerJoinEvent event) throws Exception {
+	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
 
@@ -296,7 +294,7 @@ public class PlayerStateManager implements Listener {
 	}
 
 	/* Whenever player data is saved, also save the local data */
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler(priority = EventPriority.HIGHEST)
 	public void playerSaveEvent(PlayerSaveEvent event) {
 		Player player = event.getPlayer();
 
@@ -307,12 +305,11 @@ public class PlayerStateManager implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
-	public void playerQuitEvent(PlayerQuitEvent event) throws Exception {
+	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
 
 		PlayerState oldState = mPlayerStates.get(playerId);
-		mPlayerStates.remove(playerId);
 		if (oldState != null) {
 			for (UUID channelId : oldState.getWatchedChannelIds()) {
 				Channel channel = ChannelManager.getChannel(channelId);
@@ -320,6 +317,8 @@ public class PlayerStateManager implements Listener {
 				ChannelManager.unloadChannel(channel);
 			}
 		}
+		// delete the data one tick later, as the save event still needs it (and is fired after the quit event)
+		Bukkit.getScheduler().runTaskLater(mPlugin, () -> mPlayerStates.remove(playerId), 1);
 
 		// Broadcast the player's current chat history
 		PlayerChatHistory oldChatHistory = mPlayerChatHistories.get(playerId);
@@ -334,7 +333,7 @@ public class PlayerStateManager implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
-	public void asyncChatEvent(AsyncChatEvent event) throws Exception {
+	public void asyncChatEvent(AsyncChatEvent event) {
 		if (event.isCancelled()) {
 			return;
 		}
@@ -382,9 +381,7 @@ public class PlayerStateManager implements Listener {
 					public void run() {
 						OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerId);
 						if (!offlinePlayer.isOnline()) {
-							if (mPlayerChatHistories.containsKey(playerId)) {
-								mPlayerChatHistories.remove(playerId);
-							}
+							mPlayerChatHistories.remove(playerId);
 				        }
 					}
 				}.runTaskLater(mPlugin, 20 * PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);

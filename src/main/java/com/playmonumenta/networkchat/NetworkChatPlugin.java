@@ -29,10 +29,10 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 
 	private static NetworkChatPlugin INSTANCE = null;
-	private static Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
-	private static Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
-	private static Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
-	private static Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
+	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
+	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
+	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
+	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
 	private static ChannelManager mChannelManager = null;
 	private static MessageManager mMessageManager = null;
 	private static PlayerStateManager mPlayerStateManager = null;
