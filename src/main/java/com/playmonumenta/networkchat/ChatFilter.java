@@ -21,13 +21,46 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
 
-import org.apache.commons.lang.mutable.MutableBoolean;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 
 // A collection of regex to filter chat
 public class ChatFilter {
+	public static class ChatFilterResult {
+		private boolean mFoundMatch = false;
+		private boolean mFoundBadWord = false;
+		private Component mComponent;
+
+		public ChatFilterResult(Component component) {
+			mComponent = component;
+		}
+
+		public boolean foundMatch() {
+			return mFoundMatch;
+		}
+
+		public void foundMatch(boolean value) {
+			mFoundMatch = value;
+		}
+
+		public boolean foundBadWord() {
+			return mFoundBadWord;
+		}
+
+		public void foundBadWord(boolean value) {
+			mFoundBadWord = value;
+		}
+
+		public Component component() {
+			return mComponent;
+		}
+
+		public void component(Component component) {
+			mComponent = component;
+		}
+	}
+
 	public static class ChatFilterPattern {
 		private final String mId;
 		private final boolean mIsLiteral;
@@ -125,58 +158,14 @@ public class ChatFilter {
 			mCommand = command;
 		}
 
-		public boolean hasBadWord(CommandSender sender, Component component) {
-			final MutableBoolean foundMatch = new MutableBoolean(false);
-
+		public void run(CommandSender sender, final ChatFilterResult filterResult) {
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
 				.match(mPattern)
 				.replacement((MatchResult match, TextComponent.Builder textBuilder) -> {
-					foundMatch.setValue(true);
-					String content = textBuilder.content();
-					content = mPattern.matcher(content).replaceAll(mReplacementMiniMessage);
-					Component result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
-
-					return result;
-				})
-				.build();
-
-			Component result = component.replaceText(replacementConfig);
-
-			String plainText = MessagingUtils.plainText(result);
-			String plainReplacement = mPattern.matcher(plainText).replaceAll(mReplacementMiniMessage);
-			if (!plainText.equals(plainReplacement)) {
-				foundMatch.setValue(true);
-				result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement);
-			}
-
-			if (foundMatch.isTrue()) {
-				if (mCommand != null) {
-					String command = mCommand.replace("@S", sender.getName());
-					if (sender instanceof Entity) {
-						command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
+					filterResult.foundMatch(true);
+					if (mIsBadWord) {
+						filterResult.foundBadWord(true);
 					}
-					final String finishedCommand = command;
-					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(NetworkChatPlugin.getInstance(), new Runnable() {
-						@Override
-						public void run() {
-							Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand);
-						}
-					}, 0);
-				}
-
-				return true;
-			}
-
-			return false;
-		}
-
-		public Component run(CommandSender sender, Component component) {
-			final MutableBoolean foundMatch = new MutableBoolean(false);
-
-			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
-				.match(mPattern)
-				.replacement((MatchResult match, TextComponent.Builder textBuilder) -> {
-					foundMatch.setValue(true);
 					String content = textBuilder.content();
 					content = mPattern.matcher(content).replaceAll(mReplacementMiniMessage);
 					Component result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
@@ -185,16 +174,19 @@ public class ChatFilter {
 				})
 				.build();
 
-			Component result = component.replaceText(replacementConfig);
+			filterResult.component(filterResult.component().replaceText(replacementConfig));
 
-			String plainText = MessagingUtils.plainText(result);
+			String plainText = MessagingUtils.plainText(filterResult.component());
 			String plainReplacement = mPattern.matcher(plainText).replaceAll(mReplacementMiniMessage);
 			if (!plainText.equals(plainReplacement)) {
-				foundMatch.setValue(true);
-				result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement);
+				filterResult.foundMatch(true);
+				if (mIsBadWord) {
+					filterResult.foundBadWord(true);
+				}
+				filterResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
 			}
 
-			if (foundMatch.isTrue()) {
+			if (filterResult.foundMatch()) {
 				if (mCommand != null) {
 					String command = mCommand.replace("@S", sender.getName());
 					if (sender instanceof Entity) {
@@ -209,8 +201,6 @@ public class ChatFilter {
 					}, 0);
 				}
 			}
-
-			return result;
 		}
 	}
 
@@ -268,29 +258,29 @@ public class ChatFilter {
 		return mFilters.get(id);
 	}
 
-	public boolean hasBadWord(CommandSender sender, Component component) {
+	public void run(CommandSender sender, ChatFilterResult filterResult) {
 		for (ChatFilterPattern filterPattern : mFilters.values()) {
-			if (filterPattern.isBadWord()) {
-				if (filterPattern.hasBadWord(sender, component)) {
-					return true;
-				}
-			}
+			filterPattern.run(sender, filterResult);
 		}
-		return false;
 	}
 
 	public Component run(CommandSender sender, Component component) {
+		ChatFilterResult filterResult = new ChatFilterResult(component);
 		for (ChatFilterPattern filterPattern : mFilters.values()) {
-			component = filterPattern.run(sender, component);
+			filterPattern.run(sender, filterResult);
 		}
-		return component;
+		return filterResult.component();
 	}
 
 	public String run(CommandSender sender, String plainText) {
 		Component component = Component.text(plainText);
-		for (ChatFilterPattern filterPattern : mFilters.values()) {
-			component = filterPattern.run(sender, component);
-		}
+		component = run(sender, component);
 		return MessagingUtils.plainText(component);
+	}
+
+	public boolean hasBadWord(CommandSender sender, Component component) {
+		ChatFilterResult filterResult = new ChatFilterResult(component);
+		run(sender, filterResult);
+		return filterResult.foundBadWord();
 	}
 }
