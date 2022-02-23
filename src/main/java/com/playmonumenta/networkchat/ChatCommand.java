@@ -102,7 +102,9 @@ public class ChatCommand {
 							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
 								CommandUtils.fail(sender, "You do not have permission to set the default channels.");
 							}
-							return ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
+							int result = ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
+							ChannelManager.saveDefaultChannels();
+							return result;
 						})
 						.register();
 				}
@@ -165,7 +167,7 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.executes((sender, args) -> {
 						if (!sender.hasPermission("networkchat.setprofilemessage")) {
-							CommandAPI.fail("This command can only be run as a player.");
+							CommandAPI.fail("You do not have permission to set your profile message.");
 						}
 
 						CommandSender callee = CommandUtils.getCallee(sender);
