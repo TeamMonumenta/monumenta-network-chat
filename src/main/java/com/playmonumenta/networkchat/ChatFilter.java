@@ -1,10 +1,7 @@
 package com.playmonumenta.networkchat;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -12,7 +9,6 @@ import java.util.regex.PatternSyntaxException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import dev.jorel.commandapi.CommandAPI;
@@ -21,11 +17,9 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import javax.annotation.Nullable;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.bukkit.Bukkit;
