@@ -113,7 +113,7 @@ public class Message implements AutoCloseable {
 	                                       CommandSender sender,
 	                                       JsonObject extraData,
 	                                       String message) {
-		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).parse(message);
+		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).deserialize(message);
 		return Message.createMessage(channel, messageType, sender, extraData, messageComponent);
 	}
 

@@ -522,7 +522,7 @@ public class PlayerState {
 
 	public Component profileMessageComponent() {
 		Player player = getPlayer();
-		return MessagingUtils.getAllowedMiniMessage(player).parse(mProfileMessage);
+		return MessagingUtils.getAllowedMiniMessage(player).deserialize(mProfileMessage);
 	}
 
 	public String profileMessage() {
@@ -537,7 +537,7 @@ public class PlayerState {
 			return;
 		}
 
-		Component profileMessageComponent = MessagingUtils.getAllowedMiniMessage(player).parse(profileMessage);
+		Component profileMessageComponent = MessagingUtils.getAllowedMiniMessage(player).deserialize(profileMessage);
 		if (!NetworkChatPlugin.globalFilter().hasBadWord(player, profileMessageComponent)) {
 			return;
 		}

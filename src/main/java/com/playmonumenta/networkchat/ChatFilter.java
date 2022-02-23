@@ -134,7 +134,7 @@ public class ChatFilter {
 					foundMatch.setValue(true);
 					String content = textBuilder.content();
 					content = mPattern.matcher(content).replaceAll(mReplacementMiniMessage);
-					Component result = MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(content);
+					Component result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
 
 					return result;
 				})
@@ -146,7 +146,7 @@ public class ChatFilter {
 			String plainReplacement = mPattern.matcher(plainText).replaceAll(mReplacementMiniMessage);
 			if (!plainText.equals(plainReplacement)) {
 				foundMatch.setValue(true);
-				result = MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(plainReplacement);
+				result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement);
 			}
 
 			if (foundMatch.isTrue()) {
@@ -179,7 +179,7 @@ public class ChatFilter {
 					foundMatch.setValue(true);
 					String content = textBuilder.content();
 					content = mPattern.matcher(content).replaceAll(mReplacementMiniMessage);
-					Component result = MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(content);
+					Component result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
 
 					return result;
 				})
@@ -191,7 +191,7 @@ public class ChatFilter {
 			String plainReplacement = mPattern.matcher(plainText).replaceAll(mReplacementMiniMessage);
 			if (!plainText.equals(plainReplacement)) {
 				foundMatch.setValue(true);
-				result = MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(plainReplacement);
+				result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement);
 			}
 
 			if (foundMatch.isTrue()) {
