@@ -12,6 +12,10 @@ import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
 
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+
+import javax.annotation.Nullable;
+
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 
@@ -27,16 +31,18 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	protected static final String REDIS_CONFIG_PATH = "networkchat:config";
 	private static final String REDIS_MESSAGE_COLORS_KEY = "message_colors";
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
+	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
 
-	private static NetworkChatPlugin INSTANCE = null;
+	private static @Nullable NetworkChatPlugin INSTANCE = null;
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
-	private static ChannelManager mChannelManager = null;
-	private static MessageManager mMessageManager = null;
-	private static PlayerStateManager mPlayerStateManager = null;
-	private static RemotePlayerManager mRemotePlayerManager = null;
+	private static ChatFilter mGlobalChatFilter = new ChatFilter();
+	private static @Nullable ChannelManager mChannelManager = null;
+	private static @Nullable MessageManager mMessageManager = null;
+	private static @Nullable PlayerStateManager mPlayerStateManager = null;
+	private static @Nullable RemotePlayerManager mRemotePlayerManager = null;
 
 	@Override
 	public void onLoad() {
@@ -70,6 +76,17 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 		mMessageColors.putAll(mDefaultMessageColors);
 		mMessageFormats.putAll(mDefaultMessageFormats);
+
+		try {
+			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
+				                        "LOG4J_EXPLOIT",
+				                        false,
+				                        "\\{jndi:.*\\}",
+				                        true);
+			mGlobalChatFilter.getFilter("LOG4J_EXPLOIT").command("say @S attempted a Log4J exploit!");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+		}
 
 		ChatCommand.register();
 	}
@@ -124,6 +141,21 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			}
 			return dataStr;
 		});
+
+		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_CHAT_FILTERS_KEY)
+			.thenApply(dataStr -> {
+			if (dataStr != null) {
+				Gson gson = new Gson();
+				final JsonObject dataJson = gson.fromJson(dataStr, JsonObject.class);
+				Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(INSTANCE, new Runnable() {
+					@Override
+					public void run() {
+						mGlobalChatFilter = ChatFilter.fromJson(Bukkit.getConsoleSender(), dataJson);
+					}
+				}, 0);
+			}
+			return dataStr;
+		});
 	}
 
 	@Override
@@ -150,7 +182,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 				continue;
 			}
 			String value = element.getAsString();
-			TextColor color = MessagingUtils.colorFromString(value);
+			@Nullable TextColor color = MessagingUtils.colorFromString(value);
 			if (color != null) {
 				mMessageColors.put(id, color);
 			}
@@ -233,9 +265,33 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		}
 	}
 
+	public static ChatFilter globalFilter() {
+		return mGlobalChatFilter;
+	}
+
+	public static void globalFilterFromJson(JsonObject dataJson) {
+		mGlobalChatFilter = ChatFilter.fromJson(Bukkit.getConsoleSender(), dataJson);
+	}
+
+	public static void saveGlobalFilter() {
+		JsonObject dataJson = mGlobalChatFilter.toJson();
+
+		RedisAPI.getInstance().async().hset(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_CHAT_FILTERS_KEY, dataJson.toString());
+
+		JsonObject wrappedConfigJson = new JsonObject();
+		wrappedConfigJson.add(REDIS_CHAT_FILTERS_KEY, dataJson);
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CONFIG_UPDATE,
+			                                             wrappedConfigJson,
+			                                             getMessageTtl());
+		} catch (Exception e) {
+			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+		}
+	}
+
 	@EventHandler(priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
-		JsonObject data;
+		@Nullable JsonObject data;
 		switch (event.getChannel()) {
 		case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE:
 			data = event.getData();
@@ -244,14 +300,19 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 				return;
 			}
 
-			JsonObject messageColorsJson = data.getAsJsonObject(REDIS_MESSAGE_COLORS_KEY);
+			@Nullable JsonObject messageColorsJson = data.getAsJsonObject(REDIS_MESSAGE_COLORS_KEY);
 			if (messageColorsJson != null) {
 				colorsFromJson(messageColorsJson);
 			}
 
-			JsonObject messageFormatsJson = data.getAsJsonObject(REDIS_MESSAGE_FORMATS_KEY);
+			@Nullable JsonObject messageFormatsJson = data.getAsJsonObject(REDIS_MESSAGE_FORMATS_KEY);
 			if (messageFormatsJson != null) {
 				formatsFromJson(messageFormatsJson);
+			}
+
+			@Nullable JsonObject chatFilterJson = data.getAsJsonObject(REDIS_CHAT_FILTERS_KEY);
+			if (chatFilterJson != null) {
+				globalFilterFromJson(chatFilterJson);
 			}
 
 			break;

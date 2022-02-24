@@ -77,7 +77,11 @@ public class Message implements AutoCloseable {
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(Channel channel, MessageType messageType, CommandSender sender, JsonObject extraData, Component message) {
+	protected static Message createMessage(Channel channel,
+	                                       MessageType messageType,
+	                                       CommandSender sender,
+	                                       JsonObject extraData,
+	                                       Component message) {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
@@ -89,17 +93,35 @@ public class Message implements AutoCloseable {
 		}
 		boolean senderIsPlayer = sender instanceof Player;
 		Component senderComponent = MessagingUtils.senderComponent(sender);
-		return new Message(id, instant, channelId, messageType, senderId, sender.getName(), senderType, senderIsPlayer, senderComponent, extraData, message);
+		message = NetworkChatPlugin.globalFilter().run(sender, message);
+		return new Message(id,
+		                   instant,
+		                   channelId,
+		                   messageType,
+		                   senderId,
+		                   sender.getName(),
+		                   senderType,
+		                   senderIsPlayer,
+		                   senderComponent,
+		                   extraData,
+		                   message);
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(Channel channel, MessageType messageType, CommandSender sender, JsonObject extraData, String message) {
-		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).parse(message);
+	protected static Message createMessage(Channel channel,
+	                                       MessageType messageType,
+	                                       CommandSender sender,
+	                                       JsonObject extraData,
+	                                       String message) {
+		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).deserialize(message);
 		return Message.createMessage(channel, messageType, sender, extraData, messageComponent);
 	}
 
 	// Raw, non-channel messages (use sparingly)
-	protected static Message createRawMessage(MessageType messageType, UUID senderId, JsonObject extraData, Component message) {
+	protected static Message createRawMessage(MessageType messageType,
+	                                          UUID senderId,
+	                                          JsonObject extraData,
+	                                          Component message) {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		UUID channelId = null;
@@ -112,7 +134,17 @@ public class Message implements AutoCloseable {
 		boolean senderIsPlayer = (senderId != null);
 		String senderName = "";
 		Component senderComponent = Component.empty();
-		return new Message(id, instant, channelId, messageType, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);
+		return new Message(id,
+		                   instant,
+		                   channelId,
+		                   messageType,
+		                   senderId,
+		                   senderName,
+		                   senderType,
+		                   senderIsPlayer,
+		                   senderComponent,
+		                   extraData,
+		                   message);
 	}
 
 	// For when receiving remote messages
@@ -158,7 +190,17 @@ public class Message implements AutoCloseable {
 		}
 		Component message = GsonComponentSerializer.gson().deserializeFromTree(object.get("message"));
 
-		return new Message(id, instant, channelId, messageType, senderId, senderName, senderType, senderIsPlayer, senderComponent, extraData, message);
+		return new Message(id,
+		                   instant,
+		                   channelId,
+		                   messageType,
+		                   senderId,
+		                   senderName,
+		                   senderType,
+		                   senderIsPlayer,
+		                   senderComponent,
+		                   extraData,
+		                   message);
 	}
 
 	protected JsonObject toJson() {

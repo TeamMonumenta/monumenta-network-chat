@@ -10,7 +10,6 @@ import java.util.UUID;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
@@ -23,14 +22,13 @@ import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import net.kyori.adventure.text.minimessage.Template;
-
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -104,7 +102,9 @@ public class ChatCommand {
 							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
 								CommandUtils.fail(sender, "You do not have permission to set the default channels.");
 							}
-							return ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
+							int result = ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
+							ChannelManager.saveDefaultChannels();
+							return result;
 						})
 						.register();
 				}
@@ -167,7 +167,7 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.executes((sender, args) -> {
 						if (!sender.hasPermission("networkchat.setprofilemessage")) {
-							CommandAPI.fail("This command can only be run as a player.");
+							CommandAPI.fail("You do not have permission to set your profile message.");
 						}
 
 						CommandSender callee = CommandUtils.getCallee(sender);
@@ -1146,9 +1146,9 @@ public class ChatCommand {
 						} else {
 							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
 							Component fullMessage = Component.empty()
-								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
-									Template.of("sender", senderComponent),
-									Template.of("receiver", senderComponent))))
+								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", "ExampleChannel"),
+									Template.template("sender", senderComponent),
+									Template.template("receiver", senderComponent))))
 								.append(Component.empty().color(color).append(Component.text("Test message")));
 
 							sender.sendMessage(Component.text("Example message:", color));
@@ -1190,9 +1190,9 @@ public class ChatCommand {
 						} else {
 							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
 							Component fullMessage = Component.empty()
-								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", "ExampleChannel"),
-									Template.of("sender", senderComponent),
-									Template.of("receiver", senderComponent))))
+								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", "ExampleChannel"),
+									Template.template("sender", senderComponent),
+									Template.template("receiver", senderComponent))))
 								.append(Component.empty().color(color).append(Component.text("Test message")));
 
 							sender.sendMessage(Component.text("Example message:", color));
