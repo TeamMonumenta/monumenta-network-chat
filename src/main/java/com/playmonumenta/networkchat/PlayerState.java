@@ -522,7 +522,7 @@ public class PlayerState {
 
 	public Component profileMessageComponent() {
 		Player player = getPlayer();
-		return MessagingUtils.getAllowedMiniMessage(player).parse(mProfileMessage);
+		return MessagingUtils.getAllowedMiniMessage(player).deserialize(mProfileMessage);
 	}
 
 	public String profileMessage() {
@@ -530,11 +530,19 @@ public class PlayerState {
 	}
 
 	public void profileMessage(String profileMessage) {
+		Player player = getPlayer();
 		if (profileMessage == null) {
 			mProfileMessage = "";
-		} else {
-			mProfileMessage = profileMessage;
+			RemotePlayerManager.refreshLocalPlayer(player);
+			return;
 		}
-		RemotePlayerManager.refreshLocalPlayer(getPlayer());
+
+		Component profileMessageComponent = MessagingUtils.getAllowedMiniMessage(player).deserialize(profileMessage);
+		if (!NetworkChatPlugin.globalFilter().hasBadWord(player, profileMessageComponent)) {
+			return;
+		}
+
+		mProfileMessage = profileMessage;
+		RemotePlayerManager.refreshLocalPlayer(player);
 	}
 }

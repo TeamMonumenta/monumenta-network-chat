@@ -12,7 +12,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
@@ -20,18 +19,17 @@ import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import me.clip.placeholderapi.PlaceholderAPI;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Sound;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import net.kyori.adventure.text.minimessage.Template;
+import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 // A channel for server announcements
 public class ChannelAnnouncement extends Channel implements ChannelPermissionNode {
@@ -407,7 +405,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		Component fullMessage = Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.parse(prefix, List.of(Template.of("channel_name", mName))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 		recipient.sendMessage(Identity.nil(), fullMessage, message.getMessageType());
 		if (recipient instanceof Player) {
