@@ -43,13 +43,13 @@ public class ChatCommand {
 		if (NetworkChatProperties.getChatCommandCreateEnabled()) {
 			arguments.add(new MultiLiteralArgument("new"));
 			arguments.add(new StringArgument("Channel Name"));
-			ChannelAnnouncement.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
-			ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
-			ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
-			ChannelParty.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+			ChannelAnnouncement.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
+			ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
+			ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
+			ChannelParty.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 		}
-		ChannelTeam.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
-		ChannelWhisper.registerNewChannelCommands(COMMANDS, new ArrayList<Argument>(arguments));
+		ChannelTeam.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
+		ChannelWhisper.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 
 		for (String baseCommand : COMMANDS) {
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
@@ -1458,14 +1458,22 @@ public class ChatCommand {
 	private static int sendMessage(CommandSender sender, String channelName, String message) throws WrapperCommandSyntaxException {
 		CommandSender caller = CommandUtils.getCaller(sender);
 		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!NetworkChatProperties.getChatRequiresPlayer()) {
+			if (!(caller instanceof Player)) {
+				CommandUtils.fail(sender, "Only players may chat on this shard.");
+				return 0;
+			}
+		}
 		if (callee instanceof Player && callee != caller) {
 			caller.sendMessage(Component.text("Hey! It's not nice to put words in people's mouths! Where are your manners?", NamedTextColor.RED));
 			CommandUtils.fail(sender, "You cannot chat as another player.");
+			return 0;
 		}
 
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
 			CommandUtils.fail(sender, "No such channel " + channelName + ".");
+			return 0;
 		}
 
 		channel.sendMessage(sender, message);
@@ -1475,6 +1483,12 @@ public class ChatCommand {
 	private static int sendMessageInDefault(CommandSender sender, String channelType, String message) throws WrapperCommandSyntaxException {
 		CommandSender caller = CommandUtils.getCaller(sender);
 		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!NetworkChatProperties.getChatRequiresPlayer()) {
+			if (!(caller instanceof Player)) {
+				CommandUtils.fail(sender, "Only players may chat on this shard.");
+				return 0;
+			}
+		}
 		if (callee instanceof Player && callee != caller) {
 			caller.sendMessage(Component.text("Hey! It's not nice to put words in people's mouths! Where are your manners?", NamedTextColor.RED));
 			CommandUtils.fail(sender, "You cannot chat as another player.");

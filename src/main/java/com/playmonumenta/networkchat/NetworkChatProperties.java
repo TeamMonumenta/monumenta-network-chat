@@ -17,6 +17,7 @@ public class NetworkChatProperties {
 	private boolean mChatCommandCreateEnabled = true;
 	private boolean mChatCommandModifyEnabled = true;
 	private boolean mChatCommandDeleteEnabled = true;
+	private boolean mChatRequiresPlayer = false;
 	private boolean mSudoEnabled = false;
 
 	public NetworkChatProperties() {
@@ -49,6 +50,11 @@ public class NetworkChatProperties {
 		return INSTANCE.mChatCommandDeleteEnabled;
 	}
 
+	public static boolean getChatRequiresPlayer() {
+		ensureInstance();
+		return INSTANCE.mChatRequiresPlayer;
+	}
+
 	public static void load(Plugin plugin, CommandSender sender) {
 		ensureInstance();
 		INSTANCE.loadInternal(plugin, sender);
@@ -68,6 +74,10 @@ public class NetworkChatProperties {
 
 		if (config.isBoolean("ChatCommandDelete")) {
 			mChatCommandDeleteEnabled = config.getBoolean("ChatCommandDelete", mChatCommandDeleteEnabled);
+		}
+
+		if (config.isBoolean("ChatRequiresPlayer")) {
+			mChatRequiresPlayer = config.getBoolean("ChatRequiresPlayer", mChatRequiresPlayer);
 		}
 
 		if (config.isBoolean("SudoEnabled")) {
@@ -92,6 +102,7 @@ public class NetworkChatProperties {
 		out.add("mChatCommandCreateEnabled = " + mChatCommandCreateEnabled);
 		out.add("mChatCommandModifyEnabled = " + mChatCommandModifyEnabled);
 		out.add("mChatCommandDeleteEnabled = " + mChatCommandDeleteEnabled);
+		out.add("mChatRequiresPlayer = " + mChatRequiresPlayer);
 		out.add("mSudoEnabled = " + mSudoEnabled);
 
 		return out;
@@ -110,7 +121,7 @@ public class NetworkChatProperties {
 			try {
 				configFile.createNewFile();
 			} catch (IOException e) {
-				plugin.getLogger().warning("Catch exeption during create new file for config.yml. Reason: " + e.getMessage());
+				plugin.getLogger().warning("Catch exception during create new file for config.yml. Reason: " + e.getMessage());
 			}
 		}
 
@@ -128,6 +139,10 @@ public class NetworkChatProperties {
 			config.set("ChatCommandDelete", mChatCommandDeleteEnabled);
 		}
 
+		if (!config.contains("ChatRequiresPlayer")) {
+			config.set("ChatRequiresPlayer", mChatRequiresPlayer);
+		}
+
 		if (!config.contains("SudoEnabled")) {
 			config.set("SudoEnabled", mSudoEnabled);
 		}
@@ -135,7 +150,7 @@ public class NetworkChatProperties {
 		try {
 			config.save(configFile);
 		} catch (IOException e) {
-			plugin.getLogger().warning("Catch exeption while save config.yml. Reason: " + e.getMessage());
+			plugin.getLogger().warning("Catch exception while save config.yml. Reason: " + e.getMessage());
 		}
 	}
 }
