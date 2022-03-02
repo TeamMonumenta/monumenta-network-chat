@@ -83,7 +83,20 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 				                        false,
 				                        "\\{jndi:.*\\}",
 				                        true);
-			mGlobalChatFilter.getFilter("LOG4J_EXPLOIT").command("say @S attempted a Log4J exploit!");
+			mGlobalChatFilter.getFilter("LOG4J_EXPLOIT").command("auditlogsevereplayer @S \"@S attempted a Log4J exploit\"");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+		}
+
+		try {
+			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
+				"N_WORD",
+				false,
+				"n[i1]gg+(a|[e3]r)",
+				true);
+			ChatFilter.ChatFilterPattern filter = mGlobalChatFilter.getFilter("N_WORD");
+			filter.command("auditlogsevereplayer @S \"@S said the N word\"");
+			filter.replacementMessage("<red>cool kid</red>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
