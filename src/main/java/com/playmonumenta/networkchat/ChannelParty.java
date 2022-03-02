@@ -17,6 +17,7 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
@@ -161,12 +162,10 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.new.party"))
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelParty newChannel = null;
-					if (!sender.hasPermission("networkchat.new.party")) {
-						CommandUtils.fail(sender, "You do not have permission to make new party channels.");
-					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
