@@ -32,6 +32,7 @@ import net.kyori.adventure.text.minimessage.Template;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.checkerframework.checker.units.qual.C;
 
 public class ChatCommand {
 	public static final String[] COMMANDS = new String[]{"chat", "ch", "chattest"};
@@ -61,6 +62,7 @@ public class ChatCommand {
 				arguments.add(new StringArgument("New Channel Name"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.rename"))
 					.executes((sender, args) -> {
 						return renameChannel(sender, (String)args[1], (String)args[2]);
 					})
@@ -75,10 +77,8 @@ public class ChatCommand {
 					arguments.add(new MultiLiteralArgument(channelType));
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)
+						.withPermission(CommandPermission.fromString("networkchat.setdefaultchannel"))
 						.executes((sender, args) -> {
-							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
-								CommandUtils.fail(sender, "You do not have permission to set the default channels.");
-							}
 							return ChannelManager.getDefaultChannels().command(sender, channelType, true);
 						})
 						.register();
@@ -98,10 +98,8 @@ public class ChatCommand {
 					}
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)
+						.withPermission(CommandPermission.fromString("networkchat.setdefaultchannel"))
 						.executes((sender, args) -> {
-							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
-								CommandUtils.fail(sender, "You do not have permission to set the default channels.");
-							}
 							int result = ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
 							ChannelManager.saveDefaultChannels();
 							return result;
@@ -165,11 +163,8 @@ public class ChatCommand {
 				arguments.add(new GreedyStringArgument("message"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.setprofilemessage"))
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.setprofilemessage")) {
-							CommandAPI.fail("You do not have permission to set your profile message.");
-						}
-
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player)) {
 							CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -459,6 +454,7 @@ public class ChatCommand {
 				));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.delete.channel"))
 					.executes((sender, args) -> {
 						return deleteChannel(sender, (String)args[2]);
 					})
@@ -1054,10 +1050,8 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.visibility.default"))
 				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.visibility.default")) {
-						CommandUtils.fail(sender, "You do not have permission to change the default message visibility.");
-					}
 					int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
 					PlayerStateManager.saveSettings();
 					return result;
@@ -1077,10 +1071,8 @@ public class ChatCommand {
 					ChannelWhisper.CHANNEL_CLASS_ID));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.format.default"))
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.format.default")) {
-							CommandUtils.fail(sender, "You do not have permission to change the default channel formats.");
-						}
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
 						sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
@@ -1100,10 +1092,8 @@ public class ChatCommand {
 				arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.format.default"))
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.format.default")) {
-							CommandUtils.fail(sender, "You do not have permission to change the default channel formats.");
-						}
 						String id = (String) args[2];
 						String colorString = (String) args[3];
 						TextColor color = MessagingUtils.colorFromString(colorString);
@@ -1130,10 +1120,8 @@ public class ChatCommand {
 					ChannelWhisper.CHANNEL_CLASS_ID));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.format.default"))
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.format.default")) {
-							CommandUtils.fail(sender, "You do not have permission to change the default channel formats.");
-						}
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
 						String format = NetworkChatPlugin.messageFormat(id).replace("\n", "\\n");
@@ -1173,10 +1161,8 @@ public class ChatCommand {
 				arguments.add(new GreedyStringArgument("format"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.format.default"))
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.format.default")) {
-							CommandUtils.fail(sender, "You do not have permission to change the default channel formats.");
-						}
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
 						String format = (String) args[3];
@@ -1209,6 +1195,7 @@ public class ChatCommand {
 			arguments.add(new StringArgument("message ID"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.delete.message"))
 				.executes((sender, args) -> {
 					return deleteMessage(sender, (String) args[2]);
 				})
@@ -1220,6 +1207,7 @@ public class ChatCommand {
 			arguments.add(new GreedyStringArgument("message ID"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.gui.message"))
 				.executes((sender, args) -> {
 					messageGui(baseCommand, sender, (String) args[2]);
 				})
@@ -1330,10 +1318,6 @@ public class ChatCommand {
 	}
 
 	private static int renameChannel(CommandSender sender, String oldChannelName, String newChannelName) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.rename")) {
-			CommandUtils.fail(sender, "You do not have permission to rename channels.");
-		}
-
 		// May call CommandUtils.fail(sender, )
 		ChannelManager.renameChannel(oldChannelName, newChannelName);
 		sender.sendMessage(Component.text("Channel " + oldChannelName + " renamed to " + newChannelName + ".", NamedTextColor.GRAY));
@@ -1341,10 +1325,6 @@ public class ChatCommand {
 	}
 
 	private static int deleteChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.delete.channel")) {
-			CommandUtils.fail(sender, "You do not have permission to delete channels.");
-		}
-
 		// May call CommandUtils.fail(sender, )
 		ChannelManager.deleteChannel(channelName);
 		sender.sendMessage(Component.text("Channel " + channelName + " deleted.", NamedTextColor.GRAY));
@@ -1576,10 +1556,6 @@ public class ChatCommand {
 	}
 
 	private static int deleteMessage(CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.delete.message")) {
-			CommandUtils.fail(sender, "You do not have permission to delete channels.");
-		}
-
 		UUID messageId;
 		try {
 			messageId = UUID.fromString(messageIdStr);
@@ -1593,10 +1569,6 @@ public class ChatCommand {
 	}
 
 	private static void messageGui(String baseCommand, CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.gui.message")) {
-			CommandUtils.fail(sender, "You do not have permission to open the message GUI.");
-		}
-
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");

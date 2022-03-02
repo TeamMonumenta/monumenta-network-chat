@@ -14,6 +14,7 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
@@ -161,12 +162,10 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.new.local"))
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
-					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandUtils.fail(sender, "You do not have permission to make new local channels.");
-					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -182,12 +181,10 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new BooleanArgument("Auto Join"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.new.local"))
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
-					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandUtils.fail(sender, "You do not have permission to make new local channels.");
-					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -204,12 +201,10 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new GreedyStringArgument("Channel Permission"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.new.local"))
 				.executes((sender, args) -> {
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
-					if (!sender.hasPermission("networkchat.new.local")) {
-						CommandUtils.fail(sender, "You do not have permission to make new local channels.");
-					}
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
