@@ -147,26 +147,26 @@ public class ChannelAccess {
 		setFlag(FlagKey.MAY_LISTEN.getKey(), value);
 	}
 
-	public int commandFlag(CommandSender sender, String permission) throws WrapperCommandSyntaxException {
-		if (FlagKey.of(permission) != null) {
-			Boolean value = getFlag(permission);
+	public int commandFlag(CommandSender sender, String accessKey) throws WrapperCommandSyntaxException {
+		if (FlagKey.of(accessKey) != null) {
+			Boolean value = getFlag(accessKey);
 			if (value == null) {
 				sender.sendMessage(Component.empty()
-				    .append(Component.text(permission, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.DEFAULT.getValue(), NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 0;
 			} else if (value) {
 				sender.sendMessage(Component.empty()
-				    .append(Component.text(permission, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.TRUE.getValue(), NamedTextColor.GREEN, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 1;
 			} else {
 				sender.sendMessage(Component.empty()
-				    .append(Component.text(permission, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.FALSE.getValue(), NamedTextColor.RED, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
@@ -174,35 +174,35 @@ public class ChannelAccess {
 			}
 		}
 
-		CommandAPI.fail("No such permission: " + permission);
+		CommandAPI.fail("No such access key: " + accessKey);
 		return 0;
 	}
 
-	public int commandFlag(CommandSender sender, String permission, String value) throws WrapperCommandSyntaxException {
-		if (FlagKey.of(permission) != null) {
+	public int commandFlag(CommandSender sender, String accessKey, String value) throws WrapperCommandSyntaxException {
+		if (FlagKey.of(accessKey) != null) {
 			if (FlagValue.FALSE.getValue().equals(value)) {
-				setFlag(permission, false);
+				setFlag(accessKey, false);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
-				    .append(Component.text(permission, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.FALSE.getValue(), NamedTextColor.RED, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return -1;
 			} else if (FlagValue.TRUE.getValue().equals(value)) {
-				setFlag(permission, true);
+				setFlag(accessKey, true);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
-				    .append(Component.text(permission, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.TRUE.getValue(), NamedTextColor.GREEN, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 1;
 			} else if (FlagValue.DEFAULT.getValue().equals(value)) {
-				setFlag(permission, null);
+				setFlag(accessKey, null);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
-				    .append(Component.text(permission, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.DEFAULT.getValue(), NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
@@ -216,7 +216,7 @@ public class ChannelAccess {
 			}
 		}
 
-		CommandAPI.fail("No such permission: " + permission);
+		CommandAPI.fail("No such access key: " + accessKey);
 		return 0;
 	}
 }
