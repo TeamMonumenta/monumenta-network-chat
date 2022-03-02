@@ -36,6 +36,16 @@ public class ChatFilter {
 			mComponent = component;
 		}
 
+		public ChatFilterResult(ChatFilterResult other) {
+			mComponent = other.mComponent;
+		}
+
+		public void copyResults(ChatFilterResult other) {
+			mFoundMatch = other.mFoundMatch;
+			mFoundBadWord = other.mFoundBadWord;
+			mComponent = other.mComponent;
+		}
+
 		public boolean foundMatch() {
 			return mFoundMatch;
 		}
@@ -159,12 +169,13 @@ public class ChatFilter {
 		}
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
+			final ChatFilterResult localResult = new ChatFilterResult(filterResult);
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
 				.match(mPattern)
 				.replacement((MatchResult match, TextComponent.Builder textBuilder) -> {
-					filterResult.foundMatch(true);
+					localResult.foundMatch(true);
 					if (mIsBadWord) {
-						filterResult.foundBadWord(true);
+						localResult.foundBadWord(true);
 					}
 					String content = textBuilder.content();
 					content = mPattern.matcher(content).replaceAll(mReplacementMiniMessage);
@@ -174,19 +185,19 @@ public class ChatFilter {
 				})
 				.build();
 
-			filterResult.component(filterResult.component().replaceText(replacementConfig));
+			localResult.component(localResult.component().replaceText(replacementConfig));
 
-			String plainText = MessagingUtils.plainText(filterResult.component());
+			String plainText = MessagingUtils.plainText(localResult.component());
 			String plainReplacement = mPattern.matcher(plainText).replaceAll(mReplacementMiniMessage);
 			if (!plainText.equals(plainReplacement)) {
-				filterResult.foundMatch(true);
+				localResult.foundMatch(true);
 				if (mIsBadWord) {
-					filterResult.foundBadWord(true);
+					localResult.foundBadWord(true);
 				}
-				filterResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
+				localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
 			}
 
-			if (filterResult.foundMatch()) {
+			if (localResult.foundMatch()) {
 				if (mCommand != null) {
 					String command = mCommand.replace("@S", sender.getName());
 					if (sender instanceof Entity) {
@@ -201,6 +212,7 @@ public class ChatFilter {
 					}, 0);
 				}
 			}
+			filterResult.copyResults(localResult);
 		}
 	}
 
