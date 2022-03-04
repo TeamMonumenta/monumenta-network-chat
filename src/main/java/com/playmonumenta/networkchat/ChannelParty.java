@@ -184,9 +184,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 				.register();
 
 			arguments.clear();
-			// last element of prefixArguments is channel ID
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel ID").replaceSuggestions(info ->
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
 			));
 			arguments.add(new MultiLiteralArgument("invite"));
@@ -196,18 +195,18 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					String channelId = (String)args[1];
-					Channel ch = ChannelManager.getChannel(channelId);
+					String channelName = (String)args[1];
+					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
-						CommandUtils.fail(sender, "No such channel " + channelId + ".");
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 					if (!(ch instanceof ChannelParty)) {
-						CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
+						CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
 					}
 					ChannelParty channel = (ChannelParty) ch;
 
 					if (!channel.isParticipant(sender)) {
-						CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
+						CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
 					}
 
 					String playerName = (String)args[3];
@@ -216,15 +215,14 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 						CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
 
-					sender.sendMessage(Component.text("Added " + playerName + " to " + channelId + ".", NamedTextColor.GRAY));
+					sender.sendMessage(Component.text("Added " + playerName + " to " + channelName + ".", NamedTextColor.GRAY));
 					channel.addPlayer(playerId);
 				})
 				.register();
 
 			arguments.clear();
-			// last element of prefixArguments is channel ID
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel ID").replaceSuggestions(info ->
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
 			));
 			arguments.add(new MultiLiteralArgument("kick"));
@@ -234,18 +232,18 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					String channelId = (String)args[1];
-					Channel ch = ChannelManager.getChannel(channelId);
+					String channelName = (String)args[1];
+					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
-						CommandUtils.fail(sender, "No such channel " + channelId + ".");
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 					if (!(ch instanceof ChannelParty)) {
-						CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
+						CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
 					}
 					ChannelParty channel = (ChannelParty) ch;
 
 					if (!channel.isParticipant(sender)) {
-						CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
+						CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
 					}
 
 					String playerName = (String)args[3];
@@ -254,16 +252,14 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 						CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
 
-					// TODO Display message and make player unwatch channel.
 					channel.removePlayer(playerId);
-					sender.sendMessage(Component.text("Kicked " + playerName + " from " + channelId + ".", NamedTextColor.GRAY));
+					sender.sendMessage(Component.text("Kicked " + playerName + " from " + channelName + ".", NamedTextColor.GRAY));
 				})
 				.register();
 
 			arguments.clear();
-			// last element of prefixArguments is channel ID
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel ID").replaceSuggestions(info ->
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
 			));
 			arguments.add(new MultiLiteralArgument("leave"));
@@ -285,7 +281,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					}
 					Player player = (Player) sender;
 
-					// TODO Make player unwatch channel
 					channel.removePlayer(player.getUniqueId());
 					sender.sendMessage(Component.text("You have left " + channelId + ".", NamedTextColor.GRAY));
 				})
