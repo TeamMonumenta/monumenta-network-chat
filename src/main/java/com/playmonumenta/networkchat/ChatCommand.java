@@ -43,7 +43,7 @@ public class ChatCommand {
 
 		if (NetworkChatProperties.getChatCommandCreateEnabled()) {
 			arguments.add(new MultiLiteralArgument("new"));
-			arguments.add(new StringArgument("Channel Name"));
+			arguments.add(new StringArgument("channel name"));
 			ChannelAnnouncement.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 			ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 			ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
@@ -57,10 +57,10 @@ public class ChatCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("rename"));
-				arguments.add(new StringArgument("Old Channel Name").replaceSuggestions(info ->
+				arguments.add(new StringArgument("old channel name").replaceSuggestions(info ->
 					ChannelManager.getChannelNames().toArray(new String[0])
 				));
-				arguments.add(new StringArgument("New Channel Name"));
+				arguments.add(new StringArgument("new channel name"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.withPermission(CommandPermission.fromString("networkchat.rename"))
@@ -89,11 +89,11 @@ public class ChatCommand {
 					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
 					arguments.add(new MultiLiteralArgument(channelType));
 					if (channelType.equals("default")) {
-						arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 							ChannelManager.getChannelNames().toArray(new String[0])
 						));
 					} else {
-						arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 							ChannelManager.getChannelNames(channelType).toArray(new String[0])
 						));
 					}
@@ -222,11 +222,11 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
 				arguments.add(new MultiLiteralArgument(channelType));
 				if (channelType.equals("default")) {
-					arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 						ChannelManager.getChannelNames().toArray(new String[0])
 					));
 				} else {
-					arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 						ChannelManager.getChannelNames(channelType).toArray(new String[0])
 					));
 				}
@@ -257,7 +257,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("permission"));
 				arguments.add(new MultiLiteralArgument("set"));
-				arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 				));
 				arguments.add(new GreedyStringArgument("New channel perms"));
@@ -272,7 +272,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("sound"));
 				arguments.add(new MultiLiteralArgument("add"));
-				arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 				));
 				arguments.add(new SoundArgument("Sound"));
@@ -347,7 +347,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("sound"));
 				arguments.add(new MultiLiteralArgument("clear"));
-				arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 				));
 				new CommandAPICommand(baseCommand)
@@ -376,7 +376,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("permission"));
 			arguments.add(new MultiLiteralArgument("get"));
-			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+			arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 			));
 			new CommandAPICommand(baseCommand)
@@ -390,7 +390,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("autojoin"));
 			arguments.add(new MultiLiteralArgument("get"));
-			arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+			arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 				ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0])
 			));
 			new CommandAPICommand(baseCommand)
@@ -422,7 +422,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("autojoin"));
 				arguments.add(new MultiLiteralArgument("enable", "disable"));
-				arguments.add(new StringArgument("channel").replaceSuggestions(info ->
+				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 					ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0])
 				));
 				new CommandAPICommand(baseCommand)
