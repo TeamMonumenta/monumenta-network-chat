@@ -49,7 +49,7 @@ public class RemotePlayerManager implements Listener {
 		    mIsOnline = isOnline;
 		    mShard = RemotePlayerManager.getShardName();
 
-			plugin.getLogger().info("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+			plugin.getLogger().fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
 	    public RemotePlayerState(Plugin plugin, JsonObject remoteData) {
@@ -60,7 +60,7 @@ public class RemotePlayerManager implements Listener {
 			mIsOnline = remoteData.get("isOnline").getAsBoolean();
 			mShard = remoteData.get("shard").getAsString();
 
-			plugin.getLogger().info("Recieved RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+			plugin.getLogger().fine("Recieved RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
 	    public void broadcast() {
@@ -109,7 +109,7 @@ public class RemotePlayerManager implements Listener {
 				if (shard.equals(mShardName)) {
 					continue;
 				}
-				mPlugin.getLogger().info("Registering shard " + shard);
+				mPlugin.getLogger().fine("Registering shard " + shard);
 				mRemotePlayersByShard.put(shard, new ConcurrentSkipListMap<>());
 			}
 		} catch (Exception e) {
@@ -285,11 +285,11 @@ public class RemotePlayerManager implements Listener {
 
 	// Run this on any player to update their displayed name
 	public static void refreshLocalPlayer(Player player) {
-		mPlugin.getLogger().info("Refreshing local player " + player.getName());
+		mPlugin.getLogger().fine("Refreshing local player " + player.getName());
 		RemotePlayerState remotePlayerState = new RemotePlayerState(mPlugin, player, true);
 
 		unregisterPlayer(remotePlayerState.mUuid);
-		mPlugin.getLogger().info("Registering player " + remotePlayerState.mName);
+		mPlugin.getLogger().fine("Registering player " + remotePlayerState.mName);
 		mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		if (remotePlayerState.mIsHidden) {
@@ -304,7 +304,7 @@ public class RemotePlayerManager implements Listener {
 	private static void unregisterPlayer(UUID playerId) {
 		@Nullable RemotePlayerState lastRemotePlayerState = mPlayersByUuid.get(playerId);
 		if (lastRemotePlayerState != null) {
-		    mPlugin.getLogger().info("Unregistering player " + lastRemotePlayerState.mName);
+		    mPlugin.getLogger().fine("Unregistering player " + lastRemotePlayerState.mName);
 		    String lastLocation = lastRemotePlayerState.mShard;
 		    @Nullable Map<String, RemotePlayerState> lastShardRemotePlayers = mRemotePlayersByShard.get(lastLocation);
 		    if (lastShardRemotePlayers != null) {
@@ -334,14 +334,14 @@ public class RemotePlayerManager implements Listener {
 		    if (shardRemotePlayers != null) {
 		        shardRemotePlayers.put(remotePlayerState.mName, remotePlayerState);
 		    }
-		    mPlugin.getLogger().info("Registering player " + remotePlayerState.mName);
+		    mPlugin.getLogger().fine("Registering player " + remotePlayerState.mName);
 		    mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		    mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		    if (!remotePlayerState.mIsHidden) {
 		        mVisiblePlayers.add(remotePlayerState.mUuid);
 		    }
 		} else if (!mShardName.equals(remotePlayerState.mShard)) {
-			mPlugin.getLogger().info("Detected race condition, triggering refresh on " + remotePlayerState.mName);
+			mPlugin.getLogger().fine("Detected race condition, triggering refresh on " + remotePlayerState.mName);
 			@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayerState.mUuid);
 			if (localPlayer != null) {
 				refreshLocalPlayer(localPlayer);
@@ -355,7 +355,7 @@ public class RemotePlayerManager implements Listener {
 		if (mShardName.equals(remoteShardName)) {
 			return;
 		}
-		mPlugin.getLogger().info("Registering shard " + remoteShardName);
+		mPlugin.getLogger().fine("Registering shard " + remoteShardName);
 		mRemotePlayersByShard.put(remoteShardName, new ConcurrentSkipListMap<>());
 	}
 
@@ -366,7 +366,7 @@ public class RemotePlayerManager implements Listener {
 		if (remotePlayers == null) {
 			return;
 		}
-		mPlugin.getLogger().info("Unregistering shard " + remoteShardName);
+		mPlugin.getLogger().fine("Unregistering shard " + remoteShardName);
 		Map<String, RemotePlayerState> remotePlayersCopy = new ConcurrentSkipListMap<>(remotePlayers);
 		for (Map.Entry<String, RemotePlayerState> playerDetails : remotePlayersCopy.entrySet()) {
 			RemotePlayerState remotePlayerState = playerDetails.getValue();
