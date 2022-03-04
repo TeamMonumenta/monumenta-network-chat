@@ -255,31 +255,31 @@ public class ChatCommand {
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("permission"));
-				arguments.add(new MultiLiteralArgument("set"));
 				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 				));
+				arguments.add(new MultiLiteralArgument("permission"));
+				arguments.add(new MultiLiteralArgument("set"));
 				arguments.add(new GreedyStringArgument("New channel perms"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						return changeChannelPerms(sender, (String) args[3], (String) args[4]);
+						return changeChannelPerms(sender, (String) args[1], (String) args[4]);
 					})
 					.register();
 
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("sound"));
-				arguments.add(new MultiLiteralArgument("add"));
 				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 				));
+				arguments.add(new MultiLiteralArgument("sound"));
+				arguments.add(new MultiLiteralArgument("add"));
 				arguments.add(new SoundArgument("Sound"));
 				new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					String channelName = (String) args[3];
+					String channelName = (String) args[1];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
 						CommandUtils.fail(sender, "No such channel " + channelName + ".");
@@ -345,15 +345,15 @@ public class ChatCommand {
 
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("sound"));
-				arguments.add(new MultiLiteralArgument("clear"));
 				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 				));
+				arguments.add(new MultiLiteralArgument("sound"));
+				arguments.add(new MultiLiteralArgument("clear"));
 				new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					String channelName = (String) args[3];
+					String channelName = (String) args[1];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
 						CommandUtils.fail(sender, "No such channel " + channelName + ".");
@@ -374,29 +374,29 @@ public class ChatCommand {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new MultiLiteralArgument("permission"));
-			arguments.add(new MultiLiteralArgument("get"));
 			arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 			));
+			arguments.add(new MultiLiteralArgument("permission"));
+			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					return getChannelPermission(sender, (String) args[3]);
+					return getChannelPermission(sender, (String) args[1]);
 				})
 				.register();
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new MultiLiteralArgument("autojoin"));
-			arguments.add(new MultiLiteralArgument("get"));
 			arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 				ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0])
 			));
+			arguments.add(new MultiLiteralArgument("autojoin"));
+			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					String channelName = (String) args[3];
+					String channelName = (String) args[1];
 					Channel channel = ChannelManager.getChannel(channelName);
 
 					if (channel == null) {
@@ -420,15 +420,15 @@ public class ChatCommand {
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("autojoin"));
-				arguments.add(new MultiLiteralArgument("enable", "disable"));
 				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 					ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0])
 				));
+				arguments.add(new MultiLiteralArgument("autojoin"));
+				arguments.add(new MultiLiteralArgument("enable", "disable"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						String channelName = (String) args[3];
+						String channelName = (String) args[1];
 						Channel channel = ChannelManager.getChannel(channelName);
 
 						if (channel == null) {
@@ -457,15 +457,15 @@ public class ChatCommand {
 			if (NetworkChatProperties.getChatCommandDeleteEnabled()) {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("delete"));
 				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 					ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 				));
+				arguments.add(new MultiLiteralArgument("delete"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.withPermission(CommandPermission.fromString("networkchat.delete.channel"))
 					.executes((sender, args) -> {
-						return deleteChannel(sender, (String)args[2]);
+						return deleteChannel(sender, (String)args[1]);
 					})
 					.register();
 			}
