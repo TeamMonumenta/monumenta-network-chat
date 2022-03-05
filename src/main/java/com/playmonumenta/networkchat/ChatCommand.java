@@ -51,336 +51,130 @@ public class ChatCommand {
 		ChannelWhisper.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 
 		for (String baseCommand : COMMANDS) {
-			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("rename"));
-				arguments.add(new StringArgument("old channel name").replaceSuggestions(info ->
-					ChannelManager.getChannelNames().toArray(new String[0])
-				));
-				arguments.add(new StringArgument("new channel name"));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.rename"))
-					.executes((sender, args) -> {
-						return renameChannel(sender, (String)args[2], (String)args[3]);
-					})
-					.register();
-			}
-
-			for (String channelType : DefaultChannels.CHANNEL_TYPES) {
-				if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-					arguments.clear();
-					arguments.add(new MultiLiteralArgument("server"));
-					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-					arguments.add(new MultiLiteralArgument(channelType));
-					new CommandAPICommand(baseCommand)
-						.withArguments(arguments)
-						.withPermission(CommandPermission.fromString("networkchat.setdefaultchannel"))
-						.executes((sender, args) -> {
-							return ChannelManager.getDefaultChannels().command(sender, channelType, true);
-						})
-						.register();
-
-					arguments.clear();
-					arguments.add(new MultiLiteralArgument("server"));
-					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-					arguments.add(new MultiLiteralArgument(channelType));
-					if (channelType.equals("default")) {
-						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
-							ChannelManager.getChannelNames().toArray(new String[0])
-						));
-					} else {
-						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
-							ChannelManager.getChannelNames(channelType).toArray(new String[0])
-						));
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new MultiLiteralArgument("access"));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+			));
+			arguments.add(new MultiLiteralArgument("default"));
+			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					String channelName = (String) args[2];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
-					new CommandAPICommand(baseCommand)
-						.withArguments(arguments)
-						.withPermission(CommandPermission.fromString("networkchat.setdefaultchannel"))
-						.executes((sender, args) -> {
-							int result = ChannelManager.getDefaultChannels().command(sender, channelType, (String)args[3]);
-							ChannelManager.saveDefaultChannels();
-							return result;
-						})
-						.register();
-				}
 
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new MultiLiteralArgument("profilemessage"));
-				arguments.add(new MultiLiteralArgument("get"));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						CommandSender callee = CommandUtils.getCallee(sender);
-						if (!(callee instanceof Player)) {
-							CommandUtils.fail(sender, "This command can only be run as a player.");
-						}
-
-						Player target = (Player) callee;
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-						}
-						String profileMessage = state.profileMessage();
-						if (profileMessage.isEmpty()) {
-							target.sendMessage(Component.text("Your profile message is blank.", NamedTextColor.GRAY));
-						} else {
-							target.sendMessage(Component.text("Your profile message is:", NamedTextColor.GRAY));
-							target.sendMessage(state.profileMessageComponent()
-								.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
-						}
-						return profileMessage.length();
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new MultiLiteralArgument("profilemessage"));
-				arguments.add(new MultiLiteralArgument("set"));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						CommandSender callee = CommandUtils.getCallee(sender);
-						if (!(callee instanceof Player)) {
-							CommandUtils.fail(sender, "This command can only be run as a player.");
-						}
-
-						Player target = (Player) callee;
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-						}
-						target.sendMessage(Component.text("Your profile message has been cleared.", NamedTextColor.GRAY));
-						state.profileMessage("");
-						return 0;
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new MultiLiteralArgument("profilemessage"));
-				arguments.add(new MultiLiteralArgument("set"));
-				arguments.add(new GreedyStringArgument("message"));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.setprofilemessage"))
-					.executes((sender, args) -> {
-						String profileMessage = (String)args[3];
-						CommandSender callee = CommandUtils.getCallee(sender);
-						if (!(callee instanceof Player)) {
-							CommandUtils.fail(sender, "This command can only be run as a player.");
-						}
-
-						if (!CommandUtils.checkSudoCommand(sender)) {
-							CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
-						}
-
-						Player target = (Player) callee;
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-						}
-						target.sendMessage(Component.text("Your profile message has been set to:", NamedTextColor.GRAY));
-						state.profileMessage(profileMessage);
-						target.sendMessage(state.profileMessageComponent()
-							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
-						return profileMessage.length();
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-				arguments.add(new MultiLiteralArgument(channelType));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						CommandSender callee = CommandUtils.getCallee(sender);
-						if (!(callee instanceof Player)) {
-							CommandUtils.fail(sender, "This command can only be run as a player.");
-						}
-
-						if (!CommandUtils.checkSudoCommand(sender)) {
-							CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
-						}
-
-						Player target = (Player) callee;
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-						}
-						return state.defaultChannels().command(sender, channelType);
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-				arguments.add(new MultiLiteralArgument(channelType));
-				if (channelType.equals("default")) {
-					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
-						ChannelManager.getChannelNames().toArray(new String[0])
-					));
-				} else {
-					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
-						ChannelManager.getChannelNames(channelType).toArray(new String[0])
-					));
-				}
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						CommandSender callee = CommandUtils.getCallee(sender);
-						if (!(callee instanceof Player)) {
-							CommandUtils.fail(sender, "This command can only be run as a player.");
-						}
-
-						if (!CommandUtils.checkSudoCommand(sender)) {
-							CommandUtils.fail(sender, "Hey! It's not nice to change other peoples' channels! Where are your manners?");
-						}
-
-						Player target = (Player) callee;
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-						}
-						return state.defaultChannels().command(sender, channelType, (String)args[3]);
-					})
-					.register();
-			}
+					ChannelAccess perms = channel.channelAccess();
+					return perms.commandFlag(sender, (String) args[4]);
+				})
+				.register();
 
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("permission"));
-				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+				arguments.add(new MultiLiteralArgument("access"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 				));
-				arguments.add(new MultiLiteralArgument("set"));
-				arguments.add(new GreedyStringArgument("New channel perms"));
+				arguments.add(new MultiLiteralArgument("default"));
+				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
+				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						return changeChannelPerms(sender, (String) args[2], (String) args[4]);
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+						if (!channel.mayManage(sender)) {
+							CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
+						}
+
+						ChannelAccess perms = channel.channelAccess();
+						int result = perms.commandFlag(sender, (String) args[4], (String) args[5]);
+						ChannelManager.saveChannel(channel);
+						return result;
 					})
 					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("sound"));
-				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
-					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
-				));
-				arguments.add(new MultiLiteralArgument("add"));
-				arguments.add(new SoundArgument("Sound"));
-				new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					String channelName = (String) args[2];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					if (!channel.mayManage(sender)) {
-						CommandUtils.fail(sender, "You have no permission to do this.");
-					}
-
-					ChannelSettings settings = channel.channelSettings();
-
-					settings.addSound((Sound) args[4], 1, 1);
-
-					return 1;
-				})
-				.register();
-
-				arguments.add(new FloatArgument("Volume", 0.0f, 1.0f));
-				new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					String channelName = (String) args[2];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					if (!channel.mayManage(sender)) {
-						CommandUtils.fail(sender, "You have no permission to do this.");
-					}
-
-					ChannelSettings settings = channel.channelSettings();
-
-					settings.addSound((Sound) args[4], (float) args[5], 1);
-
-					return 1;
-				})
-				.register();
-
-				arguments.add(new FloatArgument("Pitch", 0.5f, 2.0f));
-				new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					String channelName = (String) args[2];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					if (!channel.mayManage(sender)) {
-						CommandUtils.fail(sender, "You have no permission to do this.");
-					}
-
-					ChannelSettings settings = channel.channelSettings();
-
-					settings.addSound((Sound) args[4], (float) args[5], (float) args[6]);
-
-					return 1;
-				})
-				.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("sound"));
-				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
-					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
-				));
-				arguments.add(new MultiLiteralArgument("clear"));
-				new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					String channelName = (String) args[2];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					if (!channel.mayManage(sender)) {
-						CommandUtils.fail(sender, "You have no permission to do this.");
-					}
-
-					ChannelSettings settings = channel.channelSettings();
-
-					settings.clearSound();
-
-					return 1;
-				})
-				.register();
 			}
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new MultiLiteralArgument("permission"));
-			arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+			arguments.add(new MultiLiteralArgument("access"));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 			));
-			arguments.add(new MultiLiteralArgument("get"));
+			arguments.add(new MultiLiteralArgument("player"));
+			arguments.add(new StringArgument("name").replaceSuggestions(info ->
+				MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new)
+			));
+			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					return getChannelPermission(sender, (String) args[2]);
+					String channelName = (String) args[2];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+					if (!channel.mayManage(sender)) {
+						CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
+					}
+
+					String playerName = (String) args[4];
+					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+					if (playerId == null) {
+						CommandUtils.fail(sender, "No such player " + playerName + ".");
+					}
+					ChannelAccess perms = channel.playerAccess(playerId);
+					return perms.commandFlag(sender, (String) args[5]);
 				})
 				.register();
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("access"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new MultiLiteralArgument("player"));
+				arguments.add(new StringArgument("name").replaceSuggestions(info ->
+					MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new)));
+				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
+				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+						if (!channel.mayManage(sender)) {
+							CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
+						}
+
+						String playerName = (String) args[4];
+						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+						if (playerId == null) {
+							CommandUtils.fail(sender, "No such player " + playerName + ".");
+						}
+						ChannelAccess perms = channel.playerAccess(playerId);
+						int result = perms.commandFlag(sender, (String) args[5], (String) args[6]);
+						if (perms.isDefault()) {
+							channel.resetPlayerAccess(playerId);
+						}
+						ChannelManager.saveChannel(channel);
+						return result;
+					})
+					.register();
+			}
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
@@ -450,7 +244,7 @@ public class ChatCommand {
 					.register();
 			}
 
-			if (NetworkChatProperties.getChatCommandDeleteEnabled()) {
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("delete"));
@@ -461,35 +255,286 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.withPermission(CommandPermission.fromString("networkchat.delete.channel"))
 					.executes((sender, args) -> {
-						return deleteChannel(sender, (String)args[2]);
+						return deleteChannel(sender, (String) args[2]);
 					})
 					.register();
 			}
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("say"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
+			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new MultiLiteralArgument("permission"));
+			arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+				ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
 			));
+			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					setActiveChannel(sender, (String)args[1]);
-					return 1;
+					return getChannelPermission(sender, (String) args[2]);
 				})
 				.register();
 
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("permission"));
+				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new MultiLiteralArgument("set"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						return changeChannelPerms(sender, (String) args[2], (String) null);
+					})
+					.register();
+			}
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("permission"));
+				arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new MultiLiteralArgument("set"));
+				arguments.add(new GreedyStringArgument("New channel perms"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						return changeChannelPerms(sender, (String) args[2], (String) args[4]);
+					})
+					.register();
+			}
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("rename"));
+				arguments.add(new StringArgument("old channel name").replaceSuggestions(info ->
+					ChannelManager.getChannelNames().toArray(new String[0])
+				));
+				arguments.add(new StringArgument("new channel name"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.rename"))
+					.executes((sender, args) -> {
+						return renameChannel(sender, (String) args[2], (String) args[3]);
+					})
+					.register();
+			}
+
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("say"));
+			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new MultiLiteralArgument("settings"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
+				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
 			));
-			arguments.add(new GreedyStringArgument("Message"));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					sendMessage(sender, (String)args[1], (String)args[2]);
-					return 1;
+					String channelName = (String) args[2];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					ChannelSettings settings = channel.channelSettings();
+					return settings.commandFlag(sender, (String) args[3]);
+				})
+				.register();
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("settings"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
+				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+
+						ChannelSettings settings = channel.channelSettings();
+						int result = settings.commandFlag(sender, (String) args[3], (String) args[4]);
+						ChannelManager.saveChannel(channel);
+						return result;
+					})
+					.register();
+			}
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("settings"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new MultiLiteralArgument("sound"));
+				arguments.add(new MultiLiteralArgument("add"));
+				arguments.add(new SoundArgument("Notification sound"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+
+						ChannelSettings settings = state.channelSettings(channel);
+
+						settings.addSound((Sound) args[5], 1, 1);
+
+						return 1;
+					})
+					.register();
+			}
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.add(new FloatArgument("Volume", 0.0f, 1.0f));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+
+						ChannelSettings settings = state.channelSettings(channel);
+
+						settings.addSound((Sound) args[5], (Float) args[6], 1);
+
+						return 1;
+					})
+					.register();
+			}
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.add(new FloatArgument("Pitch", 0.5f, 2.0f));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+
+						ChannelSettings settings = state.channelSettings(channel);
+
+						settings.addSound((Sound) args[5], (Float) args[6], (Float) args[7]);
+
+						return 1;
+					})
+					.register();
+			}
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("settings"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new MultiLiteralArgument("sound"));
+				arguments.add(new MultiLiteralArgument("clear"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+
+						ChannelSettings settings = state.channelSettings(channel);
+
+						settings.clearSound();
+
+						return 1;
+					})
+					.register();
+			}
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("gui"));
+			arguments.add(new MultiLiteralArgument("message"));
+			arguments.add(new GreedyStringArgument("message ID"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.gui.message"))
+				.executes((sender, args) -> {
+					messageGui(baseCommand, sender, (String) args[2]);
 				})
 				.register();
 
@@ -501,7 +546,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					return joinChannel(sender, (String)args[1]);
+					return joinChannel(sender, (String) args[1]);
 				})
 				.register();
 
@@ -513,25 +558,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					return leaveChannel(sender, (String)args[1]);
-				})
-				.register();
-
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("pause"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					return pause(sender);
-				})
-				.register();
-
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("unpause"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					return unpause(sender);
+					return leaveChannel(sender, (String) args[1]);
 				})
 				.register();
 
@@ -541,6 +568,121 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					RemotePlayerManager.showOnlinePlayers((Audience) CommandUtils.getCallee(sender));
+					return 1;
+				})
+				.register();
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("message"));
+				arguments.add(new MultiLiteralArgument("delete"));
+				arguments.add(new StringArgument("Message ID"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.delete.message"))
+					.executes((sender, args) -> {
+						return deleteMessage(sender, (String) args[2]);
+					})
+					.register();
+			}
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("player"));
+			arguments.add(new MultiLiteralArgument("profilemessage"));
+			arguments.add(new MultiLiteralArgument("get"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					Player target = (Player) callee;
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+					}
+					String profileMessage = state.profileMessage();
+					if (profileMessage.isEmpty()) {
+						target.sendMessage(Component.text("Your profile message is blank.", NamedTextColor.GRAY));
+					} else {
+						target.sendMessage(Component.text("Your profile message is:", NamedTextColor.GRAY));
+						target.sendMessage(state.profileMessageComponent()
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
+					}
+					return profileMessage.length();
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("player"));
+			arguments.add(new MultiLiteralArgument("profilemessage"));
+			arguments.add(new MultiLiteralArgument("set"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					Player target = (Player) callee;
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+					}
+					target.sendMessage(Component.text("Your profile message has been cleared.", NamedTextColor.GRAY));
+					state.profileMessage("");
+					return 0;
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("player"));
+			arguments.add(new MultiLiteralArgument("profilemessage"));
+			arguments.add(new MultiLiteralArgument("set"));
+			arguments.add(new GreedyStringArgument("message"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.setprofilemessage"))
+				.executes((sender, args) -> {
+					String profileMessage = (String) args[3];
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+					}
+
+					Player target = (Player) callee;
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+					}
+					target.sendMessage(Component.text("Your profile message has been set to:", NamedTextColor.GRAY));
+					state.profileMessage(profileMessage);
+					target.sendMessage(state.profileMessageComponent()
+						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
+					return profileMessage.length();
+				})
+				.register();
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("player"));
+			arguments.add(new MultiLiteralArgument("refresh"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
+					}
+
+					Player target = (Player) callee;
+					RemotePlayerManager.refreshLocalPlayer(target);
 					return 1;
 				})
 				.register();
@@ -563,9 +705,75 @@ public class ChatCommand {
 				})
 				.register();
 
+			for (String channelType : DefaultChannels.CHANNEL_TYPES) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("player"));
+				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
+				arguments.add(new MultiLiteralArgument(channelType));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+						return state.defaultChannels().command(sender, channelType);
+					})
+					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("player"));
+				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
+				arguments.add(new MultiLiteralArgument(channelType));
+				if (channelType.equals("default")) {
+					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+						ChannelManager.getChannelNames().toArray(new String[0])
+					));
+				} else {
+					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+						ChannelManager.getChannelNames(channelType).toArray(new String[0])
+					));
+				}
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						CommandSender callee = CommandUtils.getCallee(sender);
+						if (!(callee instanceof Player)) {
+							CommandUtils.fail(sender, "This command can only be run as a player.");
+						}
+
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "Hey! It's not nice to change other peoples' channels! Where are your manners?");
+						}
+
+						Player target = (Player) callee;
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+						return state.defaultChannels().command(sender, channelType, (String) args[3]);
+					})
+					.register();
+			}
+
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("player"));
-			arguments.add(new MultiLiteralArgument("refresh"));
+			arguments.add(new MultiLiteralArgument("settings"));
+			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+			));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -574,25 +782,62 @@ public class ChatCommand {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
 					}
 
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+					}
+
 					Player target = (Player) callee;
-					RemotePlayerManager.refreshLocalPlayer(target);
-					return 1;
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+					}
+
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					ChannelSettings settings = state.channelSettings(channel);
+					return settings.commandFlag(sender, (String) args[4]);
 				})
 				.register();
 
-			arguments.add(new EntitySelectorArgument("Players", EntitySelector.MANY_PLAYERS));
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("player"));
+			arguments.add(new MultiLiteralArgument("settings"));
+			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+			));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
+			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)
-				.withPermission(CommandPermission.OP)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-
-					@SuppressWarnings("unchecked")
-					Collection<Player> players = (Collection<Player>) args[2];
-
-					for (Player player : players) {
-						RemotePlayerManager.refreshLocalPlayer(player);
+					CommandSender callee = CommandUtils.getCallee(sender);
+					if (!(callee instanceof Player)) {
+						CommandUtils.fail(sender, "This command can only be run as a player.");
 					}
-					return 1;
+
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+					}
+
+					Player target = (Player) callee;
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+					}
+
+					String channelName = (String) args[3];
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					ChannelSettings settings = state.channelSettings(channel);
+					return settings.commandFlag(sender, (String) args[4], (String) args[5]);
 				})
 				.register();
 
@@ -652,445 +897,53 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("player"));
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new MultiLiteralArgument("say"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 			));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
-						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
-
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
-					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-
-					String channelName = (String) args[3];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					ChannelSettings settings = state.channelSettings(channel);
-					return settings.commandFlag(sender, (String) args[4]);
-				})
-				.register();
-
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("sound"));
-			arguments.add(new MultiLiteralArgument("add"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
-			));
-			arguments.add(new SoundArgument("Notification sound"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
-						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
-
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
-					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-
-					String channelName = (String) args[4];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					ChannelSettings settings = state.channelSettings(channel);
-
-					settings.addSound((Sound) args[5], 1, 1);
-
-					return 1;
-				})
-				.register();
-
-			arguments.add(new FloatArgument("Volume", 0.0f, 1.0f));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
-						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
-
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
-					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-
-					String channelName = (String) args[4];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					ChannelSettings settings = state.channelSettings(channel);
-
-					settings.addSound((Sound) args[5], (Float)args[6], 1);
-
-					return 1;
-				})
-				.register();
-
-			arguments.add(new FloatArgument("Pitch", 0.5f, 2.0f));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
-						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
-
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to modifying other people's settings! Where are your manners?");
-					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-
-					String channelName = (String) args[4];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					ChannelSettings settings = state.channelSettings(channel);
-
-					settings.addSound((Sound) args[5], (Float)args[6], (Float)args[7]);
-
+					setActiveChannel(sender, (String) args[1]);
 					return 1;
 				})
 				.register();
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("sound"));
-			arguments.add(new MultiLiteralArgument("clear"));
+			arguments.add(new MultiLiteralArgument("say"));
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 			));
-			new CommandAPICommand(baseCommand)
-			.withArguments(arguments)
-			.executes((sender, args) -> {
-				CommandSender callee = CommandUtils.getCallee(sender);
-				if (!(callee instanceof Player)) {
-					CommandUtils.fail(sender, "This command can only be run as a player.");
-				}
-
-				if (!CommandUtils.checkSudoCommand(sender)) {
-					CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
-				}
-
-				Player target = (Player) callee;
-				PlayerState state = PlayerStateManager.getPlayerState(target);
-				if (state == null) {
-					CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-				}
-
-				String channelName = (String) args[4];
-				Channel channel = ChannelManager.getChannel(channelName);
-				if (channel == null) {
-					CommandUtils.fail(sender, "No such channel " + channelName + ".");
-				}
-
-				ChannelSettings settings = state.channelSettings(channel);
-
-				settings.clearSound();
-
-				return 1;
-			})
-			.register();
-
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("player"));
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
-			));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
+			arguments.add(new GreedyStringArgument("Message"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
-						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
-
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
-					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-
-					String channelName = (String) args[3];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-
-					ChannelSettings settings = state.channelSettings(channel);
-					return settings.commandFlag(sender, (String) args[4], (String) args[5]);
-				})
-				.register();
-
-			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("settings"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-					ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
-				));
-				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						String channelName = (String) args[2];
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
-
-						ChannelSettings settings = channel.channelSettings();
-						return settings.commandFlag(sender, (String) args[3]);
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("settings"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-					ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
-				));
-				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
-				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						String channelName = (String) args[2];
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
-
-						ChannelSettings settings = channel.channelSettings();
-						int result = settings.commandFlag(sender, (String) args[3], (String) args[4]);
-						ChannelManager.saveChannel(channel);
-						return result;
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("access"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
-				));
-				arguments.add(new MultiLiteralArgument("default"));
-				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						String channelName = (String) args[2];
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
-
-						ChannelAccess perms = channel.channelAccess();
-						return perms.commandFlag(sender, (String) args[4]);
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("access"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
-				));
-				arguments.add(new MultiLiteralArgument("default"));
-				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
-				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						String channelName = (String) args[2];
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
-						if (!channel.mayManage(sender)) {
-							CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
-						}
-
-						ChannelAccess perms = channel.channelAccess();
-						int result = perms.commandFlag(sender, (String) args[4], (String) args[5]);
-						ChannelManager.saveChannel(channel);
-						return result;
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("access"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
-				));
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new StringArgument("name").replaceSuggestions(info ->
-					MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new)
-				));
-				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						String channelName = (String) args[2];
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
-						if (!channel.mayManage(sender)) {
-							CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
-						}
-
-						String playerName = (String) args[4];
-						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
-						if (playerId == null) {
-							CommandUtils.fail(sender, "No such player " + playerName + ".");
-						}
-						ChannelAccess perms = channel.playerAccess(playerId);
-						return perms.commandFlag(sender, (String) args[5]);
-					})
-					.register();
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("access"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-					ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0])
-				));
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new StringArgument("name").replaceSuggestions(info ->
-					MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new)));
-				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
-				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executes((sender, args) -> {
-						String channelName = (String) args[2];
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
-						if (!channel.mayManage(sender)) {
-							CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
-						}
-
-						String playerName = (String) args[4];
-						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
-						if (playerId == null) {
-							CommandUtils.fail(sender, "No such player " + playerName + ".");
-						}
-						ChannelAccess perms = channel.playerAccess(playerId);
-						int result = perms.commandFlag(sender, (String) args[5], (String) args[6]);
-						if (perms.isDefault()) {
-							channel.resetPlayerAccess(playerId);
-						}
-						ChannelManager.saveChannel(channel);
-						return result;
-					})
-					.register();
-
-			}
-
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("server"));
-			arguments.add(new MultiLiteralArgument("message visibility"));
-			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-					return PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2]);
+					sendMessage(sender, (String) args[1], (String) args[2]);
+					return 1;
 				})
 				.register();
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("server"));
-			arguments.add(new MultiLiteralArgument("message visibility"));
-			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
-			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityValues()));
+			arguments.add(new MultiLiteralArgument("color"));
+			arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
+				ChannelGlobal.CHANNEL_CLASS_ID,
+				ChannelLocal.CHANNEL_CLASS_ID,
+				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
+				ChannelWhisper.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.visibility.default"))
+				.withPermission(CommandPermission.fromString("networkchat.format.default"))
 				.executes((sender, args) -> {
-					int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
-					PlayerStateManager.saveSettings();
-					return result;
+					String id = (String) args[2];
+					TextColor color = NetworkChatPlugin.messageColor(id);
+					sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
+					return 1;
 				})
 				.register();
 
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("server"));
-				arguments.add(new MultiLiteralArgument("color"));
-				arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
-					ChannelGlobal.CHANNEL_CLASS_ID,
-					ChannelLocal.CHANNEL_CLASS_ID,
-					ChannelParty.CHANNEL_CLASS_ID,
-					ChannelTeam.CHANNEL_CLASS_ID,
-					ChannelWhisper.CHANNEL_CLASS_ID));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.format.default"))
-					.executes((sender, args) -> {
-						String id = (String) args[2];
-						TextColor color = NetworkChatPlugin.messageColor(id);
-						sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
-						return 1;
-					})
-					.register();
-
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("server"));
 				arguments.add(new MultiLiteralArgument("color"));
@@ -1116,47 +969,49 @@ public class ChatCommand {
 						return 1;
 					})
 					.register();
+			}
 
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("server"));
-				arguments.add(new MultiLiteralArgument("format"));
-				arguments.add(new MultiLiteralArgument("player",
-					"entity",
-					"sender",
-					ChannelAnnouncement.CHANNEL_CLASS_ID,
-					ChannelGlobal.CHANNEL_CLASS_ID,
-					ChannelLocal.CHANNEL_CLASS_ID,
-					ChannelParty.CHANNEL_CLASS_ID,
-					ChannelTeam.CHANNEL_CLASS_ID,
-					ChannelWhisper.CHANNEL_CLASS_ID));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.format.default"))
-					.executes((sender, args) -> {
-						String id = (String) args[2];
-						TextColor color = NetworkChatPlugin.messageColor(id);
-						String format = NetworkChatPlugin.messageFormat(id).replace("\n", "\\n");
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("server"));
+			arguments.add(new MultiLiteralArgument("format"));
+			arguments.add(new MultiLiteralArgument("player",
+				"entity",
+				"sender",
+				ChannelAnnouncement.CHANNEL_CLASS_ID,
+				ChannelGlobal.CHANNEL_CLASS_ID,
+				ChannelLocal.CHANNEL_CLASS_ID,
+				ChannelParty.CHANNEL_CLASS_ID,
+				ChannelTeam.CHANNEL_CLASS_ID,
+				ChannelWhisper.CHANNEL_CLASS_ID));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.format.default"))
+				.executes((sender, args) -> {
+					String id = (String) args[2];
+					TextColor color = NetworkChatPlugin.messageColor(id);
+					String format = NetworkChatPlugin.messageFormat(id).replace("\n", "\\n");
 
-						Component senderComponent = MessagingUtils.senderComponent(sender);
-						sender.sendMessage(Component.text(id + " is " + format, color)
-							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
-						if (id.equals("player")) {
-							sender.sendMessage(Component.text("Example: ").append(senderComponent));
-						} else {
-							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
-							Component fullMessage = Component.empty()
-								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", "ExampleChannel"),
-									Template.template("sender", senderComponent),
-									Template.template("receiver", senderComponent))))
-								.append(Component.empty().color(color).append(Component.text("Test message")));
+					Component senderComponent = MessagingUtils.senderComponent(sender);
+					sender.sendMessage(Component.text(id + " is " + format, color)
+						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
+					if (id.equals("player")) {
+						sender.sendMessage(Component.text("Example: ").append(senderComponent));
+					} else {
+						String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
+						Component fullMessage = Component.empty()
+							.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", "ExampleChannel"),
+								Template.template("sender", senderComponent),
+								Template.template("receiver", senderComponent))))
+							.append(Component.empty().color(color).append(Component.text("Test message")));
 
-							sender.sendMessage(Component.text("Example message:", color));
-							sender.sendMessage(fullMessage);
-						}
-						return 1;
-					})
-					.register();
+						sender.sendMessage(Component.text("Example message:", color));
+						sender.sendMessage(fullMessage);
+					}
+					return 1;
+				})
+				.register();
 
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("server"));
 				arguments.add(new MultiLiteralArgument("format"));
@@ -1201,26 +1056,104 @@ public class ChatCommand {
 			}
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("message"));
-			arguments.add(new MultiLiteralArgument("delete"));
-			arguments.add(new StringArgument("message ID"));
+			arguments.add(new MultiLiteralArgument("server"));
+			arguments.add(new MultiLiteralArgument("messagevisibility"));
+			arguments.add(new MultiLiteralArgument("visibility"));
+			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.delete.message"))
 				.executes((sender, args) -> {
-					return deleteMessage(sender, (String) args[2]);
+					return PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2]);
+				})
+				.register();
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("server"));
+				arguments.add(new MultiLiteralArgument("messagevisibility"));
+				arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
+				arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityValues()));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.visibility.default"))
+					.executes((sender, args) -> {
+						int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
+						PlayerStateManager.saveSettings();
+						return result;
+					})
+					.register();
+			}
+
+			for (String channelType : DefaultChannels.CHANNEL_TYPES) {
+				if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+					arguments.clear();
+					arguments.add(new MultiLiteralArgument("server"));
+					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
+					arguments.add(new MultiLiteralArgument(channelType));
+					new CommandAPICommand(baseCommand)
+						.withArguments(arguments)
+						.withPermission(CommandPermission.fromString("networkchat.setdefaultchannel"))
+						.executes((sender, args) -> {
+							return ChannelManager.getDefaultChannels().command(sender, channelType, true);
+						})
+						.register();
+
+					arguments.clear();
+					arguments.add(new MultiLiteralArgument("server"));
+					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
+					arguments.add(new MultiLiteralArgument(channelType));
+					if (channelType.equals("default")) {
+						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+							ChannelManager.getChannelNames().toArray(new String[0])
+						));
+					} else {
+						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+							ChannelManager.getChannelNames(channelType).toArray(new String[0])
+						));
+					}
+					new CommandAPICommand(baseCommand)
+						.withArguments(arguments)
+						.withPermission(CommandPermission.fromString("networkchat.setdefaultchannel"))
+						.executes((sender, args) -> {
+							int result = ChannelManager.getDefaultChannels().command(sender, channelType, (String) args[3]);
+							ChannelManager.saveDefaultChannels();
+							return result;
+						})
+						.register();
+				}
+			}
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("pause"));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					return pause(sender);
 				})
 				.register();
 
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("gui"));
-			arguments.add(new MultiLiteralArgument("message"));
-			arguments.add(new GreedyStringArgument("message ID"));
+			arguments.add(new MultiLiteralArgument("unpause"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.gui.message"))
 				.executes((sender, args) -> {
-					messageGui(baseCommand, sender, (String) args[2]);
+					return unpause(sender);
+				})
+				.register();
+
+			arguments.add(new EntitySelectorArgument("Players", EntitySelector.MANY_PLAYERS));
+			new CommandAPICommand(baseCommand)
+				.withPermission(CommandPermission.OP)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+
+					@SuppressWarnings("unchecked")
+					Collection<Player> players = (Collection<Player>) args[2];
+
+					for (Player player : players) {
+						RemotePlayerManager.refreshLocalPlayer(player);
+					}
+					return 1;
 				})
 				.register();
 		}
@@ -1255,7 +1188,7 @@ public class ChatCommand {
 			new CommandAPICommand(channelType)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					sendMessageInDefault(sender, channelType, (String)args[0]);
+					sendMessageInDefault(sender, channelType, (String) args[0]);
 					return 1;
 				})
 				.register();
@@ -1277,7 +1210,7 @@ public class ChatCommand {
 			new CommandAPICommand(shortcut)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					sendMessageInDefault(sender, channelType, (String)args[0]);
+					sendMessageInDefault(sender, channelType, (String) args[0]);
 					return 1;
 				})
 				.register();
