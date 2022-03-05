@@ -4,11 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
-
-import org.bukkit.command.CommandSender;
-
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import javax.annotation.Nullable;
+
+import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.command.CommandSender;
 
 // A channel that is from a future plugin version. This may not be saved.
 public class ChannelFuture extends Channel {
@@ -73,8 +75,16 @@ public class ChannelFuture extends Channel {
 		return mName;
 	}
 
+	public @Nullable TextColor color() {
+		return null;
+	}
+
+	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
+		CommandUtils.fail(sender,"This channel's type is not supported in this plugin version.");
+	}
+
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
-		CommandAPI.fail("This channel's type is not supported in this plugin version.");
+		CommandUtils.fail(sender,"This channel's type is not supported in this plugin version.");
 	}
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.

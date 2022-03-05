@@ -21,6 +21,7 @@ import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import javax.annotation.Nullable;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -230,15 +231,110 @@ public class ChatCommand {
 						}
 
 						if (!(channel instanceof ChannelAutoJoin)) {
-							CommandUtils.fail(sender, "This channel has auto join disabled.");
+							CommandUtils.fail(sender, "This channel does not support auto join settings.");
 						}
 
 						boolean newAutoJoin = ((String) args[2]).equals("enable");
 
 						((ChannelAutoJoin) channel).setAutoJoin(newAutoJoin);
+						ChannelManager.saveChannel(channel);
 
 						sender.sendMessage("Channel " + channelName + " set auto join to " + (newAutoJoin ? "enabled." : "disabled."));
 
+						return 1;
+					})
+					.register();
+			}
+
+			arguments.clear();
+			arguments.add(new MultiLiteralArgument("channel"));
+			arguments.add(new MultiLiteralArgument("color"));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
+			));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.withPermission(CommandPermission.fromString("networkchat.channel.color"))
+				.executes((sender, args) -> {
+					String channelName = (String) args[2];
+					Channel channel = ChannelManager.getChannel(channelName);
+
+					if (channel == null) {
+						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
+
+					if (!channel.mayManage(sender)) {
+						CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
+
+					@Nullable TextColor color = channel.color();
+					sender.sendMessage(Component.text(channelName + " is " + MessagingUtils.colorToString(color), color));
+					return 1;
+				})
+				.register();
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("color"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
+				));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.channel.color"))
+					.executes((sender, args) -> {
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+
+						if (!channel.mayManage(sender)) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
+						TextColor color = NetworkChatPlugin.messageColor(channel.getClassId());
+						channel.color(sender, null);
+						ChannelManager.saveChannel(channel);
+						sender.sendMessage(Component.text(channelName + " reset to.", color));
+						return 1;
+					})
+					.register();
+			}
+
+			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("channel"));
+				arguments.add(new MultiLiteralArgument("color"));
+				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+					ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
+				));
+				arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.withPermission(CommandPermission.fromString("networkchat.channel.color"))
+					.executes((sender, args) -> {
+						String channelName = (String) args[2];
+						Channel channel = ChannelManager.getChannel(channelName);
+
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
+
+						if (!channel.mayManage(sender)) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
+						String colorString = (String) args[3];
+						@Nullable TextColor color = MessagingUtils.colorFromString(colorString);
+						if (color == null) {
+							CommandUtils.fail(sender, "No such color " + colorString);
+						}
+						channel.color(sender, color);
+						ChannelManager.saveChannel(channel);
+						sender.sendMessage(Component.text(channelName + " set to " + MessagingUtils.colorToString(color), color));
 						return 1;
 					})
 					.register();
@@ -406,8 +502,8 @@ public class ChatCommand {
 						}
 
 						ChannelSettings settings = state.channelSettings(channel);
-
 						settings.addSound((Sound) args[5], 1, 1);
+						ChannelManager.saveChannel(channel);
 
 						return 1;
 					})
@@ -1382,7 +1478,7 @@ public class ChatCommand {
 	private static int sendMessage(CommandSender sender, String channelName, String message) throws WrapperCommandSyntaxException {
 		CommandSender caller = CommandUtils.getCaller(sender);
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!NetworkChatProperties.getChatRequiresPlayer()) {
+		if (NetworkChatProperties.getChatRequiresPlayer()) {
 			if (!(caller instanceof Player)) {
 				CommandUtils.fail(sender, "Only players may chat on this shard.");
 				return 0;
@@ -1407,7 +1503,7 @@ public class ChatCommand {
 	private static int sendMessageInDefault(CommandSender sender, String channelType, String message) throws WrapperCommandSyntaxException {
 		CommandSender caller = CommandUtils.getCaller(sender);
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!NetworkChatProperties.getChatRequiresPlayer()) {
+		if (NetworkChatProperties.getChatRequiresPlayer()) {
 			if (!(caller instanceof Player)) {
 				CommandUtils.fail(sender, "Only players may chat on this shard.");
 				return 0;

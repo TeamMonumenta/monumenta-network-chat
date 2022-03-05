@@ -12,7 +12,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
@@ -20,18 +19,17 @@ import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
-import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
+import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 // A channel visible only to this shard (and moderators who opt in from elsewhere)
 public class ChannelLocal extends Channel implements ChannelPermissionNode, ChannelAutoJoin {
@@ -40,6 +38,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
+	private TextColor mMessageColor;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
 	private final Map<UUID, ChannelAccess> mPlayerAccess;
@@ -81,6 +80,16 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
 		ChannelLocal channel = new ChannelLocal(channelId, lastUpdate, name);
+
+		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
+		if (messageColorJson != null && messageColorJson.isString()) {
+			String messageColorString = messageColorJson.getAsString();
+			try {
+				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
+			} catch (Exception e) {
+				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+			}
+		}
 
 		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
 		if (defaultSettingsJson != null) {
@@ -143,6 +152,9 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
+		if (mMessageColor != null) {
+			result.addProperty("messageColor", MessagingUtils.colorToString(mMessageColor));
+		}
 		result.addProperty("autoJoin", mAutoJoin);
 		if (mChannelPermission != null) {
 			result.addProperty("channelPermission", mChannelPermission);
@@ -243,6 +255,14 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 
 	public String getName() {
 		return mName;
+	}
+
+	public @Nullable TextColor color() {
+		return mMessageColor;
+	}
+
+	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
+		mMessageColor = color;
 	}
 
 	public ChannelSettings channelSettings() {
@@ -416,7 +436,12 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	}
 
 	protected void showMessage(CommandSender recipient, Message message) {
-		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		TextColor channelColor;
+		if (mMessageColor != null) {
+			channelColor = mMessageColor;
+		} else {
+			channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		}
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 			.replace("<message_gui_cmd>", message.getGuiCommand())
 		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";

@@ -30,7 +30,7 @@ public class CommandUtils {
 			CommandSender callee = ((ProxiedCommandSender) sender).getCallee();
 			CommandSender caller = ((ProxiedCommandSender) sender).getCaller();
 
-			return callee.getName().equals(caller.getName()) || NetworkChatProperties.getSudoEnabled();
+			return callee.equals(caller) || NetworkChatProperties.getSudoEnabled();
 		}
 		return true;
 	}

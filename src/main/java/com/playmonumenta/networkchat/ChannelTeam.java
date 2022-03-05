@@ -11,26 +11,24 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
+import javax.annotation.Nullable;
 import net.kyori.adventure.text.minimessage.template.TemplateResolver;
-import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.Team;
-
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Team;
 
 // A channel visible to all shards
 public class ChannelTeam extends Channel {
@@ -249,6 +247,14 @@ public class ChannelTeam extends Channel {
 
 	public String getName() {
 		return "Team_" + mTeamName;
+	}
+
+	public @Nullable TextColor color() {
+		return null;
+	}
+
+	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
+		CommandUtils.fail(sender,"Team channels do not support custom text colors.");
 	}
 
 	public ChannelSettings channelSettings() {
