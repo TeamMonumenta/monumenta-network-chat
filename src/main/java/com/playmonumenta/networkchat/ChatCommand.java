@@ -1010,7 +1010,7 @@ public class ChatCommand {
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 			));
-			arguments.add(new GreedyStringArgument("Message"));
+			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -1280,7 +1280,7 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
-			arguments.add(new GreedyStringArgument("Message"));
+			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(channelType)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -1302,7 +1302,7 @@ public class ChatCommand {
 				.register();
 
 			arguments.clear();
-			arguments.add(new GreedyStringArgument("Message"));
+			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(shortcut)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
