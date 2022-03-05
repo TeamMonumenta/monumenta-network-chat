@@ -19,6 +19,7 @@ import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
@@ -38,6 +39,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
+	private TextColor mMessageColor;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
 	private final Map<UUID, ChannelAccess> mPlayerAccess;
@@ -79,6 +81,16 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
 		ChannelGlobal channel = new ChannelGlobal(channelId, lastUpdate, name);
+
+		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
+		if (messageColorJson != null && messageColorJson.isString()) {
+			String messageColorString = messageColorJson.getAsString();
+			try {
+				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
+			} catch (Exception e) {
+				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+			}
+		}
 
 		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
 		if (defaultSettingsJson != null) {
@@ -141,6 +153,9 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
+		if (mMessageColor != null) {
+			result.addProperty("messageColor", MessagingUtils.colorToString(mMessageColor));
+		}
 		result.addProperty("autoJoin", mAutoJoin);
 		if (mChannelPermission != null) {
 			result.addProperty("channelPermission", mChannelPermission);
@@ -241,6 +256,14 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 
 	public String getName() {
 		return mName;
+	}
+
+	public @Nullable TextColor color() {
+		return mMessageColor;
+	}
+
+	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
+		mMessageColor = color;
 	}
 
 	public ChannelSettings channelSettings() {
@@ -401,7 +424,12 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	protected void showMessage(CommandSender recipient, Message message) {
-		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		TextColor channelColor;
+		if (mMessageColor != null) {
+			channelColor = mMessageColor;
+		} else {
+			channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		}
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 			.replace("<message_gui_cmd>", message.getGuiCommand())
 		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";

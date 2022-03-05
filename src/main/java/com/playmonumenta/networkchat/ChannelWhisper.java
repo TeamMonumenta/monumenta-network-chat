@@ -10,28 +10,27 @@ import java.util.UUID;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
-import org.bukkit.Bukkit;
-import org.bukkit.Sound;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
+import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 // A channel visible to all shards
 public class ChannelWhisper extends Channel implements ChannelInviteOnly {
@@ -308,11 +307,19 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public String getName() {
-		String name = "Whisper";
+		StringBuilder name = new StringBuilder("Whisper");
 		for (UUID participant : mParticipants) {
-			name = name + "_" + participant.toString();
+			name.append("_").append(participant.toString());
 		}
-		return name;
+		return name.toString();
+	}
+
+	public @Nullable TextColor color() {
+		return null;
+	}
+
+	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
+		CommandUtils.fail(sender,"Whisper channels do not support custom text colors.");
 	}
 
 	public boolean isParticipant(CommandSender sender) {

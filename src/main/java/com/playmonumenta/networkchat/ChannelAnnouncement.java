@@ -19,6 +19,7 @@ import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import javax.annotation.Nullable;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
@@ -39,6 +40,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	private UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
+	private TextColor mMessageColor;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
 	private Map<UUID, ChannelAccess> mPlayerAccess;
@@ -79,6 +81,16 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 		ChannelAnnouncement channel = new ChannelAnnouncement(channelId, lastUpdate, name);
 
+		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
+		if (messageColorJson != null && messageColorJson.isString()) {
+			String messageColorString = messageColorJson.getAsString();
+			try {
+				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
+			} catch (Exception e) {
+				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+			}
+		}
+
 		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
 		if (defaultSettingsJson != null) {
 			channel.mDefaultSettings = ChannelSettings.fromJson(defaultSettingsJson);
@@ -104,7 +116,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exeption during converting json to channel Announcement reason: " + e.getMessage());
+					NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting ChannelAccess from json: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -140,6 +152,9 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
+		if (mMessageColor != null) {
+			result.addProperty("messageColor", MessagingUtils.colorToString(mMessageColor));
+		}
 		result.addProperty("autoJoin", mAutoJoin);
 		if (mChannelPermission != null) {
 			result.addProperty("channelPermission", mChannelPermission);
@@ -240,6 +255,14 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 	public String getName() {
 		return mName;
+	}
+
+	public @Nullable TextColor color() {
+		return mMessageColor;
+	}
+
+	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
+		mMessageColor = color;
 	}
 
 	public ChannelSettings channelSettings() {
@@ -394,7 +417,12 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	}
 
 	protected void showMessage(CommandSender recipient, Message message) {
-		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		TextColor channelColor;
+		if (mMessageColor != null) {
+			channelColor = mMessageColor;
+		} else {
+			channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		}
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 			.replace("<message_gui_cmd>", message.getGuiCommand())
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";

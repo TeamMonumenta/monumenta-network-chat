@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
-
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import javax.annotation.Nullable;
+import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public abstract class Channel {
 	public static Channel fromJson(JsonObject channelJson) throws Exception {
@@ -63,6 +63,10 @@ public abstract class Channel {
 
 	// Return this channel's name
 	public abstract String getName();
+
+	public abstract @Nullable TextColor color();
+
+	public abstract void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException;
 
 	public ChannelSettings channelSettings() {
 		return null;

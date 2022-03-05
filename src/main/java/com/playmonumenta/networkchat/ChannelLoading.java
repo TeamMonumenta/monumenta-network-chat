@@ -7,11 +7,12 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;
-
-import org.bukkit.command.CommandSender;
-
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import javax.annotation.Nullable;
+import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.command.CommandSender;
 
 // A channel that has not finished loading. This may not be saved.
 public class ChannelLoading extends Channel {
@@ -51,8 +52,16 @@ public class ChannelLoading extends Channel {
 		return null;
 	}
 
+	public @Nullable TextColor color() {
+		return null;
+	}
+
+	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
+		CommandUtils.fail(sender,"This channel is still loading, please try again.");
+	}
+
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
-		CommandAPI.fail("This channel is still loading, please try again.");
+		CommandUtils.fail(sender, "This channel is still loading, please try again.");
 	}
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.

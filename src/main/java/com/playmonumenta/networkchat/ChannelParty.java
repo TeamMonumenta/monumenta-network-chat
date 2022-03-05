@@ -12,28 +12,27 @@ import java.util.UUID;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
-import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
+import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 // A channel for invited players
 public class ChannelParty extends Channel implements ChannelInviteOnly {
@@ -42,6 +41,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
+	private TextColor mMessageColor;
 	private final Set<UUID> mParticipants;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
@@ -84,6 +84,16 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
 		ChannelParty channel = new ChannelParty(channelId, lastUpdate, name);
+
+		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
+		if (messageColorJson != null && messageColorJson.isString()) {
+			String messageColorString = messageColorJson.getAsString();
+			try {
+				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
+			} catch (Exception e) {
+				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+			}
+		}
 
 		JsonArray participantsJson = channelJson.getAsJsonArray("participants");
 		for (JsonElement participantJson : participantsJson) {
@@ -146,6 +156,9 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
+		if (mMessageColor != null) {
+			result.addProperty("messageColor", MessagingUtils.colorToString(mMessageColor));
+		}
 		result.add("participants", participantsJson);
 		result.add("defaultSettings", mDefaultSettings.toJson());
 		result.add("defaultAccess", mDefaultAccess.toJson());
@@ -310,6 +323,14 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 	public String getName() {
 		return mName;
+	}
+
+	public @Nullable TextColor color() {
+		return mMessageColor;
+	}
+
+	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
+		mMessageColor = color;
 	}
 
 	public void addPlayer(UUID playerId) {
@@ -534,7 +555,12 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	protected void showMessage(CommandSender recipient, Message message) {
-		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		TextColor channelColor;
+		if (mMessageColor != null) {
+			channelColor = mMessageColor;
+		} else {
+			channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
+		}
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 			.replace("<message_gui_cmd>", message.getGuiCommand())
 		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
