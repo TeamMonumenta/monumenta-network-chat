@@ -175,8 +175,11 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.party"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.party")) {
+						CommandUtils.fail(sender, "You do not have permission to create party channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelParty newChannel = null;
 

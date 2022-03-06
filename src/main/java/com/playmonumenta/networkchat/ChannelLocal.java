@@ -174,8 +174,11 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.local"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.local")) {
+						CommandUtils.fail(sender, "You do not have permission to create local channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
 
@@ -193,8 +196,11 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new BooleanArgument("Auto Join"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.local"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.local")) {
+						CommandUtils.fail(sender, "You do not have permission to create local channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
 
@@ -213,8 +219,11 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new GreedyStringArgument("Channel Permission"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.local"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.local")) {
+						CommandUtils.fail(sender, "You do not have permission to create local channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelLocal newChannel = null;
 
