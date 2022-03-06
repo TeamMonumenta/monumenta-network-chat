@@ -175,8 +175,11 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.global"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.global")) {
+						CommandUtils.fail(sender, "You do not have permission to create global channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelGlobal newChannel = null;
 
@@ -194,8 +197,11 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			arguments.add(new BooleanArgument("Auto Join"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.global"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.global")) {
+						CommandUtils.fail(sender, "You do not have permission to create global channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelGlobal newChannel = null;
 
@@ -214,8 +220,11 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			arguments.add(new GreedyStringArgument("Channel Permission"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.global"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.global")) {
+						CommandUtils.fail(sender, "You do not have permission to create global channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelGlobal newChannel = null;
 

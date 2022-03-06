@@ -174,8 +174,11 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.announcement"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.announcement")) {
+						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelAnnouncement newChannel = null;
 
@@ -193,8 +196,11 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			arguments.add(new BooleanArgument("Auto Join"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.announcement"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.announcement")) {
+						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelAnnouncement newChannel = null;
 
@@ -213,8 +219,11 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			arguments.add(new GreedyStringArgument("Channel Permission"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.new.announcement"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.new.announcement")) {
+						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
+					}
+
 					String channelName = (String)args[prefixArguments.size() - 1];
 					ChannelAnnouncement newChannel = null;
 
