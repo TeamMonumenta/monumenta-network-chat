@@ -538,7 +538,7 @@ public class PlayerState {
 		}
 
 		Component profileMessageComponent = MessagingUtils.getAllowedMiniMessage(player).deserialize(profileMessage);
-		if (!NetworkChatPlugin.globalFilter().hasBadWord(player, profileMessageComponent)) {
+		if (NetworkChatPlugin.globalFilter().hasBadWord(player, profileMessageComponent)) {
 			return;
 		}
 
