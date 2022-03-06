@@ -252,9 +252,9 @@ public class ChatCommand {
 			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 				ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 			));
+			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.channel.color"))
 				.executes((sender, args) -> {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
@@ -264,7 +264,7 @@ public class ChatCommand {
 					}
 
 					if (!channel.mayManage(sender)) {
-						CommandUtils.fail(sender, "You do not have permission to run this command.");
+						CommandUtils.fail(sender, "You do not have permission to manage this channel.");
 					}
 
 					@Nullable TextColor color = channel.color();
@@ -280,10 +280,14 @@ public class ChatCommand {
 				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 					ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 				));
+				arguments.add(new MultiLiteralArgument("clear"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.channel.color"))
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.channel.color")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 
@@ -311,11 +315,15 @@ public class ChatCommand {
 				arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
 					ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 				));
+				arguments.add(new MultiLiteralArgument("set"));
 				arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.channel.color"))
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.channel.color")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 
@@ -327,7 +335,7 @@ public class ChatCommand {
 							CommandUtils.fail(sender, "You do not have permission to run this command.");
 						}
 
-						String colorString = (String) args[3];
+						String colorString = (String) args[4];
 						@Nullable TextColor color = MessagingUtils.colorFromString(colorString);
 						if (color == null) {
 							CommandUtils.fail(sender, "No such color " + colorString);
@@ -349,8 +357,11 @@ public class ChatCommand {
 				));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.delete.channel"))
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.delete.channel")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
 						return deleteChannel(sender, (String) args[2]);
 					})
 					.register();
@@ -413,8 +424,11 @@ public class ChatCommand {
 				arguments.add(new StringArgument("new channel name"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.rename"))
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.rename")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
 						return renameChannel(sender, (String) args[2], (String) args[3]);
 					})
 					.register();
@@ -628,8 +642,11 @@ public class ChatCommand {
 			arguments.add(new GreedyStringArgument("message ID"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.gui.message"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.gui.message")) {
+						CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
+
 					messageGui(baseCommand, sender, (String) args[2]);
 				})
 				.register();
@@ -675,8 +692,11 @@ public class ChatCommand {
 				arguments.add(new StringArgument("Message ID"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.delete.message"))
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.delete.message")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
 						return deleteMessage(sender, (String) args[2]);
 					})
 					.register();
@@ -741,8 +761,11 @@ public class ChatCommand {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.setprofilemessage"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.setprofilemessage")) {
+						CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
+
 					String profileMessage = (String) args[3];
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player)) {
@@ -779,6 +802,21 @@ public class ChatCommand {
 
 					Player target = (Player) callee;
 					RemotePlayerManager.refreshLocalPlayer(target);
+					return 1;
+				})
+				.register();
+
+			arguments.add(new EntitySelectorArgument("Players", EntitySelector.MANY_PLAYERS));
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+
+					@SuppressWarnings("unchecked")
+					Collection<Player> players = (Collection<Player>) args[2];
+
+					for (Player player : players) {
+						RemotePlayerManager.refreshLocalPlayer(player);
+					}
 					return 1;
 				})
 				.register();
@@ -1030,8 +1068,11 @@ public class ChatCommand {
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.format.default"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.format.default")) {
+						CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
+
 					String id = (String) args[2];
 					TextColor color = NetworkChatPlugin.messageColor(id);
 					sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
@@ -1052,8 +1093,11 @@ public class ChatCommand {
 				arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.format.default"))
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.format.default")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
 						String id = (String) args[2];
 						String colorString = (String) args[3];
 						TextColor color = MessagingUtils.colorFromString(colorString);
@@ -1081,8 +1125,11 @@ public class ChatCommand {
 				ChannelWhisper.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermission(CommandPermission.fromString("networkchat.format.default"))
 				.executes((sender, args) -> {
+					if (!sender.hasPermission("networkchat.format.default")) {
+						CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
+
 					String id = (String) args[2];
 					TextColor color = NetworkChatPlugin.messageColor(id);
 					String format = NetworkChatPlugin.messageFormat(id).replace("\n", "\\n");
@@ -1123,8 +1170,11 @@ public class ChatCommand {
 				arguments.add(new GreedyStringArgument("format"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.format.default"))
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.format.default")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
 						String id = (String) args[2];
 						TextColor color = NetworkChatPlugin.messageColor(id);
 						String format = (String) args[3];
@@ -1171,8 +1221,11 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityValues()));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.withPermission(CommandPermission.fromString("networkchat.visibility.default"))
 					.executes((sender, args) -> {
+						if (!sender.hasPermission("networkchat.visibility.default")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
 						int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
 						PlayerStateManager.saveSettings();
 						return result;
@@ -1188,8 +1241,11 @@ public class ChatCommand {
 					arguments.add(new MultiLiteralArgument(channelType));
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)
-						.withPermission(CommandPermission.fromString("networkchat.setdefaultchannel"))
 						.executes((sender, args) -> {
+							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
+								CommandUtils.fail(sender, "You do not have permission to run this command.");
+							}
+
 							return ChannelManager.getDefaultChannels().command(sender, channelType, true);
 						})
 						.register();
@@ -1209,8 +1265,11 @@ public class ChatCommand {
 					}
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)
-						.withPermission(CommandPermission.fromString("networkchat.setdefaultchannel"))
 						.executes((sender, args) -> {
+							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
+								CommandUtils.fail(sender, "You do not have permission to run this command.");
+							}
+
 							int result = ChannelManager.getDefaultChannels().command(sender, channelType, (String) args[3]);
 							ChannelManager.saveDefaultChannels();
 							return result;
@@ -1234,22 +1293,6 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					return unpause(sender);
-				})
-				.register();
-
-			arguments.add(new EntitySelectorArgument("Players", EntitySelector.MANY_PLAYERS));
-			new CommandAPICommand(baseCommand)
-				.withPermission(CommandPermission.OP)
-				.withArguments(arguments)
-				.executes((sender, args) -> {
-
-					@SuppressWarnings("unchecked")
-					Collection<Player> players = (Collection<Player>) args[2];
-
-					for (Player player : players) {
-						RemotePlayerManager.refreshLocalPlayer(player);
-					}
-					return 1;
 				})
 				.register();
 		}
