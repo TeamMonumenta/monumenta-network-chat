@@ -1,20 +1,16 @@
 package com.playmonumenta.networkchat;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Stream;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-
 import org.bukkit.command.CommandSender;
 
 // Permissions to listen or talk in a channel

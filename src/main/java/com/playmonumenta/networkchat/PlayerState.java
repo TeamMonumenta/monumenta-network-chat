@@ -1,26 +1,22 @@
 package com.playmonumenta.networkchat;
 
+import com.destroystokyo.paper.ClientOption;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import com.destroystokyo.paper.ClientOption;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.playmonumenta.networkchat.utils.MessagingUtils;
-
+import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-
-import javax.annotation.Nullable;
 
 // TODO Track how many players are in a channel on this server/overall
 public class PlayerState {
@@ -72,7 +68,7 @@ public class PlayerState {
 
 			if (lastLoginMillis != null) {
 				long millisOffline = nowMillis - lastLoginMillis;
-				NetworkChatPlugin.getInstance().getLogger().finer(player.getName() + " was offline for " + Double.toString(millisOffline / 1000.0) + " seconds.");
+				NetworkChatPlugin.getInstance().getLogger().finer(player.getName() + " was offline for " + millisOffline / 1000.0 + " seconds.");
 			}
 		}
 
@@ -130,7 +126,7 @@ public class PlayerState {
 				try {
 					state.mUnwatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s unwatchetChannels to object. Reason: " + e.getMessage());
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s unwatchedChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -466,7 +462,7 @@ public class PlayerState {
 	}
 
 	public Set<Channel> getMutedChannels() {
-		Set<Channel> channels = new HashSet<Channel>();
+		Set<Channel> channels = new HashSet<>();
 		for (UUID channelId : mUnwatchedChannelIds.keySet()) {
 			channels.add(ChannelManager.getChannel(channelId));
 		}

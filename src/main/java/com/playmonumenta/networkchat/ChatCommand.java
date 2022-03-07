@@ -32,7 +32,6 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -127,8 +126,8 @@ public class ChatCommand {
 			ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 			ChannelParty.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 		}
-		ChannelTeam.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
-		ChannelWhisper.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
+		ChannelTeam.registerNewChannelCommands();
+		ChannelWhisper.registerNewChannelCommands();
 
 		for (String baseCommand : COMMANDS) {
 			arguments.clear();
@@ -313,7 +312,7 @@ public class ChatCommand {
 							CommandUtils.fail(sender, "This channel does not support auto join settings.");
 						}
 
-						boolean newAutoJoin = ((String) args[2]).equals("enable");
+						boolean newAutoJoin = args[3].equals("enable");
 
 						((ChannelAutoJoin) channel).setAutoJoin(newAutoJoin);
 						ChannelManager.saveChannel(channel);
@@ -467,7 +466,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						return changeChannelPerms(sender, (String) args[2], (String) null);
+						return changeChannelPerms(sender, (String) args[2], null);
 					})
 					.register();
 			}
@@ -715,7 +714,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					RemotePlayerManager.showOnlinePlayers((Audience) CommandUtils.getCallee(sender));
+					RemotePlayerManager.showOnlinePlayers(CommandUtils.getCallee(sender));
 					return 1;
 				})
 				.register();
@@ -744,23 +743,23 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					String profileMessage = "";
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-					String profileMessage = state.profileMessage();
-					if (profileMessage.isEmpty()) {
-						target.sendMessage(Component.text("Your profile message is blank.", NamedTextColor.GRAY));
 					} else {
-						target.sendMessage(Component.text("Your profile message is:", NamedTextColor.GRAY));
-						target.sendMessage(state.profileMessageComponent()
-							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+						profileMessage = state.profileMessage();
+						if (profileMessage.isEmpty()) {
+							target.sendMessage(Component.text("Your profile message is blank.", NamedTextColor.GRAY));
+						} else {
+							target.sendMessage(Component.text("Your profile message is:", NamedTextColor.GRAY));
+							target.sendMessage(state.profileMessageComponent()
+								.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
+						}
 					}
 					return profileMessage.length();
 				})
@@ -774,17 +773,16 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
+					} else {
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+						target.sendMessage(Component.text("Your profile message has been cleared.", NamedTextColor.GRAY));
+						state.profileMessage("");
 					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-					target.sendMessage(Component.text("Your profile message has been cleared.", NamedTextColor.GRAY));
-					state.profileMessage("");
 					return 0;
 				})
 				.register();
@@ -803,23 +801,22 @@ public class ChatCommand {
 
 					String profileMessage = (String) args[3];
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
+					} else {
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "You may not change other player's profile messages on this shard.");
+						}
 
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "You may not change other player's profile messages on this shard.");
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+						target.sendMessage(Component.text("Your profile message has been set to:", NamedTextColor.GRAY));
+						state.profileMessage(profileMessage);
+						target.sendMessage(state.profileMessageComponent()
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
 					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-					target.sendMessage(Component.text("Your profile message has been set to:", NamedTextColor.GRAY));
-					state.profileMessage(profileMessage);
-					target.sendMessage(state.profileMessageComponent()
-						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " profilemessage set " + profileMessage)));
 					return profileMessage.length();
 				})
 				.register();
@@ -831,12 +828,11 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
+					} else {
+						RemotePlayerManager.refreshLocalPlayer(target);
 					}
-
-					Player target = (Player) callee;
-					RemotePlayerManager.refreshLocalPlayer(target);
 					return 1;
 				})
 				.register();
@@ -845,7 +841,6 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-
 					@SuppressWarnings("unchecked")
 					Collection<Player> players = (Collection<Player>) args[2];
 
@@ -863,13 +858,12 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
+					} else {
+						target.displayName(null);
+						target.playerListName(null);
 					}
-
-					Player target = (Player) callee;
-					target.displayName(null);
-					target.playerListName(null);
 					return 1;
 				})
 				.register();
@@ -883,20 +877,21 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.executes((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
-						if (!(callee instanceof Player)) {
+						if (!(callee instanceof Player target)) {
 							CommandUtils.fail(sender, "This command can only be run as a player.");
-						}
+							return 0;
+						} else {
+							if (!CommandUtils.checkSudoCommand(sender)) {
+								CommandUtils.fail(sender, "You may not change other players' default channel on this shard.");
+							}
 
-						if (!CommandUtils.checkSudoCommand(sender)) {
-							CommandUtils.fail(sender, "You may not change other players' default channel on this shard.");
-						}
+							PlayerState state = PlayerStateManager.getPlayerState(target);
+							if (state == null) {
+								CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							}
 
-						Player target = (Player) callee;
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							return state.defaultChannels().command(sender, channelType);
 						}
-						return state.defaultChannels().command(sender, channelType);
 					})
 					.register();
 
@@ -917,20 +912,20 @@ public class ChatCommand {
 					.withArguments(arguments)
 					.executes((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
-						if (!(callee instanceof Player)) {
+						if (!(callee instanceof Player target)) {
 							CommandUtils.fail(sender, "This command can only be run as a player.");
-						}
+							return 0;
+						} else {
+							if (!CommandUtils.checkSudoCommand(sender)) {
+								CommandUtils.fail(sender, "You may not change other players' default channel on this shard.");
+							}
 
-						if (!CommandUtils.checkSudoCommand(sender)) {
-							CommandUtils.fail(sender, "You may not change other players' default channel on this shard.");
+							PlayerState state = PlayerStateManager.getPlayerState(target);
+							if (state == null) {
+								CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							}
+							return state.defaultChannels().command(sender, channelType, (String) args[3]);
 						}
-
-						Player target = (Player) callee;
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-						}
-						return state.defaultChannels().command(sender, channelType, (String) args[3]);
 					})
 					.register();
 			}
@@ -947,24 +942,24 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
+						return 0;
+					} else {
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
 
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
+						String channelName = (String) args[3];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
 
-					String channelName = (String) args[3];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						ChannelSettings settings = state.channelSettings(channel);
+						return settings.commandFlag(sender, (String) args[4]);
 					}
-
-					ChannelSettings settings = state.channelSettings(channel);
-					return settings.commandFlag(sender, (String) args[4]);
 				})
 				.register();
 
@@ -981,28 +976,28 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
+						return 0;
+					} else {
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
+						}
 
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
-					}
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
 
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
+						String channelName = (String) args[3];
+						Channel channel = ChannelManager.getChannel(channelName);
+						if (channel == null) {
+							CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						}
 
-					String channelName = (String) args[3];
-					Channel channel = ChannelManager.getChannel(channelName);
-					if (channel == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						ChannelSettings settings = state.channelSettings(channel);
+						return settings.commandFlag(sender, (String) args[4], (String) args[5]);
 					}
-
-					ChannelSettings settings = state.channelSettings(channel);
-					return settings.commandFlag(sender, (String) args[4], (String) args[5]);
 				})
 				.register();
 
@@ -1015,21 +1010,21 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
+						return 0;
+					} else {
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
+						}
 
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+						ChannelSettings settings = state.channelSettings();
+						return settings.commandFlag(sender, (String) args[3]);
 					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-					ChannelSettings settings = state.channelSettings();
-					return settings.commandFlag(sender, (String) args[3]);
 				})
 				.register();
 
@@ -1043,21 +1038,21 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.executes((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player)) {
+					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
-					}
+						return 0;
+					} else {
+						if (!CommandUtils.checkSudoCommand(sender)) {
+							CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
+						}
 
-					if (!CommandUtils.checkSudoCommand(sender)) {
-						CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
+						PlayerState state = PlayerStateManager.getPlayerState(target);
+						if (state == null) {
+							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+						}
+						ChannelSettings settings = state.channelSettings();
+						return settings.commandFlag(sender, (String) args[3], (String) args[4]);
 					}
-
-					Player target = (Player) callee;
-					PlayerState state = PlayerStateManager.getPlayerState(target);
-					if (state == null) {
-						CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-					}
-					ChannelSettings settings = state.channelSettings();
-					return settings.commandFlag(sender, (String) args[3], (String) args[4]);
 				})
 				.register();
 
@@ -1069,8 +1064,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					setActiveChannel(sender, (String) args[1]);
-					return 1;
+					return setActiveChannel(sender, (String) args[1]);
 				})
 				.register();
 
@@ -1083,8 +1077,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					sendMessage(sender, (String) args[1], (String) args[2]);
-					return 1;
+					return sendMessage(sender, (String) args[1], (String) args[2]);
 				})
 				.register();
 
@@ -1362,8 +1355,7 @@ public class ChatCommand {
 
 			new CommandAPICommand(channelType)
 				.executes((sender, args) -> {
-					setActiveToDefault(sender, channelType);
-					return 1;
+					return setActiveToDefault(sender, channelType);
 				})
 				.register();
 
@@ -1372,8 +1364,7 @@ public class ChatCommand {
 			new CommandAPICommand(channelType)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					sendMessageInDefault(sender, channelType, (String) args[0]);
-					return 1;
+					return sendMessageInDefault(sender, channelType, (String) args[0]);
 				})
 				.register();
 
@@ -1384,8 +1375,7 @@ public class ChatCommand {
 
 			new CommandAPICommand(shortcut)
 				.executes((sender, args) -> {
-					setActiveToDefault(sender, channelType);
-					return 1;
+					return setActiveToDefault(sender, channelType);
 				})
 				.register();
 
@@ -1394,8 +1384,7 @@ public class ChatCommand {
 			new CommandAPICommand(shortcut)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					sendMessageInDefault(sender, channelType, (String) args[0]);
-					return 1;
+					return sendMessageInDefault(sender, channelType, (String) args[0]);
 				})
 				.register();
 		}
@@ -1547,106 +1536,106 @@ public class ChatCommand {
 
 	private static int joinChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player)) {
+		if (!(callee instanceof Player target)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
-		}
+			return 0;
+		} else {
+			if (!CommandUtils.checkSudoCommand(sender)) {
+				CommandUtils.fail(sender, "You may not make other players join channels on this shard.");
+			}
 
-		if (!CommandUtils.checkSudoCommand(sender)) {
-			CommandUtils.fail(sender, "You may not make other players join channels on this shard.");
-		}
+			PlayerState playerState = PlayerStateManager.getPlayerState(target);
+			if (playerState == null) {
+				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+			}
 
-		Player target = (Player) callee;
-		PlayerState playerState = PlayerStateManager.getPlayerState(target);
-		if (playerState == null) {
-			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-		}
+			Channel channel = ChannelManager.getChannel(channelName);
+			if (channel == null) {
+				CommandUtils.fail(sender, "No such channel " + channelName + ".");
+			}
 
-		Channel channel = ChannelManager.getChannel(channelName);
-		if (channel == null) {
-			CommandUtils.fail(sender, "No such channel " + channelName + ".");
+			playerState.setActiveChannel(channel);
+			target.sendMessage(Component.text("Joined channel " + channelName + ".", NamedTextColor.GRAY));
+			return 1;
 		}
-
-		playerState.setActiveChannel(channel);
-		target.sendMessage(Component.text("Joined channel " + channelName + ".", NamedTextColor.GRAY));
-		return 1;
 	}
 
 	private static int leaveChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player)) {
+		if (!(callee instanceof Player target)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
-		}
+			return 0;
+		} else {
+			if (!CommandUtils.checkSudoCommand(sender)) {
+				CommandUtils.fail(sender, "You may not make other players leave channels on this shard.");
+			}
 
-		if (!CommandUtils.checkSudoCommand(sender)) {
-			CommandUtils.fail(sender, "You may not make other players leave channels on this shard.");
-		}
+			PlayerState playerState = PlayerStateManager.getPlayerState(target);
+			if (playerState == null) {
+				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+			}
 
-		Player target = (Player) callee;
-		PlayerState playerState = PlayerStateManager.getPlayerState(target);
-		if (playerState == null) {
-			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-		}
+			Channel channel = ChannelManager.getChannel(channelName);
+			if (channel == null) {
+				CommandUtils.fail(sender, "No such channel " + channelName + ".");
+			}
 
-		Channel channel = ChannelManager.getChannel(channelName);
-		if (channel == null) {
-			CommandUtils.fail(sender, "No such channel " + channelName + ".");
+			playerState.leaveChannel(channel);
+			target.sendMessage(Component.text("Left channel " + channelName + ".", NamedTextColor.GRAY));
+			return 1;
 		}
-
-		playerState.leaveChannel(channel);
-		target.sendMessage(Component.text("Left channel " + channelName + ".", NamedTextColor.GRAY));
-		return 1;
 	}
 
 	private static int setActiveChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player)) {
+		if (!(callee instanceof Player player)) {
 			CommandUtils.fail(sender, "Only players have an active channel.");
-		}
+			return 0;
+		} else {
+			if (!CommandUtils.checkSudoCommand(sender)) {
+				CommandUtils.fail(sender, "You may not change other players' active channel on this shard.");
+			}
 
-		if (!CommandUtils.checkSudoCommand(sender)) {
-			CommandUtils.fail(sender, "You may not change other players' active channel on this shard.");
-		}
+			PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				CommandUtils.fail(sender, "You have no chat state. Please report this bug and reconnect to the server.");
+			}
 
-		Player player = (Player) callee;
-		PlayerState playerState = PlayerStateManager.getPlayerState(player);
-		if (playerState == null) {
-			CommandUtils.fail(sender, "You have no chat state. Please report this bug and reconnect to the server.");
-		}
+			Channel channel = ChannelManager.getChannel(channelName);
+			if (channel == null) {
+				CommandUtils.fail(sender, "No such channel " + channelName + ".");
+			}
 
-		Channel channel = ChannelManager.getChannel(channelName);
-		if (channel == null) {
-			CommandUtils.fail(sender, "No such channel " + channelName + ".");
+			playerState.setActiveChannel(channel);
+			player.sendMessage(Component.text("You are now typing in " + channelName + ".", NamedTextColor.GRAY));
+			return 1;
 		}
-
-		playerState.setActiveChannel(channel);
-		player.sendMessage(Component.text("You are now typing in " + channelName + ".", NamedTextColor.GRAY));
-		return 1;
 	}
 
 	private static int setActiveToDefault(CommandSender sender, String channelType) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player)) {
+		if (!(callee instanceof Player player)) {
 			CommandUtils.fail(sender, "Only players have an active channel.");
-		}
+			return 0;
+		} else {
+			if (!CommandUtils.checkSudoCommand(sender)) {
+				CommandUtils.fail(sender, "You may not change other players' active channel on this shard.");
+			}
 
-		if (!CommandUtils.checkSudoCommand(sender)) {
-			CommandUtils.fail(sender, "You may not change other players' active channel on this shard.");
-		}
+			PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				CommandUtils.fail(sender, "You have no chat state. Please report this bug and reconnect to the server.");
+			}
 
-		Player player = (Player) callee;
-		PlayerState playerState = PlayerStateManager.getPlayerState(player);
-		if (playerState == null) {
-			CommandUtils.fail(sender, "You have no chat state. Please report this bug and reconnect to the server.");
-		}
+			Channel channel = playerState.getDefaultChannel(channelType);
+			if (channel == null) {
+				CommandUtils.fail(sender, "No default for " + channelType + " channel type.");
+			}
 
-		Channel channel = playerState.getDefaultChannel(channelType);
-		if (channel == null) {
-			CommandUtils.fail(sender, "No default for " + channelType + " channel type.");
+			playerState.setActiveChannel(channel);
+			player.sendMessage(Component.text("You are now typing in " + channel.getName() + ".", NamedTextColor.GRAY));
+			return 1;
 		}
-
-		playerState.setActiveChannel(channel);
-		player.sendMessage(Component.text("You are now typing in " + channel.getName() + ".", NamedTextColor.GRAY));
-		return 1;
 	}
 
 	private static int sendMessage(CommandSender sender, String channelName, String message) throws WrapperCommandSyntaxException {
@@ -1685,7 +1674,7 @@ public class ChatCommand {
 		if (callee instanceof Player && callee != caller) {
 			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 		}
-		Channel channel = null;
+		Channel channel;
 		if (sender instanceof Player) {
 			channel = PlayerStateManager.getPlayerState((Player) sender).getDefaultChannel(channelType);
 		} else {
@@ -1701,70 +1690,70 @@ public class ChatCommand {
 
 	private static int pause(CommandSender sender) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player)) {
+		if (!(callee instanceof Player target)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
-		}
+			return 0;
+		} else {
+			if (!CommandUtils.checkSudoCommand(sender)) {
+				CommandUtils.fail(sender, "You may not pause chat for other players on this shard.");
+			}
 
-		if (!CommandUtils.checkSudoCommand(sender)) {
-			CommandUtils.fail(sender, "You may not pause chat for other players on this shard.");
-		}
+			PlayerState playerState = PlayerStateManager.getPlayerState(target);
+			if (playerState == null) {
+				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+			}
 
-		Player target = (Player) callee;
-		PlayerState playerState = PlayerStateManager.getPlayerState(target);
-		if (playerState == null) {
-			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+			playerState.pauseChat();
+			target.sendMessage(Component.text("Chat paused.", NamedTextColor.GRAY));
+			return 1;
 		}
-
-		playerState.pauseChat();
-		target.sendMessage(Component.text("Chat paused.", NamedTextColor.GRAY));
-		return 1;
 	}
 
 	private static int unpause(CommandSender sender) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player)) {
+		if (!(callee instanceof Player target)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
-		}
+			return 0;
+		} else {
+			if (!CommandUtils.checkSudoCommand(sender)) {
+				CommandUtils.fail(sender, "You may not unpause chat for other players on this shard.");
+			}
 
-		if (!CommandUtils.checkSudoCommand(sender)) {
-			CommandUtils.fail(sender, "You may not unpause chat for other players on this shard.");
-		}
+			PlayerState playerState = PlayerStateManager.getPlayerState(target);
+			if (playerState == null) {
+				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+			}
 
-		Player target = (Player) callee;
-		PlayerState playerState = PlayerStateManager.getPlayerState(target);
-		if (playerState == null) {
-			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+			target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
+			playerState.unpauseChat();
+			return 1;
 		}
-
-		target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
-		playerState.unpauseChat();
-		return 1;
 	}
 
 	private static int togglePause(CommandSender sender) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player)) {
+		if (!(callee instanceof Player target)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
-		}
-
-		if (!CommandUtils.checkSudoCommand(sender)) {
-			CommandUtils.fail(sender, "You may not pause chat for other players on this shard.");
-		}
-
-		Player target = (Player) callee;
-		PlayerState playerState = PlayerStateManager.getPlayerState(target);
-		if (playerState == null) {
-			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-		}
-
-		if (playerState.isPaused()) {
-			target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
-			playerState.unpauseChat();
+			return 0;
 		} else {
-			playerState.pauseChat();
-			target.sendMessage(Component.text("Chat paused.", NamedTextColor.GRAY));
+			if (!CommandUtils.checkSudoCommand(sender)) {
+				CommandUtils.fail(sender, "You may not pause chat for other players on this shard.");
+			}
+
+			PlayerState playerState = PlayerStateManager.getPlayerState(target);
+			if (playerState == null) {
+				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+			}
+
+			if (playerState.isPaused()) {
+				target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
+				playerState.unpauseChat();
+			} else {
+				playerState.pauseChat();
+				target.sendMessage(Component.text("Chat paused.", NamedTextColor.GRAY));
+			}
+			return 1;
 		}
-		return 1;
 	}
 
 	private static int deleteMessage(CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
@@ -1782,72 +1771,71 @@ public class ChatCommand {
 
 	private static void messageGui(String baseCommand, CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player)) {
+		if (!(callee instanceof Player target)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
-		}
+		} else {
+			PlayerState playerState = PlayerStateManager.getPlayerState(target);
+			if (playerState == null) {
+				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+			}
 
-		Player target = (Player) callee;
-		PlayerState playerState = PlayerStateManager.getPlayerState(target);
-		if (playerState == null) {
-			CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
-		}
+			UUID messageId;
+			try {
+				messageId = UUID.fromString(messageIdStr);
+			} catch (Exception e) {
+				CommandUtils.fail(sender, "Invalid message ID. Click a channel name to open the message GUI.");
+				return;
+			}
 
-		UUID messageId;
-		try {
-			messageId = UUID.fromString(messageIdStr);
-		} catch (Exception e) {
-			CommandUtils.fail(sender, "Invalid message ID. Click a channel name to open the message GUI.");
-			return;
-		}
+			Message message = MessageManager.getMessage(messageId);
+			if (message == null) {
+				CommandUtils.fail(sender, "That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
+			}
+			Component gui = Component.empty();
 
-		Message message = MessageManager.getMessage(messageId);
-		if (message == null) {
-			CommandUtils.fail(sender, "That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
-		}
-		Component gui = Component.empty();
-
-		Channel channel = message.getChannel();
-		if (channel != null) {
-			gui = gui.append(Component.text(" "))
-				.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-					.hoverEvent(Component.text("Leave channel", NamedTextColor.LIGHT_PURPLE))
-					.clickEvent(ClickEvent.runCommand("/" + baseCommand + " leave " + channel.getName())));
-			gui = gui.append(Component.text(" "))
-				.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-					.hoverEvent(Component.text("My channel settings", NamedTextColor.LIGHT_PURPLE))
-					.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " settings channel " + channel.getName() + " ")));
-			if (target.hasPermission("networkchat.rename")) {
+			Channel channel = message.getChannel();
+			if (channel != null) {
 				gui = gui.append(Component.text(" "))
 					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-						.hoverEvent(Component.text("Rename channel", NamedTextColor.LIGHT_PURPLE))
-						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " rename " + channel.getName() + " ")));
-			}
-			if (target.hasPermission("networkchat.delete.channel")) {
+						.hoverEvent(Component.text("Leave channel", NamedTextColor.LIGHT_PURPLE))
+						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " leave " + channel.getName())));
 				gui = gui.append(Component.text(" "))
-					.append(Component.text("[]", NamedTextColor.RED)
-						.hoverEvent(Component.text("Delete channel", NamedTextColor.RED))
-						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete channel " + channel.getName())));
-			}
-
-			if (message.senderIsPlayer()) {
-				String fromName = message.getSenderName();
-
-				if (channel.mayManage(target)) {
+					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
+						.hoverEvent(Component.text("My channel settings", NamedTextColor.LIGHT_PURPLE))
+						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " settings channel " + channel.getName() + " ")));
+				if (target.hasPermission("networkchat.rename")) {
 					gui = gui.append(Component.text(" "))
 						.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-							.hoverEvent(Component.text("Sender channel permissions", NamedTextColor.LIGHT_PURPLE))
-							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " permissions channel " + channel.getName() + " player " + fromName + " ")));
+							.hoverEvent(Component.text("Rename channel", NamedTextColor.LIGHT_PURPLE))
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " rename " + channel.getName() + " ")));
+				}
+				if (target.hasPermission("networkchat.delete.channel")) {
+					gui = gui.append(Component.text(" "))
+						.append(Component.text("[]", NamedTextColor.RED)
+							.hoverEvent(Component.text("Delete channel", NamedTextColor.RED))
+							.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete channel " + channel.getName())));
+				}
+
+				if (message.senderIsPlayer()) {
+					String fromName = message.getSenderName();
+
+					if (channel.mayManage(target)) {
+						gui = gui.append(Component.text(" "))
+							.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
+								.hoverEvent(Component.text("Sender channel permissions", NamedTextColor.LIGHT_PURPLE))
+								.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " permissions channel " + channel.getName() + " player " + fromName + " ")));
+					}
 				}
 			}
-		}
 
-		if (target.hasPermission("networkchat.delete.message")) {
-			gui = gui.append(Component.text(" "))
-				.append(Component.text("[]", NamedTextColor.RED)
-					.hoverEvent(Component.text("Delete message", NamedTextColor.RED))
-					.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete message " + messageIdStr)));
-		}
+			if (target.hasPermission("networkchat.delete.message")) {
+				gui = gui.append(Component.text(" "))
+					.append(Component.text("[]", NamedTextColor.RED)
+						.hoverEvent(Component.text("Delete message", NamedTextColor.RED))
+						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete message " + messageIdStr)));
+			}
 
-		target.sendMessage(gui);
+			target.sendMessage(gui);
+		}
 	}
 }

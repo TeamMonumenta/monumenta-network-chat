@@ -1,15 +1,14 @@
 package com.playmonumenta.networkchat;
 
+import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
-import com.google.gson.JsonObject;
-import com.playmonumenta.networkchat.utils.CommandUtils;
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;

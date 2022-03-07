@@ -1,14 +1,13 @@
 package com.playmonumenta.networkchat.utils;
 
 import com.playmonumenta.networkchat.NetworkChatProperties;
-
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ProxiedCommandSender;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ProxiedCommandSender;
+import org.jetbrains.annotations.Contract;
 
 public class CommandUtils {
 	public static CommandSender getCallee(CommandSender sender) {
@@ -35,6 +34,7 @@ public class CommandUtils {
 		return true;
 	}
 
+	@Contract("_, _ -> fail")
 	public static void fail(CommandSender sender, String message) throws WrapperCommandSyntaxException {
 		if (sender instanceof ProxiedCommandSender) {
 			CommandSender caller = ((ProxiedCommandSender) sender).getCaller();

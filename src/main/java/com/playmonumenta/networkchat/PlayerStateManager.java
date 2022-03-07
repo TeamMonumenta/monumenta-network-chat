@@ -1,12 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.ListenerPriority;
@@ -23,16 +16,19 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-import com.playmonumenta.redissync.event.PlayerSaveEvent;
 import com.playmonumenta.redissync.RedisAPI;
-
+import com.playmonumenta.redissync.event.PlayerSaveEvent;
 import io.papermc.paper.event.player.AsyncChatEvent;
-
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
-
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -387,7 +383,6 @@ public class PlayerStateManager implements Listener {
 				}.runTaskLater(mPlugin, 20 * PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
 			} catch (Exception e) {
 				mPlugin.getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with invalid data");
-				return;
 			}
 		}
 	}
@@ -396,27 +391,27 @@ public class PlayerStateManager implements Listener {
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
 		switch (event.getChannel()) {
-		case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE:
-			data = event.getData();
-			if (data == null) {
-				mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " with null data");
-				return;
+			case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE -> {
+				data = event.getData();
+				if (data == null) {
+					mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " with null data");
+					return;
+				}
+				JsonObject playerEventSettingsJson = data.getAsJsonObject(REDIS_PLAYER_EVENT_SETTINGS_KEY);
+				if (playerEventSettingsJson != null) {
+					loadSettings(playerEventSettingsJson);
+				}
 			}
-			JsonObject playerEventSettingsJson = data.getAsJsonObject(REDIS_PLAYER_EVENT_SETTINGS_KEY);
-			if (playerEventSettingsJson != null) {
-				loadSettings(playerEventSettingsJson);
+			case PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY -> {
+				data = event.getData();
+				if (data == null) {
+					mPlugin.getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with null data");
+					return;
+				}
+				handleRemotePlayerChatHistoryMessage(data);
 			}
-			break;
-		case PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY:
-			data = event.getData();
-			if (data == null) {
-				mPlugin.getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with null data");
-				return;
+			default -> {
 			}
-			handleRemotePlayerChatHistoryMessage(data);
-			break;
-		default:
-			break;
 		}
 	}
 }

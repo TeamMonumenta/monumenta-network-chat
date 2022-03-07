@@ -1,19 +1,16 @@
 package com.playmonumenta.networkchat;
 
-import java.lang.ref.Cleaner;
-import java.time.Instant;
-import java.util.UUID;
-
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-
+import java.lang.ref.Cleaner;
+import java.time.Instant;
+import java.util.UUID;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -32,6 +29,7 @@ public class Message implements AutoCloseable {
 		}
 	}
 
+	// Member variable used to garbage collect Message objects
 	private final State mState;
 	private final Cleaner.Cleanable mCleanable;
 
@@ -241,7 +239,7 @@ public class Message implements AutoCloseable {
 		if (mId == null) {
 			return "/chat gui";
 		}
-		return "/chat gui message " + mId.toString();
+		return "/chat gui message " + mId;
 	}
 
 	public ClickEvent getGuiClickEvent() {

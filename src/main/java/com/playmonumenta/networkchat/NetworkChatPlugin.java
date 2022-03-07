@@ -175,12 +175,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			if (dataStr != null) {
 				Gson gson = new Gson();
 				final JsonObject dataJson = gson.fromJson(dataStr, JsonObject.class);
-				Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(INSTANCE, new Runnable() {
-					@Override
-					public void run() {
-						mGlobalChatFilter = ChatFilter.fromJson(Bukkit.getConsoleSender(), dataJson);
-					}
-				}, 0);
+				Bukkit.getServer().getScheduler().runTask(INSTANCE,
+					() -> mGlobalChatFilter = ChatFilter.fromJson(Bukkit.getConsoleSender(), dataJson));
 			}
 			return dataStr;
 		});
@@ -321,31 +317,27 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		@Nullable JsonObject data;
 		switch (event.getChannel()) {
-		case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE:
-			data = event.getData();
-			if (data == null) {
-				getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
-				return;
+			case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE -> {
+				data = event.getData();
+				if (data == null) {
+					getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
+					return;
+				}
+				@Nullable JsonObject messageColorsJson = data.getAsJsonObject(REDIS_MESSAGE_COLORS_KEY);
+				if (messageColorsJson != null) {
+					colorsFromJson(messageColorsJson);
+				}
+				@Nullable JsonObject messageFormatsJson = data.getAsJsonObject(REDIS_MESSAGE_FORMATS_KEY);
+				if (messageFormatsJson != null) {
+					formatsFromJson(messageFormatsJson);
+				}
+				@Nullable JsonObject chatFilterJson = data.getAsJsonObject(REDIS_CHAT_FILTERS_KEY);
+				if (chatFilterJson != null) {
+					globalFilterFromJson(chatFilterJson);
+				}
 			}
-
-			@Nullable JsonObject messageColorsJson = data.getAsJsonObject(REDIS_MESSAGE_COLORS_KEY);
-			if (messageColorsJson != null) {
-				colorsFromJson(messageColorsJson);
+			default -> {
 			}
-
-			@Nullable JsonObject messageFormatsJson = data.getAsJsonObject(REDIS_MESSAGE_FORMATS_KEY);
-			if (messageFormatsJson != null) {
-				formatsFromJson(messageFormatsJson);
-			}
-
-			@Nullable JsonObject chatFilterJson = data.getAsJsonObject(REDIS_CHAT_FILTERS_KEY);
-			if (chatFilterJson != null) {
-				globalFilterFromJson(chatFilterJson);
-			}
-
-			break;
-		default:
-			break;
 		}
 	}
 }

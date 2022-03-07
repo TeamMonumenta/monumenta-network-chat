@@ -1,14 +1,11 @@
 package com.playmonumenta.networkchat;
 
-import java.time.Instant;
-import java.util.UUID;
-
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.CommandUtils;
-import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import java.time.Instant;
+import java.util.UUID;
 import javax.annotation.Nullable;
-
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 
@@ -49,10 +46,6 @@ public class ChannelFuture extends Channel {
 	// NOTE: If this class ID is ever read, it means the channel hasn't loaded and should be ignored.
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
-	}
-
-	public String getFutureClassId() {
-		return mType;
 	}
 
 	public UUID getUniqueId() {
