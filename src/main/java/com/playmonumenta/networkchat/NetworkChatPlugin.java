@@ -101,6 +101,18 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
+		try {
+			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
+				"URL",
+				false,
+				"https?://[!#-&(-;=?-\\[\\]-z|~]+",
+				false);
+			ChatFilter.ChatFilterPattern filter = mGlobalChatFilter.getFilter("URL");
+			filter.replacementMessage("<blue><u><click:open_url:\"$0\">$0</click></u></blue>");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+		}
+
 		ChatCommand.register();
 	}
 
