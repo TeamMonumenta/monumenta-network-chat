@@ -1,23 +1,19 @@
 package com.playmonumenta.networkchat;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -76,14 +72,6 @@ public class ChannelSettings {
 		public float mVolume;
 		public float mPitch;
 
-		public CSound(Sound sound) {
-			this(sound, 1, 1);
-		}
-
-		public CSound(Sound sound, float volume) {
-			this(sound, volume, 1);
-		}
-
 		public CSound(Sound sound, float volume, float pitch) {
 			mSound = sound;
 			mVolume = volume;
@@ -107,9 +95,6 @@ public class ChannelSettings {
 			Sound sound = Sound.valueOf(object.get("mSound").getAsString());
 			float volume = object.get("mVolume").getAsFloat();
 			float pitch = object.get("mPitch").getAsFloat();
-			if (sound == null) {
-				throw new Exception("Found sound equal to null for: " + object.get("mSound").getAsString());
-			}
 			return new CSound(sound, volume, pitch);
 		}
 	}

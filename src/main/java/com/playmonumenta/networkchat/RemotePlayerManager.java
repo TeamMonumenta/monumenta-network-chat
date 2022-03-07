@@ -1,11 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.DestOfflineEvent;
@@ -13,6 +7,11 @@ import com.playmonumenta.networkrelay.DestOnlineEvent;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -57,7 +56,7 @@ public class RemotePlayerManager implements Listener {
 			mIsOnline = remoteData.get("isOnline").getAsBoolean();
 			mShard = remoteData.get("shard").getAsString();
 
-			plugin.getLogger().fine("Recieved RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+			plugin.getLogger().fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
 	    public void broadcast() {
@@ -357,7 +356,7 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
-	public void destOfflineEvent(DestOfflineEvent event) throws Exception {
+	public void destOfflineEvent(DestOfflineEvent event) {
 		String remoteShardName = event.getDest();
 		@Nullable Map<String, RemotePlayerState> remotePlayers = mRemotePlayersByShard.get(remoteShardName);
 		if (remotePlayers == null) {
@@ -405,21 +404,21 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
-	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) throws Exception {
+	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		switch (event.getChannel()) {
-		case REMOTE_PLAYER_CHANNEL:
-			@Nullable JsonObject data = event.getData();
-			if (data == null) {
-				mPlugin.getLogger().severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with null data");
-				return;
+			case REMOTE_PLAYER_CHANNEL -> {
+				@Nullable JsonObject data = event.getData();
+				if (data == null) {
+					mPlugin.getLogger().severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with null data");
+					return;
+				}
+				remotePlayerChange(data);
 			}
-			remotePlayerChange(data);
-			break;
-		case REFRESH_CHANNEL:
-			refreshLocalPlayers();
-			break;
-		default:
-			break;
+			case REFRESH_CHANNEL -> {
+				refreshLocalPlayers();
+			}
+			default -> {
+			}
 		}
 	}
 }

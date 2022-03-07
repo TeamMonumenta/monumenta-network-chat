@@ -1,16 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -18,17 +7,23 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.output.ValueStreamingChannel;
-
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -111,10 +106,6 @@ public class ChannelManager implements Listener {
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
-	}
-
-	public static Set<UUID> getLoadedChannelIds() {
-		return new ConcurrentSkipListSet<>(mChannels.keySet());
 	}
 
 	public static Set<String> getChannelNames() {
@@ -436,17 +427,13 @@ public class ChannelManager implements Listener {
 			mPlugin.getLogger().warning("Channel " + channelId.toString() + " was not found.");
 			mChannels.remove(channelId);
 			PlayerStateManager.unregisterChannel(channelId);
-			if (loadingChannel != null) {
-				loadingChannel.finishLoading();
-			}
-			return;
 		} else {
 			// Channel was found. Attempt to register it.
 			JsonObject channelJson = gson.fromJson(channelData, JsonObject.class);
 			loadChannelApply(channelId, channelJson);
-			if (loadingChannel != null) {
-				loadingChannel.finishLoading();
-			}
+		}
+		if (loadingChannel != null) {
+			loadingChannel.finishLoading();
 		}
 	}
 
@@ -587,7 +574,7 @@ public class ChannelManager implements Listener {
 			mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with invalid data");
 			return;
 		}
-		String logIdName = "ID " + channelId.toString();
+		String logIdName = "ID " + channelId;
 		String oldName = mChannelNames.get(channelId);
 		if (oldName != null) {
 			logIdName = oldName;
@@ -642,27 +629,27 @@ public class ChannelManager implements Listener {
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
 		switch (event.getChannel()) {
-		case NETWORK_CHAT_CHANNEL_UPDATE:
-			data = event.getData();
-			if (data == null) {
-				mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with null data");
-				return;
+			case NETWORK_CHAT_CHANNEL_UPDATE -> {
+				data = event.getData();
+				if (data == null) {
+					mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with null data");
+					return;
+				}
+				networkRelayChannelUpdate(data);
 			}
-			networkRelayChannelUpdate(data);
-			break;
-		case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE:
-			data = event.getData();
-			if (data == null) {
-				mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
-				return;
+			case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE -> {
+				data = event.getData();
+				if (data == null) {
+					mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
+					return;
+				}
+				JsonObject defaultChannelsJson = data.getAsJsonObject(REDIS_DEFAULT_CHANNELS_KEY);
+				if (defaultChannelsJson != null) {
+					mDefaultChannels = DefaultChannels.fromJson(defaultChannelsJson);
+				}
 			}
-			JsonObject defaultChannelsJson = data.getAsJsonObject(REDIS_DEFAULT_CHANNELS_KEY);
-			if (defaultChannelsJson != null) {
-				mDefaultChannels = DefaultChannels.fromJson(defaultChannelsJson);
+			default -> {
 			}
-			break;
-		default:
-			break;
 		}
 	}
 }

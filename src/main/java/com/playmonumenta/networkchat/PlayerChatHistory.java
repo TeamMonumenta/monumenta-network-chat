@@ -1,16 +1,12 @@
 package com.playmonumenta.networkchat;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import net.kyori.adventure.text.Component;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -26,8 +22,8 @@ public class PlayerChatHistory {
 	private final UUID mPlayerId;
 	private boolean mIsReplayingChat = false;
 	private boolean mIsDisplayingMessage = false;
-	private List<Message> mSeenMessages = new ArrayList<Message>(MAX_DISPLAYED_MESSAGES);
-	private List<Message> mUnseenMessages = new ArrayList<Message>(MAX_DISPLAYED_MESSAGES);
+	private List<Message> mSeenMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
+	private List<Message> mUnseenMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
 
 	public PlayerChatHistory(UUID playerId) {
 		mPlayerId = playerId;
@@ -36,7 +32,7 @@ public class PlayerChatHistory {
 	public void updateFromJson(JsonObject obj) {
 		JsonArray seenMessagesJson = obj.getAsJsonArray("seenMessages");
 		if (seenMessagesJson != null) {
-			mSeenMessages = new ArrayList<Message>(MAX_DISPLAYED_MESSAGES);
+			mSeenMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
 			for (JsonElement messageJson : seenMessagesJson) {
 				if (messageJson instanceof JsonObject) {
 					Message message = Message.fromJson((JsonObject) messageJson);
@@ -47,7 +43,7 @@ public class PlayerChatHistory {
 
 		JsonArray unseenMessagesJson = obj.getAsJsonArray("unseenMessages");
 		if (unseenMessagesJson != null) {
-			mUnseenMessages = new ArrayList<Message>(MAX_DISPLAYED_MESSAGES);
+			mUnseenMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
 			for (JsonElement messageJson : unseenMessagesJson) {
 				if (messageJson instanceof JsonObject) {
 					Message message = Message.fromJson((JsonObject) messageJson);
@@ -58,12 +54,12 @@ public class PlayerChatHistory {
 	}
 
 	public JsonObject toJson() {
-		List<Message> seenMessagesCopy = new ArrayList<Message>(mSeenMessages);
+		List<Message> seenMessagesCopy = new ArrayList<>(mSeenMessages);
 		JsonArray seenMessages = new JsonArray();
 		for (Message message : seenMessagesCopy) {
 			seenMessages.add(message.toJson());
 		}
-		List<Message> unseenMessagesCopy = new ArrayList<Message>(mUnseenMessages);
+		List<Message> unseenMessagesCopy = new ArrayList<>(mUnseenMessages);
 		JsonArray unseenMessages = new JsonArray();
 		for (Message message : unseenMessagesCopy) {
 			unseenMessages.add(message.toJson());

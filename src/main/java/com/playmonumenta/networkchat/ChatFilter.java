@@ -1,26 +1,21 @@
 package com.playmonumenta.networkchat;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.playmonumenta.networkchat.utils.MessagingUtils;
-
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
 import javax.annotation.Nullable;
-
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -36,8 +31,8 @@ public class ChatFilter {
 			mComponent = component;
 		}
 
-		public ChatFilterResult(ChatFilterResult other) {
-			mComponent = other.mComponent;
+		public ChatFilterResult getCleanCopy() {
+			return new ChatFilterResult(mComponent);
 		}
 
 		public void copyResults(ChatFilterResult other) {
@@ -89,7 +84,7 @@ public class ChatFilter {
 			mIsLiteral = isLiteral;
 			mPatternString = regex;
 			mIsBadWord = isBadWord;
-			Pattern pattern = null;
+			Pattern pattern;
 			try {
 				int flags = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
 				if (mIsLiteral) {
@@ -169,7 +164,7 @@ public class ChatFilter {
 		}
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
-			final ChatFilterResult localResult = new ChatFilterResult(filterResult);
+			final ChatFilterResult localResult = filterResult.getCleanCopy();
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
 				.match(mPattern)
 				.replacement((MatchResult match, TextComponent.Builder textBuilder) -> {
@@ -179,9 +174,7 @@ public class ChatFilter {
 					}
 					String content = textBuilder.content();
 					content = mPattern.matcher(content).replaceAll(mReplacementMiniMessage);
-					Component result = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
-
-					return result;
+					return MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
 				})
 				.build();
 
@@ -204,19 +197,15 @@ public class ChatFilter {
 						command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
 					}
 					final String finishedCommand = command;
-					Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(NetworkChatPlugin.getInstance(), new Runnable() {
-						@Override
-						public void run() {
-							Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand);
-						}
-					}, 0);
+					Bukkit.getScheduler().runTask(NetworkChatPlugin.getInstance(),
+						() -> Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand));
 				}
 			}
 			filterResult.copyResults(localResult);
 		}
 	}
 
-	private Map<String, ChatFilterPattern> mFilters = new HashMap<>();
+	private final Map<String, ChatFilterPattern> mFilters = new HashMap<>();
 
 	public static ChatFilter fromJson(CommandSender sender, JsonObject object) {
 		ChatFilter filter = new ChatFilter();

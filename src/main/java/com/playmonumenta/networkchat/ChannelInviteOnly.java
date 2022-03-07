@@ -2,7 +2,6 @@ package com.playmonumenta.networkchat;
 
 import java.util.List;
 import java.util.UUID;
-
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 

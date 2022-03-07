@@ -1,14 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -17,11 +8,18 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
@@ -125,7 +123,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exeption during converting json to channel Party reason: " + e.getMessage());
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Party reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -216,23 +214,22 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					if (ch == null) {
 						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
-					if (!(ch instanceof ChannelParty)) {
+					if (!(ch instanceof ChannelParty channel)) {
 						CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
-					}
-					ChannelParty channel = (ChannelParty) ch;
+					} else {
+						if (!channel.isParticipant(sender)) {
+							CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
+						}
 
-					if (!channel.isParticipant(sender)) {
-						CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
-					}
+						String playerName = (String) args[3];
+						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+						if (playerId == null) {
+							CommandUtils.fail(sender, "No such player " + playerName + ".");
+						}
 
-					String playerName = (String)args[3];
-					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
-					if (playerId == null) {
-						CommandUtils.fail(sender, "No such player " + playerName + ".");
+						sender.sendMessage(Component.text("Added " + playerName + " to " + channelName + ".", NamedTextColor.GRAY));
+						channel.addPlayer(playerId);
 					}
-
-					sender.sendMessage(Component.text("Added " + playerName + " to " + channelName + ".", NamedTextColor.GRAY));
-					channel.addPlayer(playerId);
 				})
 				.register();
 
@@ -253,23 +250,22 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					if (ch == null) {
 						CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
-					if (!(ch instanceof ChannelParty)) {
+					if (!(ch instanceof ChannelParty channel)) {
 						CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
-					}
-					ChannelParty channel = (ChannelParty) ch;
+					} else {
+						if (!channel.isParticipant(sender)) {
+							CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
+						}
 
-					if (!channel.isParticipant(sender)) {
-						CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
-					}
+						String playerName = (String) args[3];
+						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+						if (playerId == null) {
+							CommandUtils.fail(sender, "No such player " + playerName + ".");
+						}
 
-					String playerName = (String)args[3];
-					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
-					if (playerId == null) {
-						CommandUtils.fail(sender, "No such player " + playerName + ".");
+						channel.removePlayer(playerId);
+						sender.sendMessage(Component.text("Kicked " + playerName + " from " + channelName + ".", NamedTextColor.GRAY));
 					}
-
-					channel.removePlayer(playerId);
-					sender.sendMessage(Component.text("Kicked " + playerName + " from " + channelName + ".", NamedTextColor.GRAY));
 				})
 				.register();
 
@@ -287,18 +283,17 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					if (ch == null) {
 						CommandUtils.fail(sender, "No such channel " + channelId + ".");
 					}
-					if (!(ch instanceof ChannelParty)) {
+					if (!(ch instanceof ChannelParty channel)) {
 						CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
-					}
-					ChannelParty channel = (ChannelParty) ch;
+					} else {
+						if (!channel.isParticipant(sender)) {
+							CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
+						}
+						Player player = (Player) sender;
 
-					if (!channel.isParticipant(sender)) {
-						CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
+						channel.removePlayer(player.getUniqueId());
+						sender.sendMessage(Component.text("You have left " + channelId + ".", NamedTextColor.GRAY));
 					}
-					Player player = (Player) sender;
-
-					channel.removePlayer(player.getUniqueId());
-					sender.sendMessage(Component.text("You have left " + channelId + ".", NamedTextColor.GRAY));
 				})
 				.register();
 		}
@@ -400,17 +395,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return mDefaultSettings;
 	}
 
-	public ChannelSettings playerSettings(Player player) {
-		if (player == null) {
-			return null;
-		}
-		PlayerState playerState = PlayerStateManager.getPlayerState(player);
-		if (playerState != null) {
-			return playerState.channelSettings(this);
-		}
-		return null;
-	}
-
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
@@ -443,12 +427,12 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			return true;
 		}
 
-		if (!(sender instanceof Player)) {
+		if (!(sender instanceof Player player)) {
 			return false;
+		} else {
+			UUID playerId = player.getUniqueId();
+			return mParticipants.contains(playerId);
 		}
-		Player player = (Player) sender;
-		UUID playerId = player.getUniqueId();
-		return mParticipants.contains(playerId);
 	}
 
 	public boolean mayChat(CommandSender sender) {
@@ -459,25 +443,20 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			return false;
 		}
 
-		if (!(sender instanceof Player)) {
+		if (!(sender instanceof Player player)) {
 			return false;
-		}
-
-		Player player = (Player) sender;
-		UUID playerId = player.getUniqueId();
-		if (!mParticipants.contains(playerId)) {
-			return false;
-		}
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			if (mDefaultAccess.mayChat() != null && !mDefaultAccess.mayChat()) {
+		} else {
+			UUID playerId = player.getUniqueId();
+			if (!mParticipants.contains(playerId)) {
 				return false;
 			}
-		} else if (playerAccess.mayChat() != null && !playerAccess.mayChat()) {
-			return false;
+			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
+			if (playerAccess == null) {
+				return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
+			} else {
+				return playerAccess.mayChat() == null || playerAccess.mayChat();
+			}
 		}
-
-		return true;
 	}
 
 	public boolean mayListen(CommandSender sender) {
@@ -499,14 +478,10 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 		if (playerAccess == null) {
-			if (mDefaultAccess.mayListen() != null && !mDefaultAccess.mayListen()) {
-				return false;
-			}
-		} else if (playerAccess.mayListen() != null && !playerAccess.mayListen()) {
-			return false;
+			return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+		} else {
+			return playerAccess.mayListen() == null || playerAccess.mayListen();
 		}
-
-		return true;
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
@@ -536,7 +511,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
-			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
+			sender.sendMessage(Component.text("An exception occurred broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
 			CommandUtils.fail(sender, "Could not send message.");
 		}

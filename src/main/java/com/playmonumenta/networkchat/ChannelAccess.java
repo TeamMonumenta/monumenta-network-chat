@@ -1,20 +1,16 @@
 package com.playmonumenta.networkchat;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Stream;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-
 import org.bukkit.command.CommandSender;
 
 // Access to listen or talk in a channel
@@ -66,7 +62,7 @@ public class ChannelAccess {
 		}
 	}
 
-	private Map<FlagKey, Boolean> mFlags = new HashMap<>();
+	private final Map<FlagKey, Boolean> mFlags = new HashMap<>();
 
 	public static ChannelAccess fromJson(JsonObject object) {
 		ChannelAccess perms = new ChannelAccess();

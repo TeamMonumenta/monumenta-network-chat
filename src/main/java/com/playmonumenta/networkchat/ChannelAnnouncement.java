@@ -1,24 +1,22 @@
 package com.playmonumenta.networkchat;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.audience.MessageType;
@@ -26,8 +24,8 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
@@ -37,13 +35,13 @@ import org.bukkit.entity.Player;
 public class ChannelAnnouncement extends Channel implements ChannelPermissionNode {
 	public static final String CHANNEL_CLASS_ID = "announcement";
 
-	private UUID mId;
+	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
 	private TextColor mMessageColor;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
-	private Map<UUID, ChannelAccess> mPlayerAccess;
+	private final Map<UUID, ChannelAccess> mPlayerAccess;
 	private boolean mAutoJoin = true;
 	private String mChannelPermission = null;
 
@@ -278,17 +276,6 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		return mDefaultSettings;
 	}
 
-	public ChannelSettings playerSettings(Player player) {
-		if (player == null) {
-			return null;
-		}
-		PlayerState playerState = PlayerStateManager.getPlayerState(player);
-		if (playerState != null) {
-			return playerState.channelSettings(this);
-		}
-		return null;
-	}
-
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
@@ -333,14 +320,10 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 		ChannelAccess playerAccess = mPlayerAccess.get(((Player) sender).getUniqueId());
 		if (playerAccess == null) {
-			if (mDefaultAccess.mayChat() != null && mDefaultAccess.mayChat()) {
-				return true;
-			}
-		} else if (playerAccess.mayChat() != null && playerAccess.mayChat()) {
-			return true;
+			return mDefaultAccess.mayChat() != null && mDefaultAccess.mayChat();
+		} else {
+			return playerAccess.mayChat() != null && playerAccess.mayChat();
 		}
-
-		return false;
 	}
 
 	public boolean mayListen(CommandSender sender) {
@@ -362,14 +345,10 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 		if (playerAccess == null) {
-			if (mDefaultAccess.mayListen() != null && !mDefaultAccess.mayListen()) {
-				return false;
-			}
-		} else if (playerAccess.mayListen() != null && !playerAccess.mayListen()) {
-			return false;
+			return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+		} else {
+			return playerAccess.mayListen() == null || playerAccess.mayListen();
 		}
-
-		return true;
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
@@ -404,7 +383,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
-			sender.sendMessage(Component.text("An exception occured broadcasting your message.", NamedTextColor.RED)
+			sender.sendMessage(Component.text("An exception occurred broadcasting your message.", NamedTextColor.RED)
 			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
 			CommandUtils.fail(sender, "Could not send message.");
 		}

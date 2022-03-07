@@ -1,49 +1,36 @@
 package com.playmonumenta.networkchat;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
 import com.google.gson.JsonObject;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import java.time.Instant;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 public abstract class Channel {
 	public static Channel fromJson(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 
-		switch (channelClassId) {
-			case ChannelAnnouncement.CHANNEL_CLASS_ID:
-				return ChannelAnnouncement.fromJsonInternal(channelJson);
-			case ChannelGlobal.CHANNEL_CLASS_ID:
-				return ChannelGlobal.fromJsonInternal(channelJson);
-			case ChannelLocal.CHANNEL_CLASS_ID:
-				return ChannelLocal.fromJsonInternal(channelJson);
-			case ChannelParty.CHANNEL_CLASS_ID:
-				return ChannelParty.fromJsonInternal(channelJson);
-			case ChannelTeam.CHANNEL_CLASS_ID:
-				return ChannelTeam.fromJsonInternal(channelJson);
-			case ChannelWhisper.CHANNEL_CLASS_ID:
-				return ChannelWhisper.fromJsonInternal(channelJson);
-			default:
-				return ChannelFuture.fromJsonInternal(channelJson);
-		}
+		return switch (channelClassId) {
+			case ChannelAnnouncement.CHANNEL_CLASS_ID -> ChannelAnnouncement.fromJsonInternal(channelJson);
+			case ChannelGlobal.CHANNEL_CLASS_ID -> ChannelGlobal.fromJsonInternal(channelJson);
+			case ChannelLocal.CHANNEL_CLASS_ID -> ChannelLocal.fromJsonInternal(channelJson);
+			case ChannelParty.CHANNEL_CLASS_ID -> ChannelParty.fromJsonInternal(channelJson);
+			case ChannelTeam.CHANNEL_CLASS_ID -> ChannelTeam.fromJsonInternal(channelJson);
+			case ChannelWhisper.CHANNEL_CLASS_ID -> ChannelWhisper.fromJsonInternal(channelJson);
+			default -> ChannelFuture.fromJsonInternal(channelJson);
+		};
 	}
 
-	// OVERRIDE ME - Load a channel from json, allowing messages in that channel to be received
-	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
-		throw new Exception("Channel has no fromJsonInternal() method!");
-	}
+	// DEFINE ME - Load a channel from json, allowing messages in that channel to be received
+	//protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception;
 
 	public abstract JsonObject toJson();
 
-	// OVERRIDE ME - Register commands for new channels; continues off an existing argument list of literals.
+	// DEFINE ME - Register commands for new channels; continues off an existing argument list of literals.
 	// Channel ID is at index = prefixArguments.size() - 1
-	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {}
+	//public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments);
 
 	public abstract String getClassId();
 
@@ -69,10 +56,6 @@ public abstract class Channel {
 	public abstract void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException;
 
 	public ChannelSettings channelSettings() {
-		return null;
-	}
-
-	public ChannelSettings playerSettings(Player player) {
 		return null;
 	}
 
