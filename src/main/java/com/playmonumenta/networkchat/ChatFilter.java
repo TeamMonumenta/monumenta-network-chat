@@ -106,7 +106,7 @@ public class ChatFilter {
 			if (mIsBadWord) {
 				mReplacementMiniMessage = "<red>" + mId + "</red>";
 			} else {
-				mReplacementMiniMessage = "<bold>$1</bold>";
+				mReplacementMiniMessage = "<bold>$0</bold>";
 			}
 		}
 
