@@ -22,6 +22,15 @@ jobs:
           git config --global user.name "Monumenta CI"
           git config --global user.email "Monumenta.CI@NotARealEmail.com"
 
+    - name: Build Paper
+      run: |
+        if [[ ! -d ~/.m2/repository/com/destroystokyo/paper ]]; then
+          git clone https://github.com/TeamMonumenta/Paper.git
+          cd Paper
+          git checkout 1.16
+          ./paper jar
+        fi
+
     - name: Cache maven dependencies
       uses: actions/cache@v2
       env:
