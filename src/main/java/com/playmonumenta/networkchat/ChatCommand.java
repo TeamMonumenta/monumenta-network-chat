@@ -1,7 +1,7 @@
 package com.playmonumenta.networkchat;
 
-import com.google.common.graph.Network;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -15,11 +15,13 @@ import dev.jorel.commandapi.arguments.SoundArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -27,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
@@ -48,15 +49,20 @@ public class ChatCommand {
 	public static final String[] COLOR_SUGGESTIONS = new String[]{"aqua", "dark_purple", "#0189af"};
 
 	static class HelpTreeNode extends TreeMap<String, HelpTreeNode> {
-		public @Nullable String mFullPath = null;
+		public @Nullable String mResourcePath = null;
+		public @Nullable String mExternalPath = null;
 	}
 
 	private static NetworkChatPlugin mPlugin;
 
 	public static void register(NetworkChatPlugin plugin, final @Nullable ZipFile zip) {
 		mPlugin = plugin;
+
+		// Start loading entries for help command
+		final HelpTreeNode helpTree = new HelpTreeNode();
+
+		// Load from plugin jar (null if unable to load and exception has been logged)
 		if (zip != null) {
-			final HelpTreeNode helpTree = new HelpTreeNode();
 			for (Enumeration<? extends ZipEntry> zipEntries = zip.entries(); zipEntries.hasMoreElements();) {
 				ZipEntry entry = zipEntries.nextElement();
 				String resourceName = entry.getName();
@@ -75,11 +81,45 @@ public class ChatCommand {
 					}
 					node = testNode;
 				}
-				node.mFullPath = resourceName;
+				node.mResourcePath = resourceName;
+			}
+		}
+
+		// Load from plugin data folder
+		String folderLocation = plugin.getDataFolder() + File.separator + "help";
+		ArrayList<File> listOfFiles;
+		try {
+			File directory = new File(folderLocation);
+			if (!directory.exists()) {
+				if (directory.mkdirs()) {
+					plugin.getLogger().info("Created plugin help directory.");
+				}
 			}
 
-			registerHelpCommandNode(zip, new ArrayList<>(), helpTree);
+			listOfFiles = FileUtils.getFilesInDirectory(folderLocation, ".txt");
+		} catch (IOException e) {
+			plugin.getLogger().severe("Caught exception trying to load help files from plugin folder.");
+			return;
 		}
+		Collections.sort(listOfFiles);
+		for (File file : listOfFiles) {
+			String filePath = file.toString();
+			String subPath = filePath.substring(folderLocation.length() + 1, filePath.length() - 4);
+
+			HelpTreeNode node = helpTree;
+			for (String argString : subPath.split("/")) {
+				@Nullable HelpTreeNode testNode = node.get(argString);
+				if (testNode == null) {
+					testNode = new HelpTreeNode();
+					node.put(argString, testNode);
+				}
+				node = testNode;
+			}
+			node.mExternalPath = filePath;
+		}
+
+		// Register all discovered help entries
+		registerHelpCommandNode(zip, new ArrayList<>(), helpTree);
 
 		List<Argument> arguments = new ArrayList<>();
 
@@ -1365,7 +1405,7 @@ public class ChatCommand {
 		}
 	}
 
-	private static void registerHelpCommandNode(final ZipFile zip, final List<String> argStrings, final HelpTreeNode node) {
+	private static void registerHelpCommandNode(final @Nullable ZipFile zip, final List<String> argStrings, final HelpTreeNode node) {
 		List<Argument> arguments = new ArrayList<>();
 		arguments.add(new MultiLiteralArgument("help"));
 		for (String arg : argStrings) {
@@ -1384,15 +1424,24 @@ public class ChatCommand {
 					sender.sendMessage(Component.text(titleBuilder.toString(), NamedTextColor.GOLD, TextDecoration.BOLD));
 
 					// Node's help info (if any)
-					if (node.mFullPath != null) {
-						ZipEntry zipEntry = zip.getEntry(node.mFullPath);
-						BufferedReader helpFile;
+					@Nullable BufferedReader helpFile = null;
+					if (node.mExternalPath != null) {
+						try {
+							helpFile = new BufferedReader(new InputStreamReader(new FileInputStream(node.mExternalPath)));
+						} catch (IOException ex) {
+							sender.sendMessage(Component.text("Unable to load server-specific help file. Attempting to load default help file...", NamedTextColor.RED));
+						}
+					}
+					if (helpFile == null && node.mResourcePath != null && zip != null) {
+						ZipEntry zipEntry = zip.getEntry(node.mResourcePath);
 						try {
 							helpFile = new BufferedReader(new InputStreamReader(zip.getInputStream(zipEntry)));
 						} catch (IOException ex) {
 							CommandUtils.fail(sender, "Unable to load help file. This shard may need to restart.");
 							return 0;
 						}
+					}
+					if (helpFile != null) {
 						try {
 							for (@Nullable String line; (line = helpFile.readLine()) != null; ) {
 								sender.sendMessage(Component.empty()
