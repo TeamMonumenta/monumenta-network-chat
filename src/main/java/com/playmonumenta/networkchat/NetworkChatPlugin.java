@@ -1,9 +1,5 @@
 package com.playmonumenta.networkchat;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.logging.Level;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -11,14 +7,15 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
-
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.logging.Level;
+import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
-
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -113,7 +110,13 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
-		ChatCommand.register();
+		@Nullable ZipFile zip = null;
+		try {
+			zip = new ZipFile(getFile());
+		} catch (IOException ex) {
+			getLogger().log(Level.SEVERE, "Could not load help data from plugin.");
+		}
+		ChatCommand.register(this, zip);
 	}
 
 	@Override

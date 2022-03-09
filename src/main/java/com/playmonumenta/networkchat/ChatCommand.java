@@ -1,34 +1,44 @@
 package com.playmonumenta.networkchat;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
+import com.google.common.graph.Network;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
+import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
 import dev.jorel.commandapi.arguments.FloatArgument;
+import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.SoundArgument;
-import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
-import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -37,7 +47,40 @@ public class ChatCommand {
 	public static final String[] COMMANDS = new String[]{"chat", "ch", "networkchat"};
 	public static final String[] COLOR_SUGGESTIONS = new String[]{"aqua", "dark_purple", "#0189af"};
 
-	public static void register() {
+	static class HelpTreeNode extends TreeMap<String, HelpTreeNode> {
+		public @Nullable String mFullPath = null;
+	}
+
+	private static NetworkChatPlugin mPlugin;
+
+	public static void register(NetworkChatPlugin plugin, final @Nullable ZipFile zip) {
+		mPlugin = plugin;
+		if (zip != null) {
+			final HelpTreeNode helpTree = new HelpTreeNode();
+			for (Enumeration<? extends ZipEntry> zipEntries = zip.entries(); zipEntries.hasMoreElements();) {
+				ZipEntry entry = zipEntries.nextElement();
+				String resourceName = entry.getName();
+				if (!resourceName.startsWith("help/") || resourceName.endsWith("/")) {
+					continue;
+				}
+				HelpTreeNode node = helpTree;
+				for (String argString : resourceName.substring(5).split("/")) {
+					if (argString.endsWith(".txt")) {
+						argString = argString.substring(0, argString.length() - 4);
+					}
+					@Nullable HelpTreeNode testNode = node.get(argString);
+					if (testNode == null) {
+						testNode = new HelpTreeNode();
+						node.put(argString, testNode);
+					}
+					node = testNode;
+				}
+				node.mFullPath = resourceName;
+			}
+
+			registerHelpCommandNode(zip, new ArrayList<>(), helpTree);
+		}
+
 		List<Argument> arguments = new ArrayList<>();
 
 		if (NetworkChatProperties.getChatCommandCreateEnabled()) {
@@ -1319,6 +1362,83 @@ public class ChatCommand {
 					return 1;
 				})
 				.register();
+		}
+	}
+
+	private static void registerHelpCommandNode(final ZipFile zip, final List<String> argStrings, final HelpTreeNode node) {
+		List<Argument> arguments = new ArrayList<>();
+		arguments.add(new MultiLiteralArgument("help"));
+		for (String arg : argStrings) {
+			arguments.add(new MultiLiteralArgument(arg));
+		}
+		for (final String baseCommand : COMMANDS) {
+			new CommandAPICommand(baseCommand)
+				.withArguments(arguments)
+				.executes((sender, args) -> {
+					// Title
+					StringBuilder titleBuilder = new StringBuilder("/").append(baseCommand).append(" help");
+					for (String arg : argStrings) {
+						titleBuilder.append(' ').append(arg);
+					}
+					titleBuilder.append(':');
+					sender.sendMessage(Component.text(titleBuilder.toString(), NamedTextColor.GOLD, TextDecoration.BOLD));
+
+					// Node's help info (if any)
+					if (node.mFullPath != null) {
+						ZipEntry zipEntry = zip.getEntry(node.mFullPath);
+						BufferedReader helpFile;
+						try {
+							helpFile = new BufferedReader(new InputStreamReader(zip.getInputStream(zipEntry)));
+						} catch (IOException ex) {
+							CommandUtils.fail(sender, "Unable to load help file. This shard may need to restart.");
+							return 0;
+						}
+						try {
+							for (@Nullable String line; (line = helpFile.readLine()) != null; ) {
+								sender.sendMessage(Component.empty()
+									.color(NamedTextColor.GREEN)
+									.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(line)));
+							}
+						} catch (IOException ex) {
+							CommandUtils.fail(sender, "Failed to read all lines from help file. This shard may need to restart.");
+						}
+					}
+
+					// Back link (if applicable)
+					if (!argStrings.isEmpty()) {
+						StringBuilder parentCmdBuilder = new StringBuilder("/")
+							.append(baseCommand)
+							.append(" help");
+						for (String arg : argStrings.subList(0, argStrings.size() - 1)) {
+							parentCmdBuilder.append(' ').append(arg);
+						}
+						sender.sendMessage(Component.text("[Back]", NamedTextColor.LIGHT_PURPLE)
+							.clickEvent(ClickEvent.runCommand(parentCmdBuilder.toString())));
+					}
+
+					// Child links
+					for (String childArg : node.keySet()) {
+						StringBuilder childCmdBuilder = new StringBuilder("/")
+							.append(baseCommand)
+							.append(" help");
+						for (String arg : argStrings) {
+							childCmdBuilder.append(' ').append(arg);
+						}
+						childCmdBuilder.append(' ').append(childArg);
+						sender.sendMessage(Component.text("[" + childArg + "]", NamedTextColor.LIGHT_PURPLE)
+							.clickEvent(ClickEvent.runCommand(childCmdBuilder.toString())));
+					}
+					return 1;
+				})
+				.register();
+		}
+
+		for (Map.Entry<String, HelpTreeNode> entry : node.entrySet()) {
+			String arg = entry.getKey();
+			HelpTreeNode child = entry.getValue();
+			List<String> nextArgStrings = new ArrayList<>(argStrings);
+			nextArgStrings.add(arg);
+			registerHelpCommandNode(zip, nextArgStrings, child);
 		}
 	}
 

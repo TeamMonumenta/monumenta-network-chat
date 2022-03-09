@@ -218,6 +218,7 @@
                             <includes>
                                 <include>META-INF/**</include>
                                 <include>plugin.yml</include>
+                                <include>help/**</include>
                                 <include>com/playmonumenta/**</include>
                                 <include>net/kyori/adventure/text/minimessage/**</include>
                                 <include>org/checkerframework/**</include>
