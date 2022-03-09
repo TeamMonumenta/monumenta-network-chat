@@ -1241,6 +1241,28 @@ public class ChatCommand {
 				.register();
 		}
 
+		arguments.clear();
+		arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+			ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+		));
+		new CommandAPICommand("join")
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				return joinChannel(sender, (String) args[0]);
+			})
+			.register();
+
+		arguments.clear();
+		arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
+			ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0])
+		));
+		new CommandAPICommand("leave")
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				return leaveChannel(sender, (String) args[0]);
+			})
+			.register();
+
 		new CommandAPICommand("pausechat")
 			.executes((sender, args) -> {
 				return togglePause(sender);
