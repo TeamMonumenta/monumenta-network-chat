@@ -53,11 +53,7 @@ public class ChatCommand {
 		public @Nullable String mExternalPath = null;
 	}
 
-	private static NetworkChatPlugin mPlugin;
-
 	public static void register(NetworkChatPlugin plugin, final @Nullable ZipFile zip) {
-		mPlugin = plugin;
-
 		// Start loading entries for help command
 		final HelpTreeNode helpTree = new HelpTreeNode();
 
