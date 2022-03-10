@@ -1,1 +1,0 @@
-Additionally, unlike with MiniMessage, NetworkChat treats anything starting with <b>http://</b> or <b>https://</b> up to the next space as a link.

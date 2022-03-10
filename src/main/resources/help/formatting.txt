@@ -8,3 +8,5 @@ This is a tag-based system, where opening tags look like \<this>, and optional c
 - <u>\<u> or \<underlined></u>
 - <st>\<st> or \<strikethrough></st>
 - \<obf> or \<obfuscated>: <obf>Muahahahaha</st>
+
+Additionally, unlike with MiniMessage, NetworkChat treats anything starting with <b>http://</b> or <b>https://</b> up to the next space as a link.
