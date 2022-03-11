@@ -89,22 +89,22 @@ public class MessagingUtils {
 		TransformationRegistry.Builder transforms = TransformationRegistry.builder().clear();
 
 		if (sender instanceof Player) {
-			if (sender.hasPermission("networkchat.transform.color")) {
+			if (CommandUtils.hasPermission(sender, "networkchat.transform.color")) {
 				transforms.add(TransformationType.COLOR);
 			}
-			if (sender.hasPermission("networkchat.transform.decoration")) {
+			if (CommandUtils.hasPermission(sender, "networkchat.transform.decoration")) {
 				transforms.add(TransformationType.DECORATION);
 			}
-			if (sender.hasPermission("networkchat.transform.keybind")) {
+			if (CommandUtils.hasPermission(sender, "networkchat.transform.keybind")) {
 				transforms.add(TransformationType.KEYBIND);
 			}
-			if (sender.hasPermission("networkchat.transform.font")) {
+			if (CommandUtils.hasPermission(sender, "networkchat.transform.font")) {
 				transforms.add(TransformationType.FONT);
 			}
-			if (sender.hasPermission("networkchat.transform.gradient")) {
+			if (CommandUtils.hasPermission(sender, "networkchat.transform.gradient")) {
 				transforms.add(TransformationType.GRADIENT);
 			}
-			if (sender.hasPermission("networkchat.transform.rainbow")) {
+			if (CommandUtils.hasPermission(sender, "networkchat.transform.rainbow")) {
 				transforms.add(TransformationType.RAINBOW);
 			}
 		} else {
@@ -227,7 +227,7 @@ public class MessagingUtils {
 				Template.template("team_suffix", teamSuffix),
 				Template.template("profile_message", profileMessage),
 				Template.template("item", () -> {
-					if (!player.hasPermission("networkchat.transform.item")) {
+					if (!CommandUtils.hasPermission(player, "networkchat.transform.item")) {
 						return Component.empty();
 					}
 

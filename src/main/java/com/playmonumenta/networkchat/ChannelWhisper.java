@@ -383,10 +383,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!sender.hasPermission("networkchat.say")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.say.whisper")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.whisper")) {
 			return false;
 		}
 
@@ -407,10 +407,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!sender.hasPermission("networkchat.see")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.see.whisper")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see.whisper")) {
 			return false;
 		}
 
@@ -437,10 +437,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			CommandUtils.fail(sender, "Only players may whisper.");
 		}
 
-		if (!sender.hasPermission("networkchat.say")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
 			CommandUtils.fail(sender, "You do not have permission to chat.");
 		}
-		if (!sender.hasPermission("networkchat.say.whisper")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.whisper")) {
 			CommandUtils.fail(sender, "You do not have permission to whisper.");
 		}
 

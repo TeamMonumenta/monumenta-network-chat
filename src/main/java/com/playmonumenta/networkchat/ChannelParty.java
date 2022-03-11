@@ -174,7 +174,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.new.party")) {
+					if (!CommandUtils.hasPermission(sender, "networkchat.new.party")) {
 						CommandUtils.fail(sender, "You do not have permission to create party channels.");
 					}
 
@@ -423,7 +423,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayManage(CommandSender sender) {
-		if (sender.hasPermission("networkchat.moderator")) {
+		if (CommandUtils.hasPermission(sender, "networkchat.moderator")) {
 			return true;
 		}
 
@@ -436,10 +436,10 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!sender.hasPermission("networkchat.say")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.say.party")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
 			return false;
 		}
 
@@ -460,10 +460,10 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!sender.hasPermission("networkchat.see")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.see.party")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see.party")) {
 			return false;
 		}
 
@@ -486,10 +486,10 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (sender instanceof Player) {
-			if (!sender.hasPermission("networkchat.say")) {
+			if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
 				CommandUtils.fail(sender, "You do not have permission to chat.");
 			}
-			if (!sender.hasPermission("networkchat.say.party")) {
+			if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
 				CommandUtils.fail(sender, "You do not have permission to talk in party chat.");
 			}
 
@@ -498,9 +498,9 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			}
 
 			if (messageText.contains("@")) {
-				if (messageText.contains("@everyone") && !sender.hasPermission("networkchat.ping.everyone")) {
+				if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 					CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-				} else if (!sender.hasPermission("networkchat.ping.player")) {
+				} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
 					CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 				}
 			}

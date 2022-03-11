@@ -358,7 +358,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.channel.color")) {
+						if (!CommandUtils.hasPermission(sender, "networkchat.channel.color")) {
 							CommandUtils.fail(sender, "You do not have permission to change channel colors.");
 						}
 
@@ -394,7 +394,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.channel.color")) {
+						if (!CommandUtils.hasPermission(sender, "networkchat.channel.color")) {
 							CommandUtils.fail(sender, "You do not have permission to change channel colors.");
 						}
 
@@ -432,7 +432,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.delete.channel")) {
+						if (!CommandUtils.hasPermission(sender, "networkchat.delete.channel")) {
 							CommandUtils.fail(sender, "You do not have permission to delete channels.");
 						}
 
@@ -499,7 +499,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.rename")) {
+						if (!CommandUtils.hasPermission(sender, "networkchat.rename")) {
 							CommandUtils.fail(sender, "You do not have permission to rename channels.");
 						}
 
@@ -677,7 +677,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.gui.message")) {
+					if (!CommandUtils.hasPermission(sender, "networkchat.gui.message")) {
 						CommandUtils.fail(sender, "You do not have permission to run this command.");
 					}
 
@@ -727,7 +727,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.delete.message")) {
+						if (!CommandUtils.hasPermission(sender, "networkchat.delete.message")) {
 							CommandUtils.fail(sender, "You do not have permission to run this command.");
 						}
 
@@ -795,7 +795,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.setprofilemessage")) {
+					if (!CommandUtils.hasPermission(sender, "networkchat.setprofilemessage")) {
 						CommandUtils.fail(sender, "You do not have permission to run this command.");
 					}
 
@@ -1114,7 +1114,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.format.default")) {
+						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
 							CommandUtils.fail(sender, "You do not have permission to change channel colors server-wide.");
 						}
 
@@ -1187,7 +1187,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.format.default")) {
+						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
 							CommandUtils.fail(sender, "You do not have permission to change message formatting.");
 						}
 
@@ -1238,7 +1238,7 @@ public class ChatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
 					.executes((sender, args) -> {
-						if (!sender.hasPermission("networkchat.visibility.default")) {
+						if (!CommandUtils.hasPermission(sender, "networkchat.visibility.default")) {
 							CommandUtils.fail(sender, "You do not have permission to change server-wide message visibility.");
 						}
 
@@ -1258,7 +1258,7 @@ public class ChatCommand {
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)
 						.executes((sender, args) -> {
-							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
+							if (!CommandUtils.hasPermission(sender, "networkchat.setdefaultchannel")) {
 								CommandUtils.fail(sender, "You do not have permission to change server-wide default channels.");
 							}
 
@@ -1282,7 +1282,7 @@ public class ChatCommand {
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)
 						.executes((sender, args) -> {
-							if (!sender.hasPermission("networkchat.setdefaultchannel")) {
+							if (!CommandUtils.hasPermission(sender, "networkchat.setdefaultchannel")) {
 								CommandUtils.fail(sender, "You do not have permission to change server-wide default channels.");
 							}
 
@@ -1803,13 +1803,13 @@ public class ChatCommand {
 					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
 						.hoverEvent(Component.text("My channel settings", NamedTextColor.LIGHT_PURPLE))
 						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " settings channel " + channel.getName() + " ")));
-				if (target.hasPermission("networkchat.rename")) {
+				if (CommandUtils.hasPermission(target, "networkchat.rename")) {
 					gui = gui.append(Component.text(" "))
 						.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
 							.hoverEvent(Component.text("Rename channel", NamedTextColor.LIGHT_PURPLE))
 							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " rename " + channel.getName() + " ")));
 				}
-				if (target.hasPermission("networkchat.delete.channel")) {
+				if (CommandUtils.hasPermission(target, "networkchat.delete.channel")) {
 					gui = gui.append(Component.text(" "))
 						.append(Component.text("[]", NamedTextColor.RED)
 							.hoverEvent(Component.text("Delete channel", NamedTextColor.RED))
@@ -1828,7 +1828,7 @@ public class ChatCommand {
 				}
 			}
 
-			if (target.hasPermission("networkchat.delete.message")) {
+			if (CommandUtils.hasPermission(target, "networkchat.delete.message")) {
 				gui = gui.append(Component.text(" "))
 					.append(Component.text("[]", NamedTextColor.RED)
 						.hoverEvent(Component.text("Delete message", NamedTextColor.RED))

@@ -173,7 +173,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.new.announcement")) {
+					if (!CommandUtils.hasPermission(sender, "networkchat.new.announcement")) {
 						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
 					}
 
@@ -195,7 +195,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.new.announcement")) {
+					if (!CommandUtils.hasPermission(sender, "networkchat.new.announcement")) {
 						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
 					}
 
@@ -218,7 +218,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
-					if (!sender.hasPermission("networkchat.new.announcement")) {
+					if (!CommandUtils.hasPermission(sender, "networkchat.new.announcement")) {
 						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
 					}
 
@@ -304,13 +304,13 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!sender.hasPermission("networkchat.say")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.say.announcement")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.announcement")) {
 			return false;
 		}
-		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
+		if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
 			return false;
 		}
 
@@ -327,13 +327,13 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!sender.hasPermission("networkchat.see")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.see.announcement")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see.announcement")) {
 			return false;
 		}
-		if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
+		if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
 			return false;
 		}
 
@@ -353,13 +353,13 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (sender instanceof Player) {
-			if (!sender.hasPermission("networkchat.say")) {
+			if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
 				CommandUtils.fail(sender, "You do not have permission to chat.");
 			}
-			if (!sender.hasPermission("networkchat.say.announcement")) {
+			if (!CommandUtils.hasPermission(sender, "networkchat.say.announcement")) {
 				CommandUtils.fail(sender, "You do not have permission to make announcements.");
 			}
-			if (mChannelPermission != null && !sender.hasPermission(mChannelPermission)) {
+			if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
 				CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
 			}
 
@@ -368,9 +368,9 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			}
 
 			if (messageText.contains("@")) {
-				if (messageText.contains("@everyone") && !sender.hasPermission("networkchat.ping.everyone")) {
+				if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 					CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-				} else if (!sender.hasPermission("networkchat.ping.player")) {
+				} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
 					CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 				}
 			}

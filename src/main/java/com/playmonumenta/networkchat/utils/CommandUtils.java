@@ -7,6 +7,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;
+import org.bukkit.permissions.Permissible;
+import org.bukkit.permissions.Permission;
 import org.jetbrains.annotations.Contract;
 
 public class CommandUtils {
@@ -24,7 +26,20 @@ public class CommandUtils {
 		return sender;
 	}
 
-	public static Boolean checkSudoCommand(CommandSender sender) {
+	public static boolean hasPermission(Permissible permissionHolder, String permission) {
+		return hasPermission(permissionHolder, new Permission(permission));
+	}
+
+	public static boolean hasPermission(Permissible permissionHolder, Permission permission) {
+		boolean isOp = false;
+		isOp = permissionHolder.isOp();
+		permissionHolder.setOp(false);
+		boolean hasPermission = permissionHolder.hasPermission(permission);
+		permissionHolder.setOp(isOp);
+		return hasPermission;
+	}
+
+	public static boolean checkSudoCommand(CommandSender sender) {
 		if (sender instanceof ProxiedCommandSender) {
 			CommandSender callee = ((ProxiedCommandSender) sender).getCallee();
 			CommandSender caller = ((ProxiedCommandSender) sender).getCaller();

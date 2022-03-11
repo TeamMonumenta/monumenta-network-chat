@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.UUID;
@@ -74,7 +75,7 @@ public abstract class Channel {
 	}
 
 	public boolean mayManage(CommandSender sender) {
-		return sender.hasPermission("networkchat.moderator");
+		return CommandUtils.hasPermission(sender, "networkchat.moderator");
 	}
 
 	public boolean mayChat(CommandSender sender) {

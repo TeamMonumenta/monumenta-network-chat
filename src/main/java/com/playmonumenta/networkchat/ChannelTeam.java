@@ -287,10 +287,10 @@ public class ChannelTeam extends Channel {
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!sender.hasPermission("networkchat.say")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.say.team")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			return false;
 		}
 
@@ -316,10 +316,10 @@ public class ChannelTeam extends Channel {
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!sender.hasPermission("networkchat.see")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
 			return false;
 		}
-		if (!sender.hasPermission("networkchat.see.team")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see.team")) {
 			return false;
 		}
 
@@ -347,10 +347,10 @@ public class ChannelTeam extends Channel {
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (!sender.hasPermission("networkchat.say")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
 			CommandUtils.fail(sender, "You do not have permission to chat.");
 		}
-		if (!sender.hasPermission("networkchat.say.team")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			CommandUtils.fail(sender, "You do not have permission to talk to a team.");
 		}
 
@@ -359,9 +359,9 @@ public class ChannelTeam extends Channel {
 		}
 
 		if (messageText.contains("@")) {
-			if (messageText.contains("@everyone") && !sender.hasPermission("networkchat.ping.everyone")) {
+			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!sender.hasPermission("networkchat.ping.player")) {
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
 				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
