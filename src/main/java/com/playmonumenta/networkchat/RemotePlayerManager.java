@@ -379,6 +379,7 @@ public class RemotePlayerManager implements Listener {
 		if (command.startsWith("/team ")
 		    || command.contains(" run team ")
 		    || command.startsWith("/pv ")
+			|| command.equals("/pv")
 		    || command.contains("vanish")) {
 			new BukkitRunnable() {
 				@Override
