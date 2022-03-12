@@ -31,12 +31,7 @@ public class CommandUtils {
 	}
 
 	public static boolean hasPermission(Permissible permissionHolder, Permission permission) {
-		boolean isOp = false;
-		isOp = permissionHolder.isOp();
-		permissionHolder.setOp(false);
-		boolean hasPermission = permissionHolder.hasPermission(permission);
-		permissionHolder.setOp(isOp);
-		return hasPermission;
+		return permissionHolder.hasPermission(permission);
 	}
 
 	public static boolean checkSudoCommand(CommandSender sender) {
