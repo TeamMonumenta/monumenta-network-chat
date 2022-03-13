@@ -295,6 +295,32 @@ public class ChannelManager implements Listener {
 		return mChannels.get(channelId);
 	}
 
+	// Reserved for channel types with hard-coded names, ie whisper channels
+	protected static void forceRenameChannel(Channel channel) {
+		UUID channelId = channel.getUniqueId();
+		String newName = channel.getName();
+		String oldName = mChannelNames.get(channelId);
+		if (newName.equals(oldName)) {
+			return;
+		}
+
+		if (mChannelIdsByName.containsKey(newName)) {
+			try {
+				deleteChannel(newName;
+			} catch (WrapperCommandSyntaxException ex) {
+				mPlugin.getLogger().severe("Could not delete new channel name " + newName + " when trying to force rename " + oldName);
+				return;
+			}
+		}
+
+		mChannelIdsByName.put(newName, channel.getUniqueId());
+		mChannelIdsByName.remove(oldName);
+		mChannelNames.put(channel.getUniqueId(), newName);
+
+		saveChannel(channel);
+		RedisAPI.getInstance().async().hdel(REDIS_CHANNEL_NAME_TO_UUID_PATH, oldName);
+	}
+
 	public static void renameChannel(String oldName, String newName) throws WrapperCommandSyntaxException {
 		UUID oldChannelId = mChannelIdsByName.get(oldName);
 		if (oldChannelId == null) {
@@ -306,7 +332,7 @@ public class ChannelManager implements Listener {
 			CommandAPI.fail("Channel " + oldName + " not yet loaded, try again.");
 		}
 
-		if (mChannelIdsByName.get(newName) != null) {
+		if (mChannelIdsByName.containsKey(newName)) {
 			CommandAPI.fail("Channel " + newName + " already exists!");
 		}
 

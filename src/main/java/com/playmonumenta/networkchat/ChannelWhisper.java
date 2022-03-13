@@ -14,6 +14,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -298,8 +299,25 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public String getName() {
+		return getName(mParticipants);
+	}
+
+	public static String getName(List<UUID> participants) {
+		participants = new ArrayList<UUID>(participants);
+		Collections.sort(participants);
 		StringBuilder name = new StringBuilder("Whisper");
-		for (UUID participant : mParticipants) {
+		for (UUID participant : participants) {
+			name.append("_").append(participant.toString());
+		}
+		return name.toString();
+	}
+
+	public static String getAltName(List<UUID> participants) {
+		participants = new ArrayList<UUID>(participants);
+		Collections.sort(participants);
+		Collections.reverse(participants);
+		StringBuilder name = new StringBuilder("Whisper");
+		for (UUID participant : participants) {
 			name.append("_").append(participant.toString());
 		}
 		return name.toString();
