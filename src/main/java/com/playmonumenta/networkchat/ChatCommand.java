@@ -747,6 +747,9 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "You may not change other players' ignored players.");
+					}
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -780,6 +783,9 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "You may not change other players' ignored players.");
+					}
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -809,6 +815,9 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("show"));
 			arguments.add(new StringArgument("name").replaceSuggestions(info -> {
 				CommandSender sender = info.sender();
+				if (!CommandUtils.checkSudoCommand(sender)) {
+					return new String[] {};
+				}
 				CommandSender callee = CommandUtils.getCallee(sender);
 				if (!(callee instanceof Player target)) {
 					return new String[] {};
@@ -823,6 +832,9 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "You may not change other players' ignored players.");
+					}
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
