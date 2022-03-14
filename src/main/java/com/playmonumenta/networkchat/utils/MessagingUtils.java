@@ -1,7 +1,9 @@
 package com.playmonumenta.networkchat.utils;
 
+import com.comphenix.protocol.PacketType;
 import com.google.gson.JsonElement;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
+import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.RemotePlayerManager;
 import java.io.PrintWriter;
@@ -182,6 +184,9 @@ public class MessagingUtils {
 	}
 
 	public static Component playerComponent(Player player) {
+		if (player == null) {
+			return Component.empty();
+		}
 		@Nullable Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
 		String colorMiniMessage = "";
 		Component teamPrefix;
@@ -214,7 +219,12 @@ public class MessagingUtils {
 			}
 		}
 
-		Component profileMessage = PlayerStateManager.getPlayerState(player).profileMessageComponent();
+		@Nullable PlayerState state = PlayerStateManager.getPlayerState(player);
+		if (state == null) {
+			return Component.text(player.getName(), NamedTextColor.RED)
+				.hoverEvent(Component.text("Invalid player state, please relog.", NamedTextColor.RED));
+		}
+		Component profileMessage = state.profileMessageComponent();
 		String postPapiProcessing = PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player"))
 			.replaceAll("[\u00a7&][Rr]", colorMiniMessage)
 			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
