@@ -807,9 +807,19 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("player"));
 			arguments.add(new MultiLiteralArgument("ignore"));
 			arguments.add(new MultiLiteralArgument("show"));
-			arguments.add(new StringArgument("name").replaceSuggestions(info ->
-				MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new)
-			));
+			arguments.add(new StringArgument("name").replaceSuggestions(info -> {
+				CommandSender sender = info.sender();
+				CommandSender callee = CommandUtils.getCallee(sender);
+				if (!(callee instanceof Player target)) {
+					return new String[] {};
+				} else {
+					@Nullable PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						return new String[] {};
+					}
+					return state.getIgnoredPlayerNames().toArray(new String[0]);
+				}
+			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
@@ -817,7 +827,7 @@ public class ChatCommand {
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
 					} else {
-						PlayerState state = PlayerStateManager.getPlayerState(target);
+						@Nullable PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
 							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
