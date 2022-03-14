@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import com.destroystokyo.paper.ClientOption;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -25,29 +26,25 @@ public class PlayerState {
 	private UUID mActiveChannelId;
 	private ChannelSettings mDefaultChannelSettings = new ChannelSettings();
 	private DefaultChannels mDefaultChannels = new DefaultChannels();
-	private final Map<UUID, ChannelSettings> mChannelSettings;
+	private final Map<UUID, ChannelSettings> mChannelSettings = new HashMap<>();
 
-	private final Map<UUID, UUID> mWhisperChannelsByRecipient;
-	private final Map<UUID, UUID> mWhisperRecipientByChannels;
-	private UUID mLastWhisperChannel;
+	private final Set<UUID> mIgnoredPlayers = new HashSet<>();
+
+	private final Map<UUID, UUID> mWhisperChannelsByRecipient = new HashMap<>();
+	private final Map<UUID, UUID> mWhisperRecipientByChannels = new HashMap<>();
+	private @Nullable UUID mLastWhisperChannel;
 
 	// Channels not in these maps will use the default channel watch status.
-	private final Map<UUID, String> mWatchedChannelIds;
-	private final Map<UUID, String> mUnwatchedChannelIds;
+	private final Map<UUID, String> mWatchedChannelIds = new HashMap<>();
+	private final Map<UUID, String> mUnwatchedChannelIds = new HashMap<>();
 
 	private String mProfileMessage = "";
 
 	public PlayerState(Player player) {
 		mPlayerId = player.getUniqueId();
 		mChatPaused = false;
-		mChannelSettings = new HashMap<>();
 
-		mWhisperChannelsByRecipient = new HashMap<>();
-		mWhisperRecipientByChannels = new HashMap<>();
 		mLastWhisperChannel = null;
-
-		mWatchedChannelIds = new HashMap<>();
-		mUnwatchedChannelIds = new HashMap<>();
 
 		unsetActiveChannel();
 	}
@@ -57,8 +54,8 @@ public class PlayerState {
 
 		Instant now = Instant.now();
 		Long nowMillis = now.toEpochMilli();
-		Long lastLoginMillis = null;
-		JsonPrimitive lastLoginJson = obj.getAsJsonPrimitive("lastSaved");
+		@Nullable Long lastLoginMillis = null;
+		@Nullable JsonPrimitive lastLoginJson = obj.getAsJsonPrimitive("lastSaved");
 		if (lastLoginJson != null) {
 			try {
 				lastLoginMillis = lastLoginJson.getAsLong();
@@ -72,17 +69,29 @@ public class PlayerState {
 			}
 		}
 
-		JsonPrimitive isPausedJson = obj.getAsJsonPrimitive("isPaused");
+		@Nullable JsonPrimitive isPausedJson = obj.getAsJsonPrimitive("isPaused");
 		if (isPausedJson != null) {
 			state.mChatPaused = isPausedJson.getAsBoolean();
 		}
 
-		JsonPrimitive activeChannelJson = obj.getAsJsonPrimitive("activeChannel");
+		@Nullable JsonPrimitive activeChannelJson = obj.getAsJsonPrimitive("activeChannel");
 		if (activeChannelJson != null) {
 			state.mActiveChannelId = UUID.fromString(activeChannelJson.getAsString());
 		}
 
-		JsonObject whisperChannelsJson = obj.getAsJsonObject("whisperChannels");
+		@Nullable JsonArray ignoredPlayersJson = obj.getAsJsonArray("ignoredPlayers");
+		if (ignoredPlayersJson != null) {
+			for (JsonElement ignoredUuidJson : ignoredPlayersJson) {
+				try {
+					UUID ignoredUuid = UUID.fromString(ignoredUuidJson.getAsString());
+					state.mIgnoredPlayers.add(ignoredUuid);
+				} catch (Exception e) {
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s ignoredPlayers to array. Reason: " + e.getMessage());
+				}
+			}
+		}
+
+		@Nullable JsonObject whisperChannelsJson = obj.getAsJsonObject("whisperChannels");
 		if (whisperChannelsJson != null) {
 			for (Map.Entry<String, JsonElement> whisperChannelEntry : whisperChannelsJson.entrySet()) {
 				String recipientId = whisperChannelEntry.getKey();
@@ -105,7 +114,7 @@ public class PlayerState {
 			state.mLastWhisperChannel = null;
 		}
 
-		JsonObject watchedChannelsJson = obj.getAsJsonObject("watchedChannels");
+		@Nullable JsonObject watchedChannelsJson = obj.getAsJsonObject("watchedChannels");
 		if (watchedChannelsJson != null) {
 			for (Map.Entry<String, JsonElement> channelIdEntry : watchedChannelsJson.entrySet()) {
 				String channelId = channelIdEntry.getKey();
@@ -118,7 +127,7 @@ public class PlayerState {
 			}
 		}
 
-		JsonObject unwatchedChannelsJson = obj.getAsJsonObject("unwatchedChannels");
+		@Nullable JsonObject unwatchedChannelsJson = obj.getAsJsonObject("unwatchedChannels");
 		if (unwatchedChannelsJson != null) {
 			for (Map.Entry<String, JsonElement> channelIdEntry : unwatchedChannelsJson.entrySet()) {
 				String channelId = channelIdEntry.getKey();
@@ -131,17 +140,17 @@ public class PlayerState {
 			}
 		}
 
-		JsonObject defaultChannelSettingsJson = obj.getAsJsonObject("defaultChannelSettings");
+		@Nullable JsonObject defaultChannelSettingsJson = obj.getAsJsonObject("defaultChannelSettings");
 		if (defaultChannelSettingsJson != null) {
 			state.mDefaultChannelSettings = ChannelSettings.fromJson(defaultChannelSettingsJson);
 		}
 
-		JsonObject defaultChannelsJson = obj.getAsJsonObject("defaultChannels");
+		@Nullable JsonObject defaultChannelsJson = obj.getAsJsonObject("defaultChannels");
 		if (defaultChannelsJson != null) {
 			state.mDefaultChannels = DefaultChannels.fromJson(defaultChannelsJson);
 		}
 
-		JsonObject allChannelSettingsJson = obj.getAsJsonObject("channelSettings");
+		@Nullable JsonObject allChannelSettingsJson = obj.getAsJsonObject("channelSettings");
 		if (allChannelSettingsJson != null) {
 			for (Map.Entry<String, JsonElement> channelSettingEntry : allChannelSettingsJson.entrySet()) {
 				String channelId = channelSettingEntry.getKey();
@@ -155,7 +164,7 @@ public class PlayerState {
 			}
 		}
 
-		JsonPrimitive profileMessageJson = obj.getAsJsonPrimitive("profileMessage");
+		@Nullable JsonPrimitive profileMessageJson = obj.getAsJsonPrimitive("profileMessage");
 		if (profileMessageJson != null && profileMessageJson.isString()) {
 			state.mProfileMessage = profileMessageJson.getAsString();
 		}
@@ -176,6 +185,11 @@ public class PlayerState {
 			UUID channelId = channelEntry.getKey();
 			String channelName = channelEntry.getValue();
 			unwatchedChannels.addProperty(channelId.toString(), channelName);
+		}
+
+		JsonArray ignoredPlayers = new JsonArray();
+		for (UUID ignoredPlayer : mIgnoredPlayers) {
+			ignoredPlayers.add(ignoredPlayer.toString());
 		}
 
 		JsonObject whisperChannels = new JsonObject();
@@ -203,6 +217,7 @@ public class PlayerState {
 		if (mProfileMessage != null && !mProfileMessage.isEmpty()) {
 			result.addProperty("profileMessage", mProfileMessage);
 		}
+		result.add("ignoredPlayers", ignoredPlayers);
 		result.add("whisperChannels", whisperChannels);
 		if (mLastWhisperChannel != null) {
 			result.addProperty("lastWhisperChannel", mLastWhisperChannel.toString());
@@ -220,7 +235,7 @@ public class PlayerState {
 		return mPlayerId;
 	}
 
-	public Player getPlayer() {
+	public @Nullable Player getPlayer() {
 		return Bukkit.getPlayer(mPlayerId);
 	}
 
@@ -234,7 +249,7 @@ public class PlayerState {
 
 	public ChannelSettings channelSettings(Channel channel) {
 		UUID channelId = channel.getUniqueId();
-		ChannelSettings channelSettings = mChannelSettings.get(channelId);
+		@Nullable ChannelSettings channelSettings = mChannelSettings.get(channelId);
 		if (channelSettings == null) {
 			channelSettings = new ChannelSettings();
 			mChannelSettings.put(channelId, channelSettings);
@@ -247,7 +262,10 @@ public class PlayerState {
 	}
 
 	public void receiveMessage(Message message) {
-		getPlayerChatHistory().receiveMessage(message);
+		@Nullable UUID senderId = message.getSenderId();
+		if (senderId == null || !mIgnoredPlayers.contains(senderId)) {
+			getPlayerChatHistory().receiveMessage(message);
+		}
 	}
 
 	public void receiveExternalMessage(Message message) {
@@ -285,12 +303,16 @@ public class PlayerState {
 		mActiveChannelId = null;
 	}
 
+	public Set<UUID> getIgnoredPlayers() {
+		return mIgnoredPlayers;
+	}
+
 	public ChannelWhisper getWhisperChannel(UUID recipientUuid) {
-		UUID channelId = mWhisperChannelsByRecipient.get(recipientUuid);
+		@Nullable UUID channelId = mWhisperChannelsByRecipient.get(recipientUuid);
 		if (channelId == null) {
 			return null;
 		}
-		Channel channel = ChannelManager.getChannel(channelId);
+		@Nullable Channel channel = ChannelManager.getChannel(channelId);
 		if (!(channel instanceof ChannelWhisper)) {
 			return null; // Odds are channel was null, otherwise something's very improbably wrong.
 		}
@@ -299,7 +321,7 @@ public class PlayerState {
 
 	public void setWhisperChannel(UUID recipientUuid, ChannelWhisper channel) {
 		UUID channelUuid = channel.getUniqueId();
-		UUID oldChannelUuid = mWhisperChannelsByRecipient.get(recipientUuid);
+		@Nullable UUID oldChannelUuid = mWhisperChannelsByRecipient.get(recipientUuid);
 		if (oldChannelUuid != null) {
 			mWhisperRecipientByChannels.remove(oldChannelUuid);
 		}
@@ -320,8 +342,8 @@ public class PlayerState {
 		return new HashSet<>(mWhisperRecipientByChannels.keySet());
 	}
 
-	public ChannelWhisper getLastWhisperChannel() {
-		Channel channel = ChannelManager.getChannel(mLastWhisperChannel);
+	public @Nullable ChannelWhisper getLastWhisperChannel() {
+		@Nullable Channel channel = ChannelManager.getChannel(mLastWhisperChannel);
 		if (!(channel instanceof ChannelWhisper)) {
 			return null;
 		}
@@ -362,7 +384,7 @@ public class PlayerState {
 		}
 		mWatchedChannelIds.remove(channelId);
 		mUnwatchedChannelIds.remove(channelId);
-		UUID whisperRecipientUuid = mWhisperRecipientByChannels.get(channelId);
+		@Nullable UUID whisperRecipientUuid = mWhisperRecipientByChannels.get(channelId);
 		if (whisperRecipientUuid != null) {
 			mWhisperRecipientByChannels.remove(channelId);
 			mWhisperChannelsByRecipient.remove(whisperRecipientUuid);
@@ -375,7 +397,7 @@ public class PlayerState {
 	}
 
 	public Channel getDefaultChannel(String channelType) {
-		Channel channel = mDefaultChannels.getDefaultChannel(channelType);
+		@Nullable Channel channel = mDefaultChannels.getDefaultChannel(channelType);
 		if (channel == null) {
 			channel = ChannelManager.getDefaultChannel(channelType);
 		}
@@ -403,7 +425,7 @@ public class PlayerState {
 
 		UUID channelId = channel.getUniqueId();
 
-		ChannelSettings channelSettings = mChannelSettings.get(channelId);
+		@Nullable ChannelSettings channelSettings = mChannelSettings.get(channelId);
 		if (channelSettings != null && channelSettings.isListening() != null) {
 			return channelSettings.isListening();
 		}
@@ -424,8 +446,14 @@ public class PlayerState {
 	public void playMessageSound(Message message) {
 		boolean shouldPlaySound = false;
 
-		Channel channel = message.getChannel();
-		Player player = getPlayer();
+		@Nullable Channel channel = message.getChannel();
+		if (channel == null) {
+			return;
+		}
+		@Nullable Player player = getPlayer();
+		if (player == null) {
+			return;
+		}
 		String plainMessage = message.getPlainMessage();
 		if (plainMessage.contains("@" + player.getName())) {
 			shouldPlaySound = true;
@@ -438,7 +466,7 @@ public class PlayerState {
 		}
 
 		UUID channelId = channel.getUniqueId();
-		ChannelSettings channelSettings = mChannelSettings.get(channelId);
+		@Nullable ChannelSettings channelSettings = mChannelSettings.get(channelId);
 		if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
 			shouldPlaySound = channelSettings.messagesPlaySound();
 		} else if (channel.channelSettings() != null && channel.channelSettings().messagesPlaySound() != null) {
@@ -476,11 +504,11 @@ public class PlayerState {
 	 * @param channel Channel that has changed. null if deleted.
 	 */
 	protected void channelUpdated(UUID channelId, @Nullable Channel channel) {
-		String newChannelName = null;
+		@Nullable String newChannelName = null;
 		if (channel != null) {
 			newChannelName = channel.getName();
 		}
-		String lastKnownName = mWatchedChannelIds.get(channelId);
+		@Nullable String lastKnownName = mWatchedChannelIds.get(channelId);
 		if (lastKnownName != null) {
 			mWatchedChannelIds.put(channelId, newChannelName);
 		}
@@ -491,7 +519,7 @@ public class PlayerState {
 				mUnwatchedChannelIds.put(channelId, newChannelName);
 			}
 		}
-		UUID whisperRecipientUuid;
+		@Nullable UUID whisperRecipientUuid;
 		if (lastKnownName == null) {
 			whisperRecipientUuid = mWhisperRecipientByChannels.get(channelId);
 			if (whisperRecipientUuid != null) {
@@ -517,7 +545,10 @@ public class PlayerState {
 	}
 
 	public Component profileMessageComponent() {
-		Player player = getPlayer();
+		@Nullable Player player = getPlayer();
+		if (player == null) {
+			return Component.empty();
+		}
 		return MessagingUtils.getAllowedMiniMessage(player).deserialize(mProfileMessage);
 	}
 
@@ -526,7 +557,10 @@ public class PlayerState {
 	}
 
 	public void profileMessage(String profileMessage) {
-		Player player = getPlayer();
+		@Nullable Player player = getPlayer();
+		if (player == null) {
+			return;
+		}
 		if (profileMessage == null) {
 			mProfileMessage = "";
 			RemotePlayerManager.refreshLocalPlayer(player);
