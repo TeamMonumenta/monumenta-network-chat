@@ -6,11 +6,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
@@ -303,8 +305,21 @@ public class PlayerState {
 		mActiveChannelId = null;
 	}
 
-	public Set<UUID> getIgnoredPlayers() {
+	public Set<UUID> getIgnoredPlayerIds() {
 		return mIgnoredPlayers;
+	}
+
+	public Set<String> getIgnoredPlayerNames() {
+		Set<String> ignoredNames = new TreeSet<>();
+		for (UUID ignoredId : mIgnoredPlayers) {
+			@Nullable String ignoredName = MonumentaRedisSyncAPI.cachedUuidToName(ignoredId);
+			if (ignoredName == null) {
+				NetworkChatPlugin.getInstance().getLogger().warning("Could not get name of ignored player with UUID " + ignoredId.toString());
+			} else {
+				ignoredNames.add(ignoredName);
+			}
+		}
+		return ignoredNames;
 	}
 
 	public ChannelWhisper getWhisperChannel(UUID recipientUuid) {

@@ -761,7 +761,7 @@ public class ChatCommand {
 							CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and may not be ignored. Double check capitalization and spelling.");
 							return -1;
 						}
-						Set<UUID> ignoredPlayers = state.getIgnoredPlayers();
+						Set<UUID> ignoredPlayers = state.getIgnoredPlayerIds();
 						if (ignoredPlayers.contains(ignoredId)) {
 							target.sendMessage(Component.text("You are still ignoring " + ignoredName, NamedTextColor.GRAY));
 						} else {
@@ -788,16 +788,7 @@ public class ChatCommand {
 						if (state == null) {
 							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
-						Set<UUID> ignoredIds = state.getIgnoredPlayers();
-						Set<String> ignoredNames = new TreeSet<>();
-						for (UUID ignoredId : ignoredIds) {
-							@Nullable String ignoredName = MonumentaRedisSyncAPI.cachedUuidToName(ignoredId);
-							if (ignoredName == null) {
-								plugin.getLogger().warning("Could not get name of ignored player with UUID " + ignoredId.toString());
-							} else {
-								ignoredNames.add(ignoredName);
-							}
-						}
+						Set<String> ignoredNames = state.getIgnoredPlayerNames();
 						target.sendMessage(Component.text("You are ignoring:", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
 						boolean lightLine = false;
 						TextColor lineColor;
@@ -805,7 +796,7 @@ public class ChatCommand {
 							lineColor = (lightLine = !lightLine) ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
 							target.sendMessage(Component.text("- " + ignoredName, lineColor));
 						}
-						lineColor = (lightLine = !lightLine) ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
+						lineColor = (!lightLine) ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
 						target.sendMessage(Component.text("Players ignored: " + Integer.toString(ignoredNames.size()), lineColor));
 					}
 					return 1;
@@ -836,7 +827,7 @@ public class ChatCommand {
 							CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and could not be ignored. Double check capitalization and spelling.");
 							return -1;
 						}
-						Set<UUID> ignoredPlayers = state.getIgnoredPlayers();
+						Set<UUID> ignoredPlayers = state.getIgnoredPlayerIds();
 						if (ignoredPlayers.contains(ignoredId)) {
 							ignoredPlayers.remove(ignoredId);
 							target.sendMessage(Component.text("You are no longer ignoring " + ignoredName, NamedTextColor.GRAY));
