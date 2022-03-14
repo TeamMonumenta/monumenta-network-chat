@@ -755,7 +755,7 @@ public class ChatCommand {
 						if (state == null) {
 							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
-						String ignoredName = (String) args[2];
+						String ignoredName = (String) args[3];
 						@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
 						if (ignoredId == null) {
 							CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and may not be ignored. Double check capitalization and spelling.");
@@ -800,10 +800,13 @@ public class ChatCommand {
 						}
 						target.sendMessage(Component.text("You are ignoring:", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
 						boolean lightLine = false;
+						TextColor lineColor;
 						for (String ignoredName : ignoredNames) {
-							TextColor lineColor = (lightLine = !lightLine) ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
+							lineColor = (lightLine = !lightLine) ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
 							target.sendMessage(Component.text("- " + ignoredName, lineColor));
 						}
+						lineColor = (lightLine = !lightLine) ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
+						target.sendMessage(Component.text("Players ignored: " + Integer.toString(ignoredNames.size()), lineColor));
 					}
 					return 1;
 				})
@@ -827,10 +830,10 @@ public class ChatCommand {
 						if (state == null) {
 							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
 						}
-						String ignoredName = (String) args[2];
+						String ignoredName = (String) args[3];
 						@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
 						if (ignoredId == null) {
-							CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and may not be ignored. Double check capitalization and spelling.");
+							CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and could not be ignored. Double check capitalization and spelling.");
 							return -1;
 						}
 						Set<UUID> ignoredPlayers = state.getIgnoredPlayers();
