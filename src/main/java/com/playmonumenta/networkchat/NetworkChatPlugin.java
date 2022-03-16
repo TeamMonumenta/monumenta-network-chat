@@ -92,7 +92,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 				"n[i1]gg+(a|[e3]r)",
 				true);
 			ChatFilter.ChatFilterPattern filter = mGlobalChatFilter.getFilter("N_WORD");
-			filter.command("auditlogsevereplayer @S \"@S said the N word\"");
+			filter.command("auditlogsevereplayer @S \"@S said the N word: @OE\"");
 			filter.replacementMessage("<red>cool kid</red>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
