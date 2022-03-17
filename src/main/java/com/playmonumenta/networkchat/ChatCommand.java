@@ -1400,13 +1400,18 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executes((sender, args) -> {
+					if (!CommandUtils.checkSudoCommand(sender)) {
+						CommandUtils.fail(sender, "You may not show other players help info.");
+					}
+					CommandSender callee = CommandUtils.getCallee(sender);
+
 					// Title
 					StringBuilder titleBuilder = new StringBuilder("/").append(baseCommand).append(" help");
 					for (String arg : argStrings) {
 						titleBuilder.append(' ').append(arg);
 					}
 					titleBuilder.append(':');
-					sender.sendMessage(Component.text(titleBuilder.toString(), NamedTextColor.GOLD, TextDecoration.BOLD));
+					callee.sendMessage(Component.text(titleBuilder.toString(), NamedTextColor.GOLD, TextDecoration.BOLD));
 
 					// Node's help info (if any)
 					@Nullable BufferedReader helpFile = null;
@@ -1414,7 +1419,7 @@ public class ChatCommand {
 						try {
 							helpFile = new BufferedReader(new InputStreamReader(new FileInputStream(node.mExternalPath)));
 						} catch (IOException ex) {
-							sender.sendMessage(Component.text("Unable to load server-specific help file. Attempting to load default help file...", NamedTextColor.RED));
+							callee.sendMessage(Component.text("Unable to load server-specific help file. Attempting to load default help file...", NamedTextColor.RED));
 						}
 					}
 					if (helpFile == null && node.mResourcePath != null && zip != null) {
@@ -1422,19 +1427,19 @@ public class ChatCommand {
 						try {
 							helpFile = new BufferedReader(new InputStreamReader(zip.getInputStream(zipEntry)));
 						} catch (IOException ex) {
-							CommandUtils.fail(sender, "Unable to load help file. This shard may need to restart.");
+							CommandUtils.fail(callee, "Unable to load help file. This shard may need to restart.");
 							return 0;
 						}
 					}
 					if (helpFile != null) {
 						try {
 							for (@Nullable String line; (line = helpFile.readLine()) != null; ) {
-								sender.sendMessage(Component.empty()
+								callee.sendMessage(Component.empty()
 									.color(NamedTextColor.GREEN)
 									.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(line)));
 							}
 						} catch (IOException ex) {
-							CommandUtils.fail(sender, "Failed to read all lines from help file. This shard may need to restart.");
+							CommandUtils.fail(callee, "Failed to read all lines from help file. This shard may need to restart.");
 						}
 					}
 
@@ -1446,7 +1451,7 @@ public class ChatCommand {
 						for (String arg : argStrings.subList(0, argStrings.size() - 1)) {
 							parentCmdBuilder.append(' ').append(arg);
 						}
-						sender.sendMessage(Component.text("[Back]", NamedTextColor.LIGHT_PURPLE)
+						callee.sendMessage(Component.text("[Back]", NamedTextColor.LIGHT_PURPLE)
 							.clickEvent(ClickEvent.runCommand(parentCmdBuilder.toString())));
 					}
 
@@ -1459,7 +1464,7 @@ public class ChatCommand {
 							childCmdBuilder.append(' ').append(arg);
 						}
 						childCmdBuilder.append(' ').append(childArg);
-						sender.sendMessage(Component.text("[" + childArg + "]", NamedTextColor.LIGHT_PURPLE)
+						callee.sendMessage(Component.text("[" + childArg + "]", NamedTextColor.LIGHT_PURPLE)
 							.clickEvent(ClickEvent.runCommand(childCmdBuilder.toString())));
 					}
 					return 1;
