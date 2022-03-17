@@ -1932,18 +1932,18 @@ public class ChatCommand {
 				gui = gui.append(Component.text(" "))
 					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
 						.hoverEvent(Component.text("My channel settings", NamedTextColor.LIGHT_PURPLE))
-						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " settings channel " + channel.getName() + " ")));
+						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " player settings channel " + channel.getName() + " ")));
 				if (CommandUtils.hasPermission(target, "networkchat.rename")) {
 					gui = gui.append(Component.text(" "))
 						.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
 							.hoverEvent(Component.text("Rename channel", NamedTextColor.LIGHT_PURPLE))
-							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " rename " + channel.getName() + " ")));
+							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " channel rename " + channel.getName() + " ")));
 				}
 				if (CommandUtils.hasPermission(target, "networkchat.delete.channel")) {
 					gui = gui.append(Component.text(" "))
 						.append(Component.text("[]", NamedTextColor.RED)
 							.hoverEvent(Component.text("Delete channel", NamedTextColor.RED))
-							.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete channel " + channel.getName())));
+							.clickEvent(ClickEvent.runCommand("/" + baseCommand + " channel delete " + channel.getName())));
 				}
 
 				if (message.senderIsPlayer()) {
@@ -1952,8 +1952,8 @@ public class ChatCommand {
 					if (channel.mayManage(target)) {
 						gui = gui.append(Component.text(" "))
 							.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-								.hoverEvent(Component.text("Sender channel permissions", NamedTextColor.LIGHT_PURPLE))
-								.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " permissions channel " + channel.getName() + " player " + fromName + " ")));
+								.hoverEvent(Component.text("Sender channel access", NamedTextColor.LIGHT_PURPLE))
+								.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " channel access " + channel.getName() + " player " + fromName + " ")));
 					}
 				}
 			}
@@ -1962,7 +1962,7 @@ public class ChatCommand {
 				gui = gui.append(Component.text(" "))
 					.append(Component.text("[]", NamedTextColor.RED)
 						.hoverEvent(Component.text("Delete message", NamedTextColor.RED))
-						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " delete message " + messageIdStr)));
+						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " message delete " + messageIdStr)));
 			}
 
 			target.sendMessage(gui);
