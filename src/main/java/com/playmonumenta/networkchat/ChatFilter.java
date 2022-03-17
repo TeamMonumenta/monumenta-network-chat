@@ -16,6 +16,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.apache.commons.text.StringEscapeUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -25,14 +26,18 @@ public class ChatFilter {
 	public static class ChatFilterResult {
 		private boolean mFoundMatch = false;
 		private boolean mFoundBadWord = false;
+		private Component mOriginalComponent;
 		private Component mComponent;
 
 		public ChatFilterResult(Component component) {
+			mOriginalComponent = component;
 			mComponent = component;
 		}
 
 		public ChatFilterResult getCleanCopy() {
-			return new ChatFilterResult(mComponent);
+			ChatFilterResult filterResult = new ChatFilterResult(mComponent);
+			filterResult.mOriginalComponent = mOriginalComponent;
+			return filterResult;
 		}
 
 		public void copyResults(ChatFilterResult other) {
@@ -55,6 +60,10 @@ public class ChatFilter {
 
 		public void foundBadWord(boolean value) {
 			mFoundBadWord = value;
+		}
+
+		public Component originalComponent() {
+			return mOriginalComponent;
 		}
 
 		public Component component() {
@@ -196,6 +205,12 @@ public class ChatFilter {
 					if (sender instanceof Entity) {
 						command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
 					}
+					String originalMessage = MessagingUtils.plainText(localResult.originalComponent());
+					String replacedMessage = MessagingUtils.plainText(localResult.component());
+					command = command.replace("@OE", StringEscapeUtils.escapeJson(originalMessage));
+					command = command.replace("@ME", StringEscapeUtils.escapeJson(replacedMessage));
+					command = command.replace("@O", originalMessage);
+					command = command.replace("@M", replacedMessage);
 					final String finishedCommand = command;
 					Bukkit.getScheduler().runTask(NetworkChatPlugin.getInstance(),
 						() -> Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand));
