@@ -1,11 +1,13 @@
 package com.playmonumenta.networkchat;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import java.lang.ref.Cleaner;
 import java.time.Instant;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
@@ -83,8 +85,8 @@ public class Message implements AutoCloseable {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
-		UUID senderId = null;
-		NamespacedKey senderType = null;
+		@Nullable UUID senderId = null;
+		@Nullable NamespacedKey senderType = null;
 		if (sender instanceof Entity) {
 			senderId = ((Entity) sender).getUniqueId();
 			senderType = ((Entity) sender).getType().getKey();
@@ -117,18 +119,18 @@ public class Message implements AutoCloseable {
 
 	// Raw, non-channel messages (use sparingly)
 	protected static Message createRawMessage(MessageType messageType,
-	                                          UUID senderId,
+	                                          @Nullable UUID senderId,
 	                                          JsonObject extraData,
 	                                          Component message) {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
-		UUID channelId = null;
+		@Nullable UUID channelId = null;
 		if (senderId != null) {
 			if (senderId.getMostSignificantBits() == 0 && senderId.getLeastSignificantBits() == 0) {
 				senderId = null;
 			}
 		}
-		NamespacedKey senderType = null;
+		@Nullable NamespacedKey senderType = null;
 		boolean senderIsPlayer = (senderId != null);
 		String senderName = "";
 		Component senderComponent = Component.empty();
@@ -147,23 +149,31 @@ public class Message implements AutoCloseable {
 
 	// For when receiving remote messages
 	protected static Message fromJson(JsonObject object) {
-		UUID id = null;
-		if (object.get("id") != null) {
-			id = UUID.fromString(object.get("id").getAsString());
+		@Nullable UUID id = null;
+		@Nullable JsonElement idJson = object.get("id");
+		if (idJson != null) {
+			id = UUID.fromString(idJson.getAsString());
 		}
-		Message existingMessage = MessageManager.getMessage(id);
+		@Nullable Message existingMessage = MessageManager.getMessage(id);
 		if (existingMessage != null) {
 			return existingMessage;
 		}
 
-		Instant instant = Instant.ofEpochMilli(object.get("instant").getAsLong());
-		UUID channelId = null;
-		if (object.get("channelId") != null) {
-			channelId = UUID.fromString(object.get("channelId").getAsString());
+		Instant instant;
+		try {
+			instant = Instant.ofEpochMilli(object.get("instant").getAsLong());
+		} catch (Exception ex) {
+			instant = Instant.EPOCH;
+		}
+		@Nullable UUID channelId = null;
+		@Nullable JsonElement channelIdJson = object.get("channelId");
+		if (channelIdJson != null) {
+			channelId = UUID.fromString(channelIdJson.getAsString());
 		}
 		MessageType messageType = MessageType.CHAT;
-		if (object.get("messageType") != null) {
-			String messageTypeName = object.get("messageType").getAsString();
+		@Nullable JsonElement messageTypeJson = object.get("messageType");
+		if (messageTypeJson != null) {
+			String messageTypeName = messageTypeJson.getAsString();
 			for (MessageType possibleType : MessageType.values()) {
 				if (possibleType.name().equals(messageTypeName)) {
 					messageType = possibleType;
@@ -171,22 +181,28 @@ public class Message implements AutoCloseable {
 				}
 			}
 		}
-		UUID senderId = null;
-		if (object.get("senderId") != null) {
-			senderId = UUID.fromString(object.get("senderId").getAsString());
+		@Nullable UUID senderId = null;
+		@Nullable JsonElement senderIdJson = object.get("senderId");
+		if (senderIdJson != null) {
+			senderId = UUID.fromString(senderIdJson.getAsString());
 		}
-		String senderName = object.get("senderName").getAsString();
-		NamespacedKey senderType = null;
-		if (object.get("senderType") != null) {
-			senderType = NamespacedKey.fromString(object.get("senderType").getAsString());
+		@Nullable JsonElement senderNameJson = object.get("senderName");
+		String senderName = senderNameJson.getAsString();
+		@Nullable NamespacedKey senderType = null;
+		@Nullable JsonElement senderTypeJson = object.get("senderType");
+		if (senderTypeJson != null) {
+			senderType = NamespacedKey.fromString(senderTypeJson.getAsString());
 		}
-		boolean senderIsPlayer = object.get("senderIsPlayer").getAsBoolean();
-		Component senderComponent = MessagingUtils.fromJson(object.get("senderComponent"));
-		JsonObject extraData = null;
-		if (object.get("extra") != null) {
-			extraData = object.get("extra").getAsJsonObject();
+		@Nullable JsonElement senderIsPlayerJson = object.get("senderIsPlayer");
+		boolean senderIsPlayer = senderIsPlayerJson.getAsBoolean();
+		Component senderComponent = MessagingUtils.fromJson(senderIsPlayerJson);
+		@Nullable JsonObject extraData = null;
+		@Nullable JsonElement extraJson = object.get("extra");
+		if (extraJson != null) {
+			extraData = extraJson.getAsJsonObject();
 		}
-		Component message = GsonComponentSerializer.gson().deserializeFromTree(object.get("message"));
+		@Nullable JsonElement messageJson = object.get("message");
+		Component message = GsonComponentSerializer.gson().deserializeFromTree(messageJson);
 
 		return new Message(id,
 		                   instant,
@@ -303,11 +319,11 @@ public class Message implements AutoCloseable {
 		if (mIsDeleted) {
 			return;
 		}
-		Channel channel = ChannelManager.getChannel(mChannelId);
+		@Nullable Channel channel = ChannelManager.getChannel(mChannelId);
 		if (channel == null) {
 			// Non-channel messages
 			if (mExtraData != null) {
-				JsonPrimitive shardJson = mExtraData.getAsJsonPrimitive("shard");
+				@Nullable JsonPrimitive shardJson = mExtraData.getAsJsonPrimitive("shard");
 				if (shardJson != null) {
 					String shard = shardJson.getAsString();
 					if (!shard.equals("*") && !shard.equals(RemotePlayerManager.getShardName())) {
