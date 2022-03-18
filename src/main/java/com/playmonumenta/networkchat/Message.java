@@ -195,7 +195,11 @@ public class Message implements AutoCloseable {
 		}
 		@Nullable JsonElement senderIsPlayerJson = object.get("senderIsPlayer");
 		boolean senderIsPlayer = senderIsPlayerJson.getAsBoolean();
-		Component senderComponent = MessagingUtils.fromJson(senderIsPlayerJson);
+		Component senderComponent = Component.text(senderName);
+		@Nullable JsonElement senderComponentJson = object.get("senderComponent");
+		if (senderComponentJson != null) {
+			senderComponent = MessagingUtils.fromJson(senderComponentJson);
+		}
 		@Nullable JsonObject extraData = null;
 		@Nullable JsonElement extraJson = object.get("extra");
 		if (extraJson != null) {
