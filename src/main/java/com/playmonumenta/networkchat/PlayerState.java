@@ -293,6 +293,7 @@ public class PlayerState {
 	}
 
 	public void unpauseChat() {
+		mChatPaused = false;
 		getPlayerChatHistory().unpauseChat();
 	}
 
