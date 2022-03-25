@@ -8,6 +8,7 @@ import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -324,14 +325,32 @@ public class PlayerState {
 
 	public ChannelWhisper getWhisperChannel(UUID recipientUuid) {
 		@Nullable UUID channelId = mWhisperChannelsByRecipient.get(recipientUuid);
+		@Nullable Channel channel;
 		if (channelId == null) {
+			ArrayList<UUID> participants = new ArrayList<>();
+			participants.add(mPlayerId);
+			participants.add(recipientUuid);
+
+			String channelName = ChannelWhisper.getAltName(participants);
+			channel = ChannelManager.getChannel(channelName);
+			if (channel instanceof ChannelWhisper channelWhisper) {
+				return channelWhisper;
+			}
+
+			channelName = ChannelWhisper.getName(participants);
+			channel = ChannelManager.getChannel(channelName);
+			if (channel instanceof ChannelWhisper channelWhisper) {
+				return channelWhisper;
+			}
+
 			return null;
 		}
-		@Nullable Channel channel = ChannelManager.getChannel(channelId);
-		if (!(channel instanceof ChannelWhisper)) {
+		channel = ChannelManager.getChannel(channelId);
+		if (!(channel instanceof ChannelWhisper channelWhipser)) {
 			return null; // Odds are channel was null, otherwise something's very improbably wrong.
+		} else {
+			return channelWhipser;
 		}
-		return (ChannelWhisper) channel;
 	}
 
 	public void setWhisperChannel(UUID recipientUuid, ChannelWhisper channel) {
