@@ -146,7 +146,8 @@ public class PlayerChatHistory {
 		// Delete old seen messages
 		if (mUnseenMessages.size() + mSeenMessages.size() > MAX_DISPLAYED_MESSAGES) {
 			int newSeenStartIndex = mUnseenMessages.size() + mSeenMessages.size() - MAX_DISPLAYED_MESSAGES;
-			mSeenMessages = mSeenMessages.subList(newSeenStartIndex, MAX_DISPLAYED_MESSAGES);
+			int newSeenToIndex = Integer.min(MAX_DISPLAYED_MESSAGES, mSeenMessages.size());
+			mSeenMessages = mSeenMessages.subList(newSeenStartIndex, newSeenToIndex);
 		}
 		showUnseen();
 	}
