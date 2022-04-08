@@ -308,12 +308,30 @@ public class ChannelManager implements Listener {
 			return;
 		}
 
-		if (mChannelIdsByName.containsKey(newName)) {
-			try {
-				deleteChannel(newName);
-			} catch (WrapperCommandSyntaxException ex) {
-				mPlugin.getLogger().severe("Could not delete new channel name " + newName + " when trying to force rename " + oldName);
-				return;
+		@Nullable UUID existingChannelId = mChannelIdsByName.get(newName);
+		if (existingChannelId != null) {
+			if (!existingChannelId.equals(channelId)) {
+				mPlugin.getLogger().info("Replacing channel " + newName);
+				String channelIdStr = channelId.toString();
+
+				// Update Redis
+				RedisAsyncCommands<String, String> redisAsync = RedisAPI.getInstance().async();
+				redisAsync.hdel(REDIS_CHANNEL_NAME_TO_UUID_PATH, newName);
+				redisAsync.hdel(REDIS_CHANNELS_PATH, channelIdStr);
+				redisAsync.srem(REDIS_FORCELOADED_CHANNEL_PATH, channelIdStr);
+
+				// Broadcast to other shards
+				JsonObject wrappedChannelJson = new JsonObject();
+				wrappedChannelJson.addProperty("channelId", channelIdStr);
+				wrappedChannelJson.addProperty("channelLastUpdate", Instant.now().toEpochMilli());
+				// "channelData" intentionally left out (null indicates delete)
+				try {
+					NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CHANNEL_UPDATE,
+						wrappedChannelJson,
+						NetworkChatPlugin.getMessageTtl());
+				} catch (Exception e) {
+					mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
+				}
 			}
 		}
 
