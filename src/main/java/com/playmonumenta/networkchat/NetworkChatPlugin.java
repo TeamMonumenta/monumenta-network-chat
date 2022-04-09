@@ -114,7 +114,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 				"Spoiler",
 				false,
-				"\\|\\|(.+)\\|\\|",
+				"\\|\\|(.+?)\\|\\|",
 				false);
 			ChatFilter.ChatFilterPattern filter = mGlobalChatFilter.getFilter("Spoiler");
 			filter.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
