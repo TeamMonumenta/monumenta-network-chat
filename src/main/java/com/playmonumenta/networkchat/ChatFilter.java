@@ -4,10 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import com.playmonumenta.networkchat.utils.ReplacerWithEscape;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -173,6 +175,8 @@ public class ChatFilter {
 		}
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
+			Logger logger = NetworkChatPlugin.getInstance().getLogger();
+			ReplacerWithEscape replacer = new ReplacerWithEscape(logger, sender, mReplacementMiniMessage);
 			final ChatFilterResult localResult = filterResult.getCleanCopy();
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
 				.match(mPattern)
@@ -182,7 +186,7 @@ public class ChatFilter {
 						localResult.foundBadWord(true);
 					}
 					String content = textBuilder.content();
-					content = mPattern.matcher(content).replaceAll(mReplacementMiniMessage);
+					content = mPattern.matcher(content).replaceAll(replacer);
 					return MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
 				})
 				.build();
@@ -190,7 +194,7 @@ public class ChatFilter {
 			localResult.component(localResult.component().replaceText(replacementConfig));
 
 			String plainText = MessagingUtils.plainText(localResult.component());
-			String plainReplacement = mPattern.matcher(plainText).replaceAll(mReplacementMiniMessage);
+			String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
 			if (!plainText.equals(plainReplacement)) {
 				localResult.foundMatch(true);
 				if (mIsBadWord) {

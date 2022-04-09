@@ -110,6 +110,18 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
+		try {
+			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
+				"Spoiler",
+				false,
+				"\\|\\|(.+)\\|\\|",
+				false);
+			ChatFilter.ChatFilterPattern filter = mGlobalChatFilter.getFilter("Spoiler");
+			filter.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+		}
+
 		@Nullable ZipFile zip = null;
 		try {
 			zip = new ZipFile(getFile());
