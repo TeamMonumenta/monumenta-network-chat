@@ -123,6 +123,14 @@ public class ChannelManager implements Listener {
 		return matches;
 	}
 
+	public static String getChannelName(UUID channelId) {
+		return mChannelNames.get(channelId);
+	}
+
+	public static UUID getChannelId(String channelName) {
+		return mChannelIdsByName.get(channelName);
+	}
+
 	public static List<Channel> getLoadedChannels() {
 		return new ArrayList<>(mChannels.values());
 	}

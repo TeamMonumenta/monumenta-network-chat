@@ -204,7 +204,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			}
 
 			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
-			ChannelWhisper channel = senderState.getWhisperChannel(recipientUuid);
+			@Nullable ChannelWhisper channel = senderState.getWhisperChannel(recipientUuid);
 			if (channel == null) {
 				try {
 					channel = new ChannelWhisper(sendingPlayer.getUniqueId(), recipientUuid);
@@ -231,7 +231,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			}
 
 			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
-			ChannelWhisper channel = senderState.getWhisperChannel(recipientUuid);
+			@Nullable ChannelWhisper channel = senderState.getWhisperChannel(recipientUuid);
 			if (channel == null) {
 				try {
 					channel = new ChannelWhisper(sendingPlayer.getUniqueId(), recipientUuid);
