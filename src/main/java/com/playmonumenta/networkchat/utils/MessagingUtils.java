@@ -1,11 +1,12 @@
 package com.playmonumenta.networkchat.utils;
 
-import com.comphenix.protocol.PacketType;
 import com.google.gson.JsonElement;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.RemotePlayerManager;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.UUID;
@@ -247,6 +248,12 @@ public class MessagingUtils {
 					}
 					return Component.empty();
 			})));
+	}
+
+	public static String getCommandExceptionMessage(WrapperCommandSyntaxException ex) {
+		// TODO If/when CommandAPI exposes the message directly, remove the Brigadier dependency
+		CommandSyntaxException unwrappedEx = ex.getException();
+		return unwrappedEx.getMessage();
 	}
 
 	public static void sendStackTrace(CommandSender sender, Exception e) {

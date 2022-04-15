@@ -384,8 +384,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
-			sender.sendMessage(Component.text("An exception occurred broadcasting your message.", NamedTextColor.RED)
-			    .hoverEvent(Component.text(e.getMessage(), NamedTextColor.RED)));
+			CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
 		}
 	}
 
