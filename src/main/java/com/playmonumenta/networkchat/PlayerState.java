@@ -7,6 +7,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -323,33 +325,30 @@ public class PlayerState {
 		return ignoredNames;
 	}
 
-	public ChannelWhisper getWhisperChannel(UUID recipientUuid) {
+	public ChannelWhisper getWhisperChannel(UUID recipientUuid) throws WrapperCommandSyntaxException {
 		@Nullable UUID channelId = mWhisperChannelsByRecipient.get(recipientUuid);
 		@Nullable Channel channel;
+
 		if (channelId == null) {
 			ArrayList<UUID> participants = new ArrayList<>();
 			participants.add(mPlayerId);
 			participants.add(recipientUuid);
 
 			String channelName = ChannelWhisper.getAltName(participants);
-			channel = ChannelManager.getChannel(channelName);
-			if (channel instanceof ChannelWhisper channelWhisper) {
-				return channelWhisper;
-			}
+			channelId = ChannelManager.getChannelId(channelName);
 
-			channelName = ChannelWhisper.getName(participants);
-			channel = ChannelManager.getChannel(channelName);
-			if (channel instanceof ChannelWhisper channelWhisper) {
-				return channelWhisper;
+			if (channelId == null) {
+				channelName = ChannelWhisper.getName(participants);
+				channelId = ChannelManager.getChannelId(channelName);
 			}
-
-			return null;
 		}
-		channel = ChannelManager.getChannel(channelId);
-		if (!(channel instanceof ChannelWhisper channelWhipser)) {
-			return null; // Odds are channel was null, otherwise something's very improbably wrong.
+
+		channel = ChannelManager.loadChannel(channelId);
+		if (!(channel instanceof ChannelWhisper channelWhisper)) {
+			CommandAPI.fail("Whisper channel is loading, please try again.");
+			return null;
 		} else {
-			return channelWhipser;
+			return channelWhisper;
 		}
 	}
 
