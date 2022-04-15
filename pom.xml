@@ -46,6 +46,11 @@
             <url>https://jitpack.io</url>
         </repository>
         <repository>
+            <id>minecraft-libraries</id>
+            <name>Minecraft Libraries</name>
+            <url>https://libraries.minecraft.net</url>
+        </repository>
+        <repository>
             <id>monumenta-network-relay</id>
             <url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/</url>
         </repository>
@@ -86,6 +91,11 @@
             <artifactId>commandapi-core</artifactId>
             <version>6.0.0</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mojang</groupId>
+            <artifactId>brigadier</artifactId>
+            <version>1.0.15</version>
         </dependency>
         <dependency>
             <groupId>com.playmonumenta</groupId>

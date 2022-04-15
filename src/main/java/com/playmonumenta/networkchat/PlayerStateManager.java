@@ -18,6 +18,7 @@ import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import com.playmonumenta.redissync.RedisAPI;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -328,11 +329,8 @@ public class PlayerStateManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void asyncChatEvent(AsyncChatEvent event) {
-		if (event.isCancelled()) {
-			return;
-		}
 		if (!mIsDefaultChatPlugin) {
 			return;
 		}
@@ -356,6 +354,10 @@ public class PlayerStateManager implements Listener {
 		}
 		try {
 			channel.sendMessage(player, messageStr);
+		} catch (WrapperCommandSyntaxException ex) {
+			String error = MessagingUtils.getCommandExceptionMessage(ex);
+			player.sendMessage(Component.text(error, NamedTextColor.RED));
+			mPlugin.getLogger().warning(error);
 		} catch (Exception ex) {
 			MessagingUtils.sendStackTrace(player, ex);
 		}
