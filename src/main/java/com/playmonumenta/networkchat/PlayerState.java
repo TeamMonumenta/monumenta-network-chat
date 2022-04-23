@@ -325,7 +325,7 @@ public class PlayerState {
 		return ignoredNames;
 	}
 
-	public ChannelWhisper getWhisperChannel(UUID recipientUuid) throws WrapperCommandSyntaxException {
+	public @Nullable ChannelWhisper getWhisperChannel(UUID recipientUuid) throws WrapperCommandSyntaxException {
 		@Nullable UUID channelId = mWhisperChannelsByRecipient.get(recipientUuid);
 		@Nullable Channel channel;
 
@@ -341,6 +341,10 @@ public class PlayerState {
 				channelName = ChannelWhisper.getName(participants);
 				channelId = ChannelManager.getChannelId(channelName);
 			}
+		}
+
+		if (channelId == null) {
+			return null;
 		}
 
 		channel = ChannelManager.loadChannel(channelId);
