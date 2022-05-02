@@ -397,7 +397,8 @@ public class ChannelTeam extends Channel {
 
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
-			if (!mayListen(state.getPlayer())) {
+			Player player = state.getPlayer();
+			if (player == null || !mayListen(player)) {
 				continue;
 			}
 

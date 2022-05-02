@@ -300,7 +300,8 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	}
 
 	public boolean shouldAutoJoin(PlayerState state) {
-		return mAutoJoin && mayListen(state.getPlayer());
+		Player player = state.getPlayer();
+		return mAutoJoin && player != null && mayListen(player);
 	}
 
 	public boolean mayChat(CommandSender sender) {
@@ -411,7 +412,8 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
-			if (!mayListen(state.getPlayer())) {
+			Player player = state.getPlayer();
+			if (player == null || !mayListen(player)) {
 				continue;
 			}
 

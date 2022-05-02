@@ -301,7 +301,8 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	public boolean shouldAutoJoin(PlayerState state) {
-		return mAutoJoin && mayListen(state.getPlayer());
+		Player player = state.getPlayer();
+		return mAutoJoin && player != null && mayListen(player);
 	}
 
 	public String getChannelPermission() {

@@ -449,7 +449,11 @@ public class PlayerState {
 	}
 
 	public boolean isListening(Channel channel) {
-		switch (getPlayer().getClientOption(ClientOption.CHAT_VISIBILITY)) {
+		Player player = getPlayer();
+		if (player == null) {
+			return false;
+		}
+		switch (player.getClientOption(ClientOption.CHAT_VISIBILITY)) {
 		case HIDDEN:
 			return false;
 		case SYSTEM:
@@ -572,11 +576,17 @@ public class PlayerState {
 			unregisterChannel(channelId);
 			// TODO Group deleted channel messages together.
 			if (showAlert) {
-				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is no longer available.", NamedTextColor.RED));
+				Player player = getPlayer();
+				if (player != null) {
+					player.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is no longer available.", NamedTextColor.RED));
+				}
 			}
 		} else {
 			if (showAlert && !newChannelName.equals(lastKnownName)) {
-				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newChannelName + ".", NamedTextColor.GRAY));
+				Player player = getPlayer();
+				if (player != null) {
+					player.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newChannelName + ".", NamedTextColor.GRAY));
+				}
 			}
 		}
 	}
