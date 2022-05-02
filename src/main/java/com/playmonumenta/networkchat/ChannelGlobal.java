@@ -301,7 +301,8 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	public boolean shouldAutoJoin(PlayerState state) {
-		return mAutoJoin && mayListen(state.getPlayer());
+		Player player = state.getPlayer();
+		return mAutoJoin && player != null && mayListen(player);
 	}
 
 	public String getChannelPermission() {
@@ -398,7 +399,8 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
-			if (!mayListen(state.getPlayer())) {
+			Player player = state.getPlayer();
+			if (player == null || !mayListen(player)) {
 				continue;
 			}
 

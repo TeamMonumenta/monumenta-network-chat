@@ -8,6 +8,7 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public abstract class Channel {
 	public static Channel fromJson(JsonObject channelJson) throws Exception {
@@ -71,7 +72,8 @@ public abstract class Channel {
 	public void resetPlayerAccess(UUID playerId) {}
 
 	public boolean shouldAutoJoin(PlayerState state) {
-		return mayListen(state.getPlayer());
+		Player player = state.getPlayer();
+		return player != null && mayListen(player);
 	}
 
 	public boolean mayManage(CommandSender sender) {
