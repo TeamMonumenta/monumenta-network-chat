@@ -230,7 +230,12 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 				CommandUtils.fail(sender, recipientName + " is not online.");
 			}
 
-			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			@Nullable PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			if (senderState == null) {
+				CommandUtils.fail(sendingPlayer, sendingPlayer.getName() + " has no chat state and must relog.");
+			} else if (senderState.isPaused()) {
+				CommandUtils.fail(sendingPlayer, "You cannot chat with chat paused (/chat unpause)");
+			}
 			@Nullable ChannelWhisper channel = senderState.getWhisperChannel(recipientUuid);
 			if (channel == null) {
 				try {
@@ -268,6 +273,11 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
 			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			if (senderState == null) {
+				CommandUtils.fail(sendingPlayer, sendingPlayer.getName() + " has no chat state and must relog.");
+			} else if (senderState.isPaused()) {
+				CommandUtils.fail(sendingPlayer, "You cannot chat with chat paused (/chat unpause)");
+			}
 			ChannelWhisper channel = senderState.getLastWhisperChannel();
 			if (channel == null) {
 				CommandUtils.fail(sender, "No one has sent you a whisper yet.");

@@ -196,7 +196,13 @@ public class ChannelTeam extends Channel {
 			CommandUtils.fail(sender, "An entity is required to run this command here");
 		} else {
 			Team team;
-			if (sendingEntity instanceof Player) {
+			if (sendingEntity instanceof Player player) {
+				@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+				if (playerState == null) {
+					CommandUtils.fail(sender, player.getName() + " has no chat state and must relog.");
+				} else if (playerState.isPaused()) {
+					CommandUtils.fail(sender, "You cannot chat with chat paused (/chat unpause)");
+				}
 				team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(sendingEntity.getName());
 			} else {
 				team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(sendingEntity.getUniqueId().toString());
