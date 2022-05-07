@@ -1,0 +1,12 @@
+package com.playmonumenta.networkchat.gui;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class Gui {
+	private Map<Integer, GuiItem> mGuiItems = new HashMap<>();
+
+	public Gui() {
+
+	}
+}

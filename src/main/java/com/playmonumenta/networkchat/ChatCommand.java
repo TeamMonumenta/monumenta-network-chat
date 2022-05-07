@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -1777,9 +1776,18 @@ public class ChatCommand {
 				return 0;
 			}
 		}
-		if (callee instanceof Player && callee != caller) {
-			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
-			return 0;
+		if (callee instanceof Player player) {
+			if (callee != caller) {
+				CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+				return 0;
+			}
+
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				CommandUtils.fail(player, player.getName() + " has no chat state and must relog.");
+			} else if (playerState.isPaused()) {
+				CommandUtils.fail(player, "You cannot chat with chat paused (/chat unpause)");
+			}
 		}
 
 		Channel channel = ChannelManager.getChannel(channelName);
@@ -1801,8 +1809,17 @@ public class ChatCommand {
 				return 0;
 			}
 		}
-		if (callee instanceof Player && callee != caller) {
-			CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+		if (callee instanceof Player player) {
+			if (callee != caller) {
+				CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
+			}
+
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				CommandUtils.fail(player, player.getName() + " has no chat state and must relog.");
+			} else if (playerState.isPaused()) {
+				CommandUtils.fail(player, "You cannot chat with chat paused (/chat unpause)");
+			}
 		}
 		Channel channel;
 		if (sender instanceof Player) {

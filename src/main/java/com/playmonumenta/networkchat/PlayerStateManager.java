@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -188,11 +190,11 @@ public class PlayerStateManager implements Listener {
 		return new HashMap<>(mPlayerStates);
 	}
 
-	public static PlayerState getPlayerState(Player player) {
+	public static @Nullable PlayerState getPlayerState(Player player) {
 		return getPlayerState(player.getUniqueId());
 	}
 
-	public static PlayerState getPlayerState(UUID playerId) {
+	public static @Nullable PlayerState getPlayerState(UUID playerId) {
 		return mPlayerStates.get(playerId);
 	}
 
@@ -336,9 +338,13 @@ public class PlayerStateManager implements Listener {
 		}
 
 		Player player = event.getPlayer();
-		PlayerState playerState = mPlayerStates.get(player.getUniqueId());
+		@Nullable PlayerState playerState = mPlayerStates.get(player.getUniqueId());
 		if (playerState == null) {
 			player.sendMessage(Component.text("You have no chat state and cannot talk. Please report this bug, then reconnect to the server.", NamedTextColor.RED));
+			event.setCancelled(true);
+			return;
+		} else if (playerState.isPaused()) {
+			player.sendMessage(Component.text("You cannot chat with chat paused (/chat unpause)", NamedTextColor.RED));
 			event.setCancelled(true);
 			return;
 		}

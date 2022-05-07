@@ -1,0 +1,69 @@
+package com.playmonumenta.networkchat.gui;
+
+import java.util.List;
+import java.util.UUID;
+import javax.annotation.Nullable;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+
+public class GuiItem {
+    private static NamespacedKey ID_KEY;
+
+	static {
+		@Nullable NamespacedKey idKey = NamespacedKey.fromString("networkchat:gui_item_id");
+		if (idKey == null) {
+			throw new RuntimeException("Could not initialize item gui ID key");
+		}
+		ID_KEY = idKey;
+	}
+
+	private ItemStack mItemStack;
+	private UUID mItemId;
+
+	private GuiItem(ItemStack itemStack) throws Exception {
+		if (!itemStack.hasItemMeta()) {
+			throw new Exception("Not a GUI item - no ItemMeta");
+		}
+		ItemMeta meta = itemStack.getItemMeta();
+		PersistentDataContainer container = meta.getPersistentDataContainer();
+		String idStr = container.get(ID_KEY, PersistentDataType.STRING);
+		mItemId = UUID.fromString(idStr);
+	}
+
+	public GuiItem(Material material) {
+		mItemId = UUID.randomUUID();
+		ItemStack itemStack = new ItemStack(material);
+	    ItemMeta meta = itemStack.getItemMeta();
+	    PersistentDataContainer container = meta.getPersistentDataContainer();
+	    container.set(ID_KEY, PersistentDataType.STRING, mItemId.toString());
+	    itemStack.setItemMeta(meta);
+    }
+
+	public ItemStack getItemStack() {
+		return mItemStack;
+	}
+
+	public UUID getItemId() {
+		return mItemId;
+	}
+
+	public void itemName(Component name) {
+		ItemStack itemStack = mItemStack;
+		ItemMeta meta = itemStack.getItemMeta();
+		meta.displayName(name);
+		itemStack.setItemMeta(meta);
+	}
+
+	public void appendLore(Component line) {
+		ItemStack itemStack = mItemStack;
+		ItemMeta meta = itemStack.getItemMeta();
+		List<Component> lore = meta.lore();
+		lore.append(line);
+		itemStack.setItemMeta(meta);
+	}
+}

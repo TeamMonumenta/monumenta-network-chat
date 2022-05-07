@@ -1,0 +1,5 @@
+package com.playmonumenta.networkchat.gui;
+
+public class GuiManager {
+
+}
