@@ -1025,7 +1025,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument(channelType));
 				if (channelType.equals("default") || channelType.equals("guild")) {
 					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
-						ChannelManager.getChannelNames().toArray(new String[0])
+						ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 					));
 				} else {
 					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
