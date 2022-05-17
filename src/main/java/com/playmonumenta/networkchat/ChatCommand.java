@@ -1023,7 +1023,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("player"));
 				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
 				arguments.add(new MultiLiteralArgument(channelType));
-				if (channelType.equals("default") || channelType.equals("guild")) {
+				if (channelType.equals("default") || channelType.equals(DefaultChannels.GUILD_CHANNEL)) {
 					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 						ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 					));
@@ -1493,7 +1493,7 @@ public class ChatCommand {
 				.register();
 
 			String shortcut;
-			if (channelType == "guild") {
+			if (channelType == DefaultChannels.GUILD_CHANNEL) {
 				shortcut = "gc";
 			} else {
 				shortcut = channelType.substring(0, 1);
