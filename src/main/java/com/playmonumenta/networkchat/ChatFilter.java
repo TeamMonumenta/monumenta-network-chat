@@ -43,8 +43,8 @@ public class ChatFilter {
 		}
 
 		public void copyResults(ChatFilterResult other) {
-			mFoundMatch = other.mFoundMatch;
-			mFoundBadWord = other.mFoundBadWord;
+			mFoundMatch |= other.mFoundMatch;
+			mFoundBadWord |= other.mFoundBadWord;
 			mComponent = other.mComponent;
 		}
 
