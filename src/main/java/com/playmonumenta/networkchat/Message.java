@@ -12,6 +12,7 @@ import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
@@ -77,7 +78,7 @@ public class Message implements AutoCloseable {
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(Channel channel,
+	protected static @Nullable Message createMessage(Channel channel,
 	                                       MessageType messageType,
 	                                       CommandSender sender,
 	                                       JsonObject extraData,
@@ -93,7 +94,14 @@ public class Message implements AutoCloseable {
 		}
 		boolean senderIsPlayer = sender instanceof Player;
 		Component senderComponent = MessagingUtils.senderComponent(sender);
-		message = NetworkChatPlugin.globalFilter().run(sender, message);
+		ChatFilter.ChatFilterResult filterResult = new ChatFilter.ChatFilterResult(message);
+		NetworkChatPlugin.globalFilter().run(sender, filterResult);
+		message = filterResult.component();
+		if (filterResult.foundBadWord()) {
+			sender.sendMessage(Component.text("You cannot say that on this server:", NamedTextColor.RED));
+			sender.sendMessage(message);
+			return null;
+		}
 		return new Message(id,
 		                   instant,
 		                   channelId,
@@ -108,7 +116,7 @@ public class Message implements AutoCloseable {
 	}
 
 	// Normally called through a channel
-	protected static Message createMessage(Channel channel,
+	protected static @Nullable Message createMessage(Channel channel,
 	                                       MessageType messageType,
 	                                       CommandSender sender,
 	                                       JsonObject extraData,
