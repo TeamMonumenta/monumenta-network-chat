@@ -386,7 +386,10 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			}
 		}
 
-		Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
+		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
+		if (message == null) {
+			return;
+		}
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);

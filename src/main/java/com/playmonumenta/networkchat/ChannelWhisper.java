@@ -486,7 +486,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("receiver", receiverId.toString());
 
-		Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		if (message == null) {
+			return;
+		}
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);

@@ -375,7 +375,10 @@ public class ChannelTeam extends Channel {
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("team", mTeamName);
 
-		Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		if (message == null) {
+			return;
+		}
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);

@@ -379,7 +379,10 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 		messageText = PlaceholderAPI.setPlaceholders(null, messageText);
 
-		Message message = Message.createMessage(this, MessageType.SYSTEM, sender, null, messageText);
+		@Nullable Message message = Message.createMessage(this, MessageType.SYSTEM, sender, null, messageText);
+		if (message == null) {
+			return;
+		}
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);

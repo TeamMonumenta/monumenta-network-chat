@@ -43,8 +43,8 @@ public class ChatFilter {
 		}
 
 		public void copyResults(ChatFilterResult other) {
-			mFoundMatch = other.mFoundMatch;
-			mFoundBadWord = other.mFoundBadWord;
+			mFoundMatch |= other.mFoundMatch;
+			mFoundBadWord |= other.mFoundBadWord;
 			mComponent = other.mComponent;
 		}
 
@@ -162,16 +162,18 @@ public class ChatFilter {
 			return mReplacementMiniMessage;
 		}
 
-		public void replacementMessage(String replacementMiniMessage) {
+		public ChatFilterPattern replacementMessage(String replacementMiniMessage) {
 			mReplacementMiniMessage = replacementMiniMessage;
+			return this;
 		}
 
 		public @Nullable String command() {
 			return mCommand;
 		}
 
-		public void command(@Nullable String command) {
+		public ChatFilterPattern command(@Nullable String command) {
 			mCommand = command;
+			return this;
 		}
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
@@ -257,13 +259,14 @@ public class ChatFilter {
 		return object;
 	}
 
-	public void addFilter(CommandSender sender,
+	public ChatFilterPattern addFilter(CommandSender sender,
 	                      String id,
 	                      boolean isLiteral,
 	                      String regex,
 	                      boolean isBadWord) throws WrapperCommandSyntaxException {
 		ChatFilterPattern filterPattern = new ChatFilterPattern(sender, id, isLiteral, regex, isBadWord);
 		mFilters.put(id, filterPattern);
+		return filterPattern;
 	}
 
 	public void removeFilter(String id) {
@@ -286,9 +289,7 @@ public class ChatFilter {
 
 	public Component run(CommandSender sender, Component component) {
 		ChatFilterResult filterResult = new ChatFilterResult(component);
-		for (ChatFilterPattern filterPattern : mFilters.values()) {
-			filterPattern.run(sender, filterResult);
-		}
+		run(sender, filterResult);
 		return filterResult.component();
 	}
 

@@ -380,7 +380,10 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("fromShard", RemotePlayerManager.getShardName());
 
-		Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		if (message == null) {
+			return;
+		}
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
