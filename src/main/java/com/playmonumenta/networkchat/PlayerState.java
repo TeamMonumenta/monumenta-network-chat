@@ -485,6 +485,10 @@ public class PlayerState {
 	}
 
 	public void playMessageSound(Message message) {
+		if (getPlayerChatHistory().isReplayingChat()) {
+			return;
+		}
+
 		boolean shouldPlaySound = false;
 
 		@Nullable Channel channel = message.getChannel();
