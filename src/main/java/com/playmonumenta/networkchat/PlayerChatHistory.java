@@ -134,6 +134,10 @@ public class PlayerChatHistory {
 		}
 	}
 
+	public boolean isReplayingChat() {
+		return mIsReplayingChat;
+	}
+
 	public boolean isPaused() {
 		return getPlayerState().isPaused();
 	}
