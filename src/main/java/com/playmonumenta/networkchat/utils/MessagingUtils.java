@@ -189,7 +189,7 @@ public class MessagingUtils {
 			return Component.empty();
 		}
 		@Nullable Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
-		String colorMiniMessage = "";
+		String colorMiniMessage;
 		Component teamPrefix;
 		Component teamDisplayName;
 		Component teamSuffix;
@@ -206,9 +206,7 @@ public class MessagingUtils {
 				 * Instead, null is the appropriate return value.
 				 */
 				color = playerTeam.color();
-				if (color != null) {
-					colorMiniMessage = "<" + color.asHexString() + ">";
-				}
+				colorMiniMessage = "<" + color.asHexString() + ">";
 				teamPrefix = playerTeam.prefix();
 				teamDisplayName = playerTeam.displayName();
 				teamSuffix = playerTeam.suffix();
@@ -316,5 +314,13 @@ public class MessagingUtils {
 			return "";
 		}
 		return "<" + colorToString(color) + ">";
+	}
+
+	public static String noChatStateStr(Player player) {
+		return player.getName() + " has no chat state and must relog.";
+	}
+
+	public static Component noChatState(Player player) {
+		return Component.text(noChatStateStr(player), NamedTextColor.RED);
 	}
 }

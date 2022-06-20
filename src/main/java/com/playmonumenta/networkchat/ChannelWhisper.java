@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
-import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -203,7 +202,11 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 				CommandUtils.fail(sender, recipientName + " is not online.");
 			}
 
-			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			@Nullable PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			if (senderState == null) {
+				sendingPlayer.sendMessage(MessagingUtils.noChatState(sendingPlayer));
+				return 0;
+			}
 			@Nullable ChannelWhisper channel = senderState.getWhisperChannel(recipientUuid);
 			if (channel == null) {
 				try {
@@ -232,7 +235,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 			@Nullable PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
 			if (senderState == null) {
-				CommandUtils.fail(sendingPlayer, sendingPlayer.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(sendingPlayer, MessagingUtils.noChatStateStr(sendingPlayer));
 			} else if (senderState.isPaused()) {
 				CommandUtils.fail(sendingPlayer, "You cannot chat with chat paused (/chat unpause)");
 			}
@@ -257,6 +260,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
 			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			if (senderState == null) {
+				sendingPlayer.sendMessage(MessagingUtils.noChatState(sendingPlayer));
+				return 0;
+			}
 			ChannelWhisper channel = senderState.getLastWhisperChannel();
 			if (channel == null) {
 				CommandUtils.fail(sender, "No one has sent you a whisper yet.");
@@ -274,7 +281,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		} else {
 			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
 			if (senderState == null) {
-				CommandUtils.fail(sendingPlayer, sendingPlayer.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(sendingPlayer, MessagingUtils.noChatStateStr(sendingPlayer));
 			} else if (senderState.isPaused()) {
 				CommandUtils.fail(sendingPlayer, "You cannot chat with chat paused (/chat unpause)");
 			}
@@ -313,7 +320,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public static String getName(List<UUID> participants) {
-		participants = new ArrayList<UUID>(participants);
+		participants = new ArrayList<>(participants);
 		Collections.sort(participants);
 		StringBuilder name = new StringBuilder("Whisper");
 		for (UUID participant : participants) {
@@ -323,7 +330,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public static String getAltName(List<UUID> participants) {
-		participants = new ArrayList<UUID>(participants);
+		participants = new ArrayList<>(participants);
 		Collections.sort(participants);
 		Collections.reverse(participants);
 		StringBuilder name = new StringBuilder("Whisper");
@@ -506,6 +513,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		try {
 			receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 		} catch (Exception e) {
+			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
 			return;
 		}
@@ -519,6 +527,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private void distributeMessageToPlayer(UUID playerId, UUID otherId, Message message) {
 		PlayerState state = PlayerStateManager.getPlayerState(playerId);
 		if (state == null) {
+			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().finer("Receiver not on this shard.");
 			return;
 		}
@@ -539,36 +548,38 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	protected void showMessage(CommandSender recipient, Message message) {
+	protected Component shownMessage(CommandSender recipient, Message message) {
 		JsonObject extraData = message.getExtraData();
 		Component receiverComp;
 		try {
 			UUID receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 			receiverComp = RemotePlayerManager.getPlayerComponent(receiverUuid);
 		} catch (Exception e) {
+			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
 			receiverComp = Component.text("ErrorLoadingName");
 		}
 
 		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
-		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
+			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
+		return Component.empty()
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("sender", message.getSenderComponent()),
+				Template.template("receiver", receiverComp))))
+			.append(Component.empty().color(channelColor).append(message.getMessage()));
+	}
+
+	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
-		Identity senderIdentity;
-		if (senderUuid == null) {
-			senderIdentity = Identity.nil();
-		} else {
-			senderIdentity = Identity.identity(senderUuid);
-		}
-
-		Component fullMessage = Component.empty()
-		    .append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("sender", message.getSenderComponent()),
-		        Template.template("receiver", receiverComp))))
-		    .append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
-		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
-			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(message);
+		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
+		if (recipient instanceof Player player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				player.sendMessage(MessagingUtils.noChatState(player));
+				return;
+			}
+			playerState.playMessageSound(message);
 		}
 	}
 }

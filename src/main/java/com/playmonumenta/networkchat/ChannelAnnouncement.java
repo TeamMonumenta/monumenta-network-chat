@@ -22,7 +22,6 @@ import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.template.TemplateResolver;
@@ -85,6 +84,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
+				assert NetworkChatPlugin.getInstance() != null;
 				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
@@ -114,6 +114,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
+					assert NetworkChatPlugin.getInstance() != null;
 					NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting ChannelAccess from json: " + e.getMessage());
 					continue;
 				}
@@ -407,7 +408,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		}
 	}
 
-	protected void showMessage(CommandSender recipient, Message message) {
+	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
 			channelColor = mMessageColor;
@@ -418,12 +419,20 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			.replace("<message_gui_cmd>", message.getGuiCommand())
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
-		Component fullMessage = Component.empty()
+		return Component.empty()
 			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(Identity.nil(), fullMessage, message.getMessageType());
-		if (recipient instanceof Player) {
-			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(message);
+	}
+
+	protected void showMessage(CommandSender recipient, Message message) {
+		recipient.sendMessage(Identity.nil(), shownMessage(recipient, message), message.getMessageType());
+		if (recipient instanceof Player player) {
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				player.sendMessage(MessagingUtils.noChatState(player));
+				return;
+			}
+			playerState.playMessageSound(message);
 		}
 	}
 
