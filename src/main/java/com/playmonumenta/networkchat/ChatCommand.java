@@ -755,7 +755,7 @@ public class ChatCommand {
 					} else {
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						String ignoredName = (String) args[3];
 						@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
@@ -791,18 +791,20 @@ public class ChatCommand {
 					} else {
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						Set<String> ignoredNames = state.getIgnoredPlayerNames();
 						target.sendMessage(Component.text("You are ignoring:", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
 						boolean lightLine = false;
 						TextColor lineColor;
 						for (String ignoredName : ignoredNames) {
-							lineColor = (lightLine = !lightLine) ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
+							lightLine = !lightLine;
+							lineColor = lightLine ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
 							target.sendMessage(Component.text("- " + ignoredName, lineColor));
 						}
-						lineColor = (!lightLine) ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
-						target.sendMessage(Component.text("Players ignored: " + Integer.toString(ignoredNames.size()), lineColor));
+						lightLine = !lightLine;
+						lineColor = lightLine ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
+						target.sendMessage(Component.text("Players ignored: " + ignoredNames.size(), lineColor));
 					}
 					return 1;
 				})
@@ -840,7 +842,7 @@ public class ChatCommand {
 					} else {
 						@Nullable PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						String ignoredName = (String) args[3];
 						@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
@@ -874,7 +876,7 @@ public class ChatCommand {
 					} else {
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						profileMessage = state.profileMessage();
 						if (profileMessage.isEmpty()) {
@@ -902,7 +904,7 @@ public class ChatCommand {
 					} else {
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						target.sendMessage(Component.text("Your profile message has been cleared.", NamedTextColor.GRAY));
 						state.profileMessage("");
@@ -934,7 +936,7 @@ public class ChatCommand {
 
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						target.sendMessage(Component.text("Your profile message has been set to:", NamedTextColor.GRAY));
 						state.profileMessage(profileMessage);
@@ -1011,7 +1013,7 @@ public class ChatCommand {
 
 							PlayerState state = PlayerStateManager.getPlayerState(target);
 							if (state == null) {
-								CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+								CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 							}
 
 							return state.defaultChannels().command(sender, channelType);
@@ -1046,7 +1048,7 @@ public class ChatCommand {
 
 							PlayerState state = PlayerStateManager.getPlayerState(target);
 							if (state == null) {
-								CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+								CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 							}
 							return state.defaultChannels().command(sender, channelType, (String) args[3]);
 						}
@@ -1072,7 +1074,7 @@ public class ChatCommand {
 					} else {
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 
 						String channelName = (String) args[3];
@@ -1110,7 +1112,7 @@ public class ChatCommand {
 
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 
 						String channelName = (String) args[3];
@@ -1144,7 +1146,7 @@ public class ChatCommand {
 
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						ChannelSettings settings = state.channelSettings();
 						return settings.commandFlag(sender, (String) args[3]);
@@ -1172,7 +1174,7 @@ public class ChatCommand {
 
 						PlayerState state = PlayerStateManager.getPlayerState(target);
 						if (state == null) {
-							CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+							CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						ChannelSettings settings = state.channelSettings();
 						return settings.commandFlag(sender, (String) args[3], (String) args[4]);
@@ -1493,7 +1495,7 @@ public class ChatCommand {
 				.register();
 
 			String shortcut;
-			if (channelType == DefaultChannels.GUILD_CHANNEL) {
+			if (channelType.equals(DefaultChannels.GUILD_CHANNEL)) {
 				shortcut = "gc";
 			} else {
 				shortcut = channelType.substring(0, 1);
@@ -1680,7 +1682,7 @@ public class ChatCommand {
 
 			PlayerState playerState = PlayerStateManager.getPlayerState(target);
 			if (playerState == null) {
-				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 			}
 
 			Channel channel = ChannelManager.getChannel(channelName);
@@ -1706,7 +1708,7 @@ public class ChatCommand {
 
 			PlayerState playerState = PlayerStateManager.getPlayerState(target);
 			if (playerState == null) {
-				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 			}
 
 			Channel channel = ChannelManager.getChannel(channelName);
@@ -1789,7 +1791,7 @@ public class ChatCommand {
 
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
-				CommandUtils.fail(player, player.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(player, MessagingUtils.noChatStateStr(player));
 			} else if (playerState.isPaused()) {
 				CommandUtils.fail(player, "You cannot chat with chat paused (/chat unpause)");
 			}
@@ -1821,14 +1823,20 @@ public class ChatCommand {
 
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
-				CommandUtils.fail(player, player.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(player, MessagingUtils.noChatStateStr(player));
 			} else if (playerState.isPaused()) {
 				CommandUtils.fail(player, "You cannot chat with chat paused (/chat unpause)");
 			}
 		}
 		Channel channel;
-		if (sender instanceof Player) {
-			channel = PlayerStateManager.getPlayerState((Player) sender).getDefaultChannel(channelType);
+		if (sender instanceof Player player) {
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				player.sendMessage(MessagingUtils.noChatState(player));
+				channel = ChannelManager.getDefaultChannel(channelType);
+			} else {
+				channel = playerState.getDefaultChannel(channelType);
+			}
 		} else {
 			channel = ChannelManager.getDefaultChannel(channelType);
 		}
@@ -1852,7 +1860,7 @@ public class ChatCommand {
 
 			PlayerState playerState = PlayerStateManager.getPlayerState(target);
 			if (playerState == null) {
-				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 			}
 
 			playerState.pauseChat();
@@ -1873,7 +1881,7 @@ public class ChatCommand {
 
 			PlayerState playerState = PlayerStateManager.getPlayerState(target);
 			if (playerState == null) {
-				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 			}
 
 			target.sendMessage(Component.text("Unpausing chat.", NamedTextColor.GRAY));
@@ -1894,7 +1902,7 @@ public class ChatCommand {
 
 			PlayerState playerState = PlayerStateManager.getPlayerState(target);
 			if (playerState == null) {
-				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 			}
 
 			if (playerState.isPaused()) {
@@ -1928,7 +1936,7 @@ public class ChatCommand {
 		} else {
 			PlayerState playerState = PlayerStateManager.getPlayerState(target);
 			if (playerState == null) {
-				CommandUtils.fail(sender, callee.getName() + " has no chat state and must relog.");
+				CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 			}
 
 			UUID messageId;

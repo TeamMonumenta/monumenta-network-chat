@@ -6,6 +6,7 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.UUID;
 import javax.annotation.Nullable;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 
@@ -83,6 +84,11 @@ public class ChannelFuture extends Channel {
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
 	public void distributeMessage(Message message) {}
 
-	// The channel is loading - we can't determine who can see this yet!
+	// The channel is from a future version - we can't determine how to display this!
+	protected Component shownMessage(CommandSender recipient, Message message) {
+		return message.getMessage();
+	}
+
+	// The channel is from a future version - we can't determine who can see this!
 	protected void showMessage(CommandSender recipient, Message message) {}
 }

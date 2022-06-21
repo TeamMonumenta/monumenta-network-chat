@@ -13,7 +13,9 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -132,19 +134,24 @@ public class Message implements AutoCloseable {
 	                                          Component message) {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
-		@Nullable UUID channelId = null;
 		if (senderId != null) {
 			if (senderId.getMostSignificantBits() == 0 && senderId.getLeastSignificantBits() == 0) {
 				senderId = null;
 			}
 		}
 		@Nullable NamespacedKey senderType = null;
+		if (senderId != null) {
+			@Nullable Entity sender = Bukkit.getEntity(senderId);
+			if (sender != null) {
+				senderType = sender.getType().getKey();
+			}
+		}
 		boolean senderIsPlayer = (senderId != null);
 		String senderName = "";
 		Component senderComponent = Component.empty();
 		return new Message(id,
 		                   instant,
-		                   channelId,
+		                   null,
 		                   messageType,
 		                   senderId,
 		                   senderName,
@@ -195,14 +202,24 @@ public class Message implements AutoCloseable {
 			senderId = UUID.fromString(senderIdJson.getAsString());
 		}
 		@Nullable JsonElement senderNameJson = object.get("senderName");
-		String senderName = senderNameJson.getAsString();
+		String senderName;
+		if (senderNameJson == null) {
+			senderName = "@";
+		} else {
+			senderName = senderNameJson.getAsString();
+		}
 		@Nullable NamespacedKey senderType = null;
 		@Nullable JsonElement senderTypeJson = object.get("senderType");
 		if (senderTypeJson != null) {
 			senderType = NamespacedKey.fromString(senderTypeJson.getAsString());
 		}
 		@Nullable JsonElement senderIsPlayerJson = object.get("senderIsPlayer");
-		boolean senderIsPlayer = senderIsPlayerJson.getAsBoolean();
+		boolean senderIsPlayer;
+		if (senderIsPlayerJson == null) {
+			senderIsPlayer = false;
+		} else {
+			senderIsPlayer = senderIsPlayerJson.getAsBoolean();
+		}
 		Component senderComponent = Component.text(senderName);
 		@Nullable JsonElement senderComponentJson = object.get("senderComponent");
 		if (senderComponentJson != null) {
@@ -214,7 +231,12 @@ public class Message implements AutoCloseable {
 			extraData = extraJson.getAsJsonObject();
 		}
 		@Nullable JsonElement messageJson = object.get("message");
-		Component message = GsonComponentSerializer.gson().deserializeFromTree(messageJson);
+		Component message;
+		if (messageJson == null) {
+			message = Component.text("[MESSAGE COULD NOT BE LOADED]", NamedTextColor.RED, TextDecoration.BOLD);
+		} else {
+			message = GsonComponentSerializer.gson().deserializeFromTree(messageJson);
+		}
 
 		return new Message(id,
 		                   instant,
@@ -298,6 +320,13 @@ public class Message implements AutoCloseable {
 		return mSenderId;
 	}
 
+	public Identity getSenderIdentity() {
+		if (mSenderIsPlayer && mSenderId != null) {
+			return Identity.identity(mSenderId);
+		}
+		return Identity.nil();
+	}
+
 	public String getSenderName() {
 		return mSenderName;
 	}
@@ -326,6 +355,28 @@ public class Message implements AutoCloseable {
 		return mIsDeleted;
 	}
 
+	// Get the message as shown to a given recipient
+	public Component shownMessage(CommandSender recipient) {
+		if (mIsDeleted) {
+			return Component.text("[DELETED]", NamedTextColor.RED, TextDecoration.BOLD);
+		}
+		@Nullable Channel channel = ChannelManager.getChannel(mChannelId);
+		if (channel == null) {
+			// Non-channel messages
+			if (mExtraData != null) {
+				@Nullable JsonPrimitive shardJson = mExtraData.getAsJsonPrimitive("shard");
+				if (shardJson != null) {
+					String shard = shardJson.getAsString();
+					if (!shard.equals("*") && !shard.equals(RemotePlayerManager.getShardName())) {
+						return Component.text("[NOT VISIBLE ON THIS SHARD]", NamedTextColor.RED, TextDecoration.BOLD);
+					}
+				}
+			}
+			return mMessage;
+		}
+		return channel.shownMessage(recipient, this);
+	}
+
 	// Must be called from PlayerState to allow pausing messages.
 	protected void showMessage(CommandSender recipient) {
 		if (mIsDeleted) {
@@ -343,11 +394,7 @@ public class Message implements AutoCloseable {
 					}
 				}
 			}
-			Identity senderId = Identity.nil();
-			if (mSenderId != null) {
-				senderId = Identity.identity(mSenderId);
-			}
-			recipient.sendMessage(senderId, mMessage, mMessageType);
+			recipient.sendMessage(getSenderIdentity(), mMessage, mMessageType);
 			return;
 		}
 		channel.showMessage(recipient, this);

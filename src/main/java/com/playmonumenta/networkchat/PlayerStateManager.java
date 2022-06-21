@@ -340,7 +340,7 @@ public class PlayerStateManager implements Listener {
 		Player player = event.getPlayer();
 		@Nullable PlayerState playerState = mPlayerStates.get(player.getUniqueId());
 		if (playerState == null) {
-			player.sendMessage(Component.text("You have no chat state and cannot talk. Please report this bug, then reconnect to the server.", NamedTextColor.RED));
+			player.sendMessage(MessagingUtils.noChatState(player));
 			event.setCancelled(true);
 			return;
 		} else if (playerState.isPaused()) {

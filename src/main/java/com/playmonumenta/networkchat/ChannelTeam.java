@@ -17,10 +17,10 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
-import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Bukkit;
@@ -103,6 +103,7 @@ public class ChannelTeam extends Channel {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
+					assert NetworkChatPlugin.getInstance() != null;
 					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
 					continue;
 				}
@@ -183,7 +184,11 @@ public class ChannelTeam extends Channel {
 				ChannelManager.registerNewChannel(sender, channel);
 			}
 
-			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			@Nullable PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			if (senderState == null) {
+				sendingPlayer.sendMessage(MessagingUtils.noChatState(sendingPlayer));
+				return 0;
+			}
 			senderState.setActiveChannel(channel);
 			sender.sendMessage(Component.text("You are now typing to team ", NamedTextColor.GRAY).append(team.displayName()));
 		}
@@ -199,7 +204,7 @@ public class ChannelTeam extends Channel {
 			if (sendingEntity instanceof Player player) {
 				@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 				if (playerState == null) {
-					CommandUtils.fail(sender, player.getName() + " has no chat state and must relog.");
+					CommandUtils.fail(sender, MessagingUtils.noChatStateStr(player));
 				} else if (playerState.isPaused()) {
 					CommandUtils.fail(sender, "You cannot chat with chat paused (/chat unpause)");
 				}
@@ -395,11 +400,13 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
+			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
 			return;
 		}
 		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
 		if (team == null) {
+			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().finer("No such team " + teamName + " on this shard, ignoring.");
 			return;
 		}
@@ -418,14 +425,16 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
-	protected void showMessage(CommandSender recipient, Message message) {
+	protected Component shownMessage(CommandSender recipient, Message message) {
 		JsonObject extraData = message.getExtraData();
 		String teamName;
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
+			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
-			return;
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			return Component.text("[Could not get team from Message]", NamedTextColor.RED, TextDecoration.BOLD);
 		}
 
 		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
@@ -456,24 +465,25 @@ public class ChannelTeam extends Channel {
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
-		UUID senderUuid = message.getSenderId();
-		Identity senderIdentity;
-		if (senderUuid == null) {
-			senderIdentity = Identity.nil();
-		} else {
-			senderIdentity = Identity.identity(senderUuid);
-		}
-
-		Component fullMessage = Component.empty()
+		return Component.empty()
 			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("sender", message.getSenderComponent()),
 				Template.template("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
 				Template.template("team_prefix", teamPrefix),
 				Template.template("team_displayname", teamDisplayName),
 				Template.template("team_suffix", teamSuffix))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
-		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
-			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(message);
+	}
+
+	protected void showMessage(CommandSender recipient, Message message) {
+		UUID senderUuid = message.getSenderId();
+		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
+		if (recipient instanceof Player player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				player.sendMessage(MessagingUtils.noChatState(player));
+				return;
+			}
+			playerState.playMessageSound(message);
 		}
 	}
 }
