@@ -734,6 +734,30 @@ public class ChatCommand {
 						return deleteMessage(sender, (String) args[2]);
 					})
 					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("message"));
+				arguments.add(new MultiLiteralArgument("deletefromsender"));
+				arguments.add(new StringArgument("name").replaceSuggestions(info ->
+					MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new)
+				));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						if (!CommandUtils.hasPermission(sender, "networkchat.message.deletefromsender")) {
+							CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+						String targetName = (String) args[2];
+						@Nullable UUID targetId = MonumentaRedisSyncAPI.cachedNameToUuid(targetName);
+						if (targetId == null) {
+							CommandUtils.fail(sender, "The player " + targetName + " has not joined this server before. Double check capitalization and spelling.");
+							return -1;
+						}
+
+						MessageManager.deleteMessagesFromSender(targetId);
+						return 1;
+					})
+					.register();
 			}
 
 			arguments.clear();
@@ -1993,6 +2017,16 @@ public class ChatCommand {
 					.append(Component.text("[]", NamedTextColor.RED)
 						.hoverEvent(Component.text("Delete message", NamedTextColor.RED))
 						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " message delete " + messageIdStr)));
+			}
+
+			if (message.senderIsPlayer()) {
+				if (CommandUtils.hasPermission(target, "networkchat.message.deletefromsender")) {
+					String fromName = message.getSenderName();
+					gui = gui.append(Component.text(" "))
+						.append(Component.text("[]", NamedTextColor.RED)
+							.hoverEvent(Component.text("Delete messages from sender", NamedTextColor.RED))
+							.clickEvent(ClickEvent.runCommand("/" + baseCommand + " message deletefromsender " + fromName)));
+				}
 			}
 
 			target.sendMessage(gui);
