@@ -146,7 +146,7 @@ public class ChannelTeam extends Channel {
 			CommandAPI.unregister(command);
 
 			new CommandAPICommand(command)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return runCommandSet(sender);
 				})
 				.register();
@@ -155,7 +155,7 @@ public class ChannelTeam extends Channel {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return runCommandSay(sender, (String) args[0]);
 				})
 				.register();

@@ -173,7 +173,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.local")) {
 						CommandUtils.fail(sender, "You do not have permission to create local channels.");
 					}
@@ -195,7 +195,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new BooleanArgument("Auto Join"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.local")) {
 						CommandUtils.fail(sender, "You do not have permission to create local channels.");
 					}
@@ -218,7 +218,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new GreedyStringArgument("Channel Permission"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.local")) {
 						CommandUtils.fail(sender, "You do not have permission to create local channels.");
 					}

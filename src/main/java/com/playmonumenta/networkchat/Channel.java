@@ -22,6 +22,7 @@ public abstract class Channel {
 			case ChannelParty.CHANNEL_CLASS_ID -> ChannelParty.fromJsonInternal(channelJson);
 			case ChannelTeam.CHANNEL_CLASS_ID -> ChannelTeam.fromJsonInternal(channelJson);
 			case ChannelWhisper.CHANNEL_CLASS_ID -> ChannelWhisper.fromJsonInternal(channelJson);
+			case ChannelWorld.CHANNEL_CLASS_ID -> ChannelWorld.fromJsonInternal(channelJson);
 			default -> ChannelFuture.fromJsonInternal(channelJson);
 		};
 	}

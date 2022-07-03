@@ -159,7 +159,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			));
 			new CommandAPICommand(command)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return runCommandSet(sender, (String)args[0]);
 				})
 				.register();
@@ -171,14 +171,14 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return runCommandSay(sender, (String)args[0], (String)args[1]);
 				})
 				.register();
 		}
 
 		new CommandAPICommand(REPLY_COMMAND)
-			.executes((sender, args) -> {
+			.executesNative((sender, args) -> {
 				return runCommandReplySet(sender);
 			})
 			.register();
@@ -187,7 +187,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		arguments.add(new GreedyStringArgument("message"));
 		new CommandAPICommand(REPLY_COMMAND)
 			.withArguments(arguments)
-			.executes((sender, args) -> {
+			.executesNative((sender, args) -> {
 				return runCommandReplySay(sender, (String)args[0]);
 			})
 			.register();

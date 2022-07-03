@@ -125,6 +125,7 @@ public class ChatCommand {
 			ChannelLocal.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 			ChannelGlobal.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 			ChannelParty.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
+			ChannelWorld.registerNewChannelCommands(COMMANDS, new ArrayList<>(arguments));
 		}
 		ChannelTeam.registerNewChannelCommands();
 		ChannelWhisper.registerNewChannelCommands();
@@ -140,7 +141,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
@@ -164,7 +165,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
@@ -195,7 +196,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
@@ -229,7 +230,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
@@ -264,7 +265,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 
@@ -296,7 +297,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("enable", "disable"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 
@@ -333,7 +334,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 
@@ -357,7 +358,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("clear"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.channel.color")) {
 							CommandUtils.fail(sender, "You do not have permission to change channel colors.");
 						}
@@ -393,7 +394,7 @@ public class ChatCommand {
 				arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.channel.color")) {
 							CommandUtils.fail(sender, "You do not have permission to change channel colors.");
 						}
@@ -431,7 +432,7 @@ public class ChatCommand {
 				));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.delete.channel")) {
 							CommandUtils.fail(sender, "You do not have permission to delete channels.");
 						}
@@ -450,7 +451,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return getChannelPermission(sender, (String) args[2]);
 				})
 				.register();
@@ -465,7 +466,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("set"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						return changeChannelPerms(sender, (String) args[2], null);
 					})
 					.register();
@@ -482,7 +483,7 @@ public class ChatCommand {
 				arguments.add(new GreedyStringArgument("New channel perms"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						return changeChannelPerms(sender, (String) args[2], (String) args[4]);
 					})
 					.register();
@@ -498,7 +499,7 @@ public class ChatCommand {
 				arguments.add(new StringArgument("new channel name"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.rename")) {
 							CommandUtils.fail(sender, "You do not have permission to rename channels.");
 						}
@@ -517,7 +518,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String) args[2];
 					Channel channel = ChannelManager.getChannel(channelName);
 					if (channel == null) {
@@ -540,7 +541,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
@@ -571,7 +572,7 @@ public class ChatCommand {
 				arguments.add(new SoundArgument("Notification sound"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
@@ -595,7 +596,7 @@ public class ChatCommand {
 				arguments.add(new FloatArgument("Volume", 0.0f, 1.0f));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
@@ -619,7 +620,7 @@ public class ChatCommand {
 				arguments.add(new FloatArgument("Pitch", 0.5f, 2.0f));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
@@ -650,7 +651,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument("clear"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						String channelName = (String) args[2];
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
@@ -676,7 +677,7 @@ public class ChatCommand {
 			arguments.add(new GreedyStringArgument("message ID"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.gui.message")) {
 						CommandUtils.fail(sender, "You do not have permission to run this command.");
 					}
@@ -692,7 +693,7 @@ public class ChatCommand {
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return joinChannel(sender, (String) args[1]);
 				})
 				.register();
@@ -704,7 +705,7 @@ public class ChatCommand {
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return leaveChannel(sender, (String) args[1]);
 				})
 				.register();
@@ -713,7 +714,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("listplayers"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					RemotePlayerManager.showOnlinePlayers(CommandUtils.getCallee(sender));
 					return 1;
 				})
@@ -726,7 +727,7 @@ public class ChatCommand {
 				arguments.add(new StringArgument("Message ID"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.delete.message")) {
 							CommandUtils.fail(sender, "You do not have permission to run this command.");
 						}
@@ -745,7 +746,7 @@ public class ChatCommand {
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.checkSudoCommand(sender)) {
 						CommandUtils.fail(sender, "You may not change other players' ignored players.");
 					}
@@ -781,7 +782,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("list"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.checkSudoCommand(sender)) {
 						CommandUtils.fail(sender, "You may not change other players' ignored players.");
 					}
@@ -832,7 +833,7 @@ public class ChatCommand {
 			}));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.checkSudoCommand(sender)) {
 						CommandUtils.fail(sender, "You may not change other players' ignored players.");
 					}
@@ -868,7 +869,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String profileMessage = "";
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
@@ -897,7 +898,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("set"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -920,7 +921,7 @@ public class ChatCommand {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.setprofilemessage")) {
 						CommandUtils.fail(sender, "You do not have permission to run this command.");
 					}
@@ -952,7 +953,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("refresh"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -966,7 +967,7 @@ public class ChatCommand {
 			arguments.add(new EntitySelectorArgument("Players", EntitySelector.MANY_PLAYERS));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					@SuppressWarnings("unchecked")
 					Collection<Player> players = (Collection<Player>) args[2];
 
@@ -982,7 +983,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("resetnick"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -1001,7 +1002,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument(channelType));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player target)) {
 							CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -1036,7 +1037,7 @@ public class ChatCommand {
 				}
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player target)) {
 							CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -1066,7 +1067,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -1100,7 +1101,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -1134,7 +1135,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -1162,7 +1163,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -1189,7 +1190,7 @@ public class ChatCommand {
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return setActiveChannel(sender, (String) args[1]);
 				})
 				.register();
@@ -1202,7 +1203,7 @@ public class ChatCommand {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return sendMessage(sender, (String) args[1], (String) args[2]);
 				})
 				.register();
@@ -1215,10 +1216,11 @@ public class ChatCommand {
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
 				ChannelTeam.CHANNEL_CLASS_ID,
-				ChannelWhisper.CHANNEL_CLASS_ID));
+				ChannelWhisper.CHANNEL_CLASS_ID,
+				ChannelWorld.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String id = (String) args[2];
 					TextColor color = NetworkChatPlugin.messageColor(id);
 					sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
@@ -1235,11 +1237,12 @@ public class ChatCommand {
 					ChannelLocal.CHANNEL_CLASS_ID,
 					ChannelParty.CHANNEL_CLASS_ID,
 					ChannelTeam.CHANNEL_CLASS_ID,
-					ChannelWhisper.CHANNEL_CLASS_ID));
+					ChannelWhisper.CHANNEL_CLASS_ID,
+					ChannelWorld.CHANNEL_CLASS_ID));
 				arguments.add(new GreedyStringArgument("color").replaceSuggestions(info -> COLOR_SUGGESTIONS));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
 							CommandUtils.fail(sender, "You do not have permission to change channel colors server-wide.");
 						}
@@ -1268,10 +1271,11 @@ public class ChatCommand {
 				ChannelLocal.CHANNEL_CLASS_ID,
 				ChannelParty.CHANNEL_CLASS_ID,
 				ChannelTeam.CHANNEL_CLASS_ID,
-				ChannelWhisper.CHANNEL_CLASS_ID));
+				ChannelWhisper.CHANNEL_CLASS_ID,
+				ChannelWorld.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String id = (String) args[2];
 					TextColor color = NetworkChatPlugin.messageColor(id);
 					String format = NetworkChatPlugin.messageFormat(id).replace("\n", "\\n");
@@ -1308,11 +1312,12 @@ public class ChatCommand {
 					ChannelLocal.CHANNEL_CLASS_ID,
 					ChannelParty.CHANNEL_CLASS_ID,
 					ChannelTeam.CHANNEL_CLASS_ID,
-					ChannelWhisper.CHANNEL_CLASS_ID));
+					ChannelWhisper.CHANNEL_CLASS_ID,
+					ChannelWorld.CHANNEL_CLASS_ID));
 				arguments.add(new GreedyStringArgument("format"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
 							CommandUtils.fail(sender, "You do not have permission to change message formatting.");
 						}
@@ -1350,7 +1355,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2]);
 				})
 				.register();
@@ -1363,7 +1368,7 @@ public class ChatCommand {
 				arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityValues()));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
-					.executes((sender, args) -> {
+					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.visibility.default")) {
 							CommandUtils.fail(sender, "You do not have permission to change server-wide message visibility.");
 						}
@@ -1383,7 +1388,7 @@ public class ChatCommand {
 					arguments.add(new MultiLiteralArgument(channelType));
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)
-						.executes((sender, args) -> {
+						.executesNative((sender, args) -> {
 							if (!CommandUtils.hasPermission(sender, "networkchat.setdefaultchannel")) {
 								CommandUtils.fail(sender, "You do not have permission to change server-wide default channels.");
 							}
@@ -1407,7 +1412,7 @@ public class ChatCommand {
 					}
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)
-						.executes((sender, args) -> {
+						.executesNative((sender, args) -> {
 							if (!CommandUtils.hasPermission(sender, "networkchat.setdefaultchannel")) {
 								CommandUtils.fail(sender, "You do not have permission to change server-wide default channels.");
 							}
@@ -1424,7 +1429,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("pause"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return pause(sender);
 				})
 				.register();
@@ -1433,7 +1438,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("unpause"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return unpause(sender);
 				})
 				.register();
@@ -1445,7 +1450,7 @@ public class ChatCommand {
 		));
 		new CommandAPICommand("join")
 			.withArguments(arguments)
-			.executes((sender, args) -> {
+			.executesNative((sender, args) -> {
 				return joinChannel(sender, (String) args[0]);
 			})
 			.register();
@@ -1456,19 +1461,19 @@ public class ChatCommand {
 		));
 		new CommandAPICommand("leave")
 			.withArguments(arguments)
-			.executes((sender, args) -> {
+			.executesNative((sender, args) -> {
 				return leaveChannel(sender, (String) args[0]);
 			})
 			.register();
 
 		new CommandAPICommand("pausechat")
-			.executes((sender, args) -> {
+			.executesNative((sender, args) -> {
 				return togglePause(sender);
 			})
 			.register();
 
 		new CommandAPICommand("pc")
-			.executes((sender, args) -> {
+			.executesNative((sender, args) -> {
 				return togglePause(sender);
 			})
 			.register();
@@ -1480,7 +1485,7 @@ public class ChatCommand {
 			}
 
 			new CommandAPICommand(channelType)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return setActiveToDefault(sender, channelType);
 				})
 				.register();
@@ -1489,7 +1494,7 @@ public class ChatCommand {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(channelType)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return sendMessageInDefault(sender, channelType, (String) args[0]);
 				})
 				.register();
@@ -1497,6 +1502,8 @@ public class ChatCommand {
 			String shortcut;
 			if (channelType.equals(DefaultChannels.GUILD_CHANNEL)) {
 				shortcut = "gc";
+			} else if (channelType.equals(DefaultChannels.WORLD_CHANNEL)) {
+					shortcut = "wc";
 			} else {
 				shortcut = channelType.substring(0, 1);
 			}
@@ -1505,7 +1512,7 @@ public class ChatCommand {
 			}
 
 			new CommandAPICommand(shortcut)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return setActiveToDefault(sender, channelType);
 				})
 				.register();
@@ -1514,7 +1521,7 @@ public class ChatCommand {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(shortcut)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return sendMessageInDefault(sender, channelType, (String) args[0]);
 				})
 				.register();
@@ -1530,7 +1537,7 @@ public class ChatCommand {
 		for (final String baseCommand : COMMANDS) {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.checkSudoCommand(sender)) {
 						CommandUtils.fail(sender, "You may not show other players help info.");
 					}

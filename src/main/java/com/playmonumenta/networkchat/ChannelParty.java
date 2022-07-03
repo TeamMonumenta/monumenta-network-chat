@@ -174,7 +174,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.party")) {
 						CommandUtils.fail(sender, "You do not have permission to create party channels.");
 					}
@@ -209,7 +209,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
@@ -245,7 +245,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
@@ -278,7 +278,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.add(new MultiLiteralArgument("leave"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelId = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelId);
 					if (ch == null) {

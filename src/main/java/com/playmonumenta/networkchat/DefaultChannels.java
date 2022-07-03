@@ -18,12 +18,14 @@ import org.bukkit.command.CommandSender;
 public class DefaultChannels {
 	public static final String DEFAULT_CHANNEL = "default";
 	public static final String GUILD_CHANNEL = "guildchat";
+	public static final String WORLD_CHANNEL = "worldchat";
 	public static final Set<String> CHANNEL_TYPES = Set.of(DEFAULT_CHANNEL,
 		ChannelAnnouncement.CHANNEL_CLASS_ID,
 		ChannelLocal.CHANNEL_CLASS_ID,
 		ChannelGlobal.CHANNEL_CLASS_ID,
 		ChannelParty.CHANNEL_CLASS_ID,
-		GUILD_CHANNEL);
+		GUILD_CHANNEL,
+		WORLD_CHANNEL);
 
 	private final Map<String, UUID> mDefaultsByType = new HashMap<>();
 
