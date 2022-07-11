@@ -306,9 +306,6 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
 			return false;
 		}
@@ -316,22 +313,20 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			return false;
 		}
 
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return true;
-		}
-
-		ChannelAccess playerAccess = mPlayerAccess.get(((Player) sender).getUniqueId());
-		if (playerAccess == null) {
-			return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
 		} else {
-			return playerAccess.mayChat() == null || playerAccess.mayChat();
+			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
+			if (playerAccess == null) {
+				return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
+			} else {
+				return playerAccess.mayChat() == null || playerAccess.mayChat();
+			}
 		}
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.local")) {
 			return false;
 		}
@@ -339,42 +334,38 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			return false;
 		}
 
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return true;
-		}
-
-		UUID playerId = ((Player) sender).getUniqueId();
-
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
 		} else {
-			return playerAccess.mayListen() == null || playerAccess.mayListen();
+			UUID playerId = player.getUniqueId();
+
+			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
+			if (playerAccess == null) {
+				return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+			} else {
+				return playerAccess.mayListen() == null || playerAccess.mayListen();
+			}
 		}
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (sender instanceof Player) {
-			if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-				CommandUtils.fail(sender, "You do not have permission to chat.");
-			}
-			if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
-				CommandUtils.fail(sender, "You do not have permission to talk in local chat.");
-			}
-			if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
-				CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
-			}
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
+			CommandUtils.fail(sender, "You do not have permission to talk in local chat.");
+		}
+		if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
+			CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
+		}
 
-			if (!mayChat(sender)) {
-				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
-			}
+		if (!mayChat(sender)) {
+			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
+		}
 
-			if (messageText.contains("@")) {
-				if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-					CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-				} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
-					CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
-				}
+		if (messageText.contains("@")) {
+			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
+				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
+				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
 

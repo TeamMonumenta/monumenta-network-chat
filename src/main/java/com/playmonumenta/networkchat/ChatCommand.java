@@ -1030,6 +1030,10 @@ public class ChatCommand {
 					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 						ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0])
 					));
+				} else if (channelType.equals(DefaultChannels.WORLD_CHANNEL)) {
+					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+						ChannelManager.getChannelNames(ChannelWorld.CHANNEL_CLASS_ID).toArray(new String[0])
+					));
 				} else {
 					arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 						ChannelManager.getChannelNames(channelType).toArray(new String[0])
@@ -1404,6 +1408,10 @@ public class ChatCommand {
 					if (channelType.equals("default")) {
 						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
 							ChannelManager.getChannelNames().toArray(new String[0])
+						));
+					} else if (channelType.equals(DefaultChannels.WORLD_CHANNEL)) {
+						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
+							ChannelManager.getChannelNames(ChannelWorld.CHANNEL_CLASS_ID).toArray(new String[0])
 						));
 					} else {
 						arguments.add(new StringArgument("channel name").replaceSuggestions(info ->
@@ -1817,6 +1825,7 @@ public class ChatCommand {
 	private static int sendMessageInDefault(CommandSender sender, String channelType, String message) throws WrapperCommandSyntaxException {
 		CommandSender caller = CommandUtils.getCaller(sender);
 		CommandSender callee = CommandUtils.getCallee(sender);
+		Channel channel;
 		if (NetworkChatProperties.getChatRequiresPlayer()) {
 			if (!(caller instanceof Player)) {
 				CommandUtils.fail(sender, "Only players may chat on this shard.");
@@ -1831,16 +1840,10 @@ public class ChatCommand {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
 				CommandUtils.fail(player, MessagingUtils.noChatStateStr(player));
+				channel = ChannelManager.getDefaultChannel(channelType);
 			} else if (playerState.isPaused()) {
 				CommandUtils.fail(player, "You cannot chat with chat paused (/chat unpause)");
-			}
-		}
-		Channel channel;
-		if (sender instanceof Player player) {
-			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
-			if (playerState == null) {
-				player.sendMessage(MessagingUtils.noChatState(player));
-				channel = ChannelManager.getDefaultChannel(channelType);
+				throw new RuntimeException("Previous exception failed to raise.");
 			} else {
 				channel = playerState.getDefaultChannel(channelType);
 			}

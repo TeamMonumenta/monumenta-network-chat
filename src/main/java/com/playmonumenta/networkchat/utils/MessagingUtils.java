@@ -91,23 +91,24 @@ public class MessagingUtils {
 	public static MiniMessage getAllowedMiniMessage(CommandSender sender) {
 		TransformationRegistry.Builder transforms = TransformationRegistry.builder().clear();
 
-		if (sender instanceof Player) {
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.color")) {
+		CommandSender caller = CommandUtils.getCaller(sender);
+		if (caller instanceof Player player) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.color")) {
 				transforms.add(TransformationType.COLOR);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.decoration")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.decoration")) {
 				transforms.add(TransformationType.DECORATION);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.keybind")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.keybind")) {
 				transforms.add(TransformationType.KEYBIND);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.font")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.font")) {
 				transforms.add(TransformationType.FONT);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.gradient")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.gradient")) {
 				transforms.add(TransformationType.GRADIENT);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.rainbow")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.rainbow")) {
 				transforms.add(TransformationType.RAINBOW);
 			}
 		} else {

@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import java.lang.ref.Cleaner;
 import java.time.Instant;
@@ -94,7 +95,7 @@ public class Message implements AutoCloseable {
 			senderId = ((Entity) sender).getUniqueId();
 			senderType = ((Entity) sender).getType().getKey();
 		}
-		boolean senderIsPlayer = sender instanceof Player;
+		boolean senderIsPlayer = CommandUtils.getCallee(sender) instanceof Player;
 		Component senderComponent = MessagingUtils.senderComponent(sender);
 		ChatFilter.ChatFilterResult filterResult = new ChatFilter.ChatFilterResult(message);
 		NetworkChatPlugin.globalFilter().run(sender, filterResult);
