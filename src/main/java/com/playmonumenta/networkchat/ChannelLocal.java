@@ -442,7 +442,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
-		if (recipient instanceof Player player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
+		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
 				player.sendMessage(MessagingUtils.noChatState(player));

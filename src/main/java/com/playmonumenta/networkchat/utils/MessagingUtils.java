@@ -130,8 +130,9 @@ public class MessagingUtils {
 	}
 
 	public static Component senderComponent(CommandSender sender) {
-		if (sender instanceof Entity) {
-			return entityComponent((Entity) sender);
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (callee instanceof Entity entity) {
+			return entityComponent(entity);
 		}
 		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
 			TemplateResolver.templates(Template.template("sender_name", sender.getName())));
