@@ -8,6 +8,7 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -16,6 +17,7 @@ import org.bukkit.plugin.Plugin;
 public class MessageManager implements Listener {
 	public static final String NETWORK_CHAT_MESSAGE = "com.playmonumenta.networkchat.Message";
 	public static final String NETWORK_CHAT_DELETE_MESSAGE = "com.playmonumenta.networkchat.Message.delete";
+	public static final String NETWORK_CHAT_DELETE_FROM_SENDER = "com.playmonumenta.networkchat.Message.deleteFromSender";
 
 	private static MessageManager INSTANCE = null;
 	private static Plugin mPlugin = null;
@@ -38,7 +40,7 @@ public class MessageManager implements Listener {
 		return INSTANCE;
 	}
 
-	public static Message getMessage(UUID messageId) {
+	public static @Nullable Message getMessage(UUID messageId) {
 		WeakReference<Message> messageWeakReference = mMessages.get(messageId);
 		if (messageWeakReference == null) {
 			return null;
@@ -64,6 +66,18 @@ public class MessageManager implements Listener {
 		}
 	}
 
+	public static void deleteMessagesFromSender(UUID senderId) {
+		JsonObject object = new JsonObject();
+		object.addProperty("id", senderId.toString());
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_DELETE_FROM_SENDER,
+				object,
+				NetworkChatPlugin.getMessageTtl());
+		} catch (Exception e) {
+			NetworkChatPlugin.getInstance().getLogger().warning("Catch exception sending " + NETWORK_CHAT_DELETE_FROM_SENDER + " reason: " + e.getMessage());
+		}
+	}
+
 	@EventHandler(priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
@@ -83,6 +97,14 @@ public class MessageManager implements Listener {
 					return;
 				}
 				deleteMessageHandler(data);
+			}
+			case NETWORK_CHAT_DELETE_FROM_SENDER -> {
+				data = event.getData();
+				if (data == null) {
+					mPlugin.getLogger().severe("Got " + NETWORK_CHAT_DELETE_FROM_SENDER + " message with null data");
+					return;
+				}
+				deleteFromSenderHandler(data);
 			}
 			default -> {
 			}
@@ -120,6 +142,36 @@ public class MessageManager implements Listener {
 
 		if (message != null) {
 			message.markDeleted();
+			for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
+				state.refreshChat();
+			}
+		}
+	}
+
+	public void deleteFromSenderHandler(JsonObject object) {
+		UUID senderId;
+		try {
+			senderId = UUID.fromString(object.getAsJsonPrimitive("id").getAsString());
+		} catch (Exception e) {
+			mPlugin.getLogger().severe("Could not read delete from sender request from json:");
+			mPlugin.getLogger().severe(e.getMessage());
+			return;
+		}
+
+		boolean changeFound = false;
+		for (WeakReference<Message> messageWeakReference : mMessages.values()) {
+			@Nullable Message message = messageWeakReference.get();
+			if (message == null || message.isDeleted()) {
+				continue;
+			}
+
+			if (senderId.equals(message.getSenderId())) {
+				message.markDeleted();
+				changeFound = true;
+			}
+		}
+
+		if (changeFound) {
 			for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
 				state.refreshChat();
 			}
