@@ -103,8 +103,10 @@ public class ChannelTeam extends Channel {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					assert NetworkChatPlugin.getInstance() != null;
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
+					NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+					if (instance != null) {
+						instance.getLogger().warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
+					}
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -395,14 +397,18 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			assert NetworkChatPlugin.getInstance() != null;
-			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
+			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+			if (instance != null) {
+				instance.getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
+			}
 			return;
 		}
 		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
 		if (team == null) {
-			assert NetworkChatPlugin.getInstance() != null;
-			NetworkChatPlugin.getInstance().getLogger().finer("No such team " + teamName + " on this shard, ignoring.");
+			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+			if (instance != null) {
+				instance.getLogger().finer("No such team " + teamName + " on this shard, ignoring.");
+			}
 			return;
 		}
 
@@ -426,8 +432,10 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			assert NetworkChatPlugin.getInstance() != null;
-			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
+			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+			if (instance != null) {
+				instance.getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
+			}
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 			return Component.text("[Could not get team from Message]", NamedTextColor.RED, TextDecoration.BOLD);
 		}

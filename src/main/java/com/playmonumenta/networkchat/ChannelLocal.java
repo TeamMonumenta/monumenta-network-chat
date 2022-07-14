@@ -84,8 +84,10 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				assert NetworkChatPlugin.getInstance() != null;
-				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+				NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+				if (instance != null) {
+					instance.getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+				}
 			}
 		}
 
@@ -114,8 +116,10 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					assert NetworkChatPlugin.getInstance() != null;
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel local reason: " + e.getMessage());
+					NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+					if (instance != null) {
+						instance.getLogger().warning("Catch exception during converting json to channel local reason: " + e.getMessage());
+					}
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -387,20 +391,26 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	public void distributeMessage(Message message) {
 		JsonObject extraData = message.getExtraData();
 		if (extraData == null) {
-			assert NetworkChatPlugin.getInstance() != null;
-			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with no fromShard, ignoring.");
+			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+			if (instance != null) {
+				instance.getLogger().warning("Got local chat message with no fromShard, ignoring.");
+			}
 			return;
 		}
 		JsonElement fromShardJsonElement = extraData.get("fromShard");
 		if (!fromShardJsonElement.isJsonPrimitive()) {
-			assert NetworkChatPlugin.getInstance() != null;
-			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
+			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+			if (instance != null) {
+				instance.getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
+			}
 			return;
 		}
 		JsonPrimitive fromShardJsonPrimitive = fromShardJsonElement.getAsJsonPrimitive();
 		if (!fromShardJsonPrimitive.isString()) {
-			assert NetworkChatPlugin.getInstance() != null;
-			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
+			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+			if (instance != null) {
+				instance.getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
+			}
 			return;
 		}
 		if (!Objects.equals(RemotePlayerManager.getShardName(), fromShardJsonPrimitive.getAsString())) {
