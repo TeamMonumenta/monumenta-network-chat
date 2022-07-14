@@ -178,13 +178,8 @@ public class ChatFilter {
 		}
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
-			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-			Logger logger;
-			if (instance != null) {
-				logger = NetworkChatPlugin.getInstance().getLogger();
-			} else {
-				logger = Bukkit.getLogger();
-			}
+			assert NetworkChatPlugin.getInstance() != null;
+			Logger logger = NetworkChatPlugin.getInstance().getLogger();
 			CommandSender callee = CommandUtils.getCallee(sender);
 			ReplacerWithEscape replacer = new ReplacerWithEscape(logger, sender, mReplacementMiniMessage);
 			final ChatFilterResult localResult = filterResult.getCleanCopy();
@@ -247,10 +242,7 @@ public class ChatFilter {
 						ChatFilterPattern pattern = ChatFilterPattern.fromJson(sender, patternObject);
 						filter.mFilters.put(pattern.id(), pattern);
 					} catch (Exception e) {
-						NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-						if (instance != null) {
-							instance.getLogger().warning("Failed to load chat filter pattern: " + e.getMessage());
-						}
+						NetworkChatPlugin.getInstance().getLogger().warning("Failed to load chat filter pattern: " + e.getMessage());
 					}
 				}
 			}

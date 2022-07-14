@@ -84,10 +84,8 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-				if (instance != null) {
-					instance.getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
-				}
+				assert NetworkChatPlugin.getInstance() != null;
+				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
 
@@ -116,10 +114,8 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-					if (instance != null) {
-						instance.getLogger().warning("Caught exception getting ChannelAccess from json: " + e.getMessage());
-					}
+					assert NetworkChatPlugin.getInstance() != null;
+					NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting ChannelAccess from json: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);

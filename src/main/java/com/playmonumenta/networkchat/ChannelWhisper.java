@@ -513,10 +513,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		try {
 			receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 		} catch (Exception e) {
-			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-			if (instance != null) {
-				instance.getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
-			}
+			assert NetworkChatPlugin.getInstance() != null;
+			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
 			return;
 		}
 		UUID senderUuid = message.getSenderId();
@@ -529,10 +527,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private void distributeMessageToPlayer(UUID playerId, UUID otherId, Message message) {
 		PlayerState state = PlayerStateManager.getPlayerState(playerId);
 		if (state == null) {
-			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-			if (instance != null) {
-				instance.getLogger().finer("Receiver not on this shard.");
-			}
+			assert NetworkChatPlugin.getInstance() != null;
+			NetworkChatPlugin.getInstance().getLogger().finer("Receiver not on this shard.");
 			return;
 		}
 		state.setWhisperChannel(otherId, this);
@@ -559,10 +555,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			UUID receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 			receiverComp = RemotePlayerManager.getPlayerComponent(receiverUuid);
 		} catch (Exception e) {
-			NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-			if (instance != null) {
-				instance.getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
-			}
+			assert NetworkChatPlugin.getInstance() != null;
+			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
 			receiverComp = Component.text("ErrorLoadingName");
 		}
 

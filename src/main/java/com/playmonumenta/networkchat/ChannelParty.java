@@ -88,10 +88,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-				if (instance != null) {
-					instance.getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
-				}
+				assert NetworkChatPlugin.getInstance() != null;
+				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
 
@@ -125,10 +123,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-					if (instance != null) {
-						instance.getLogger().warning("Catch exception during converting json to channel Party reason: " + e.getMessage());
-					}
+					assert NetworkChatPlugin.getInstance() != null;
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Party reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -359,10 +355,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			try {
 				ChannelManager.deleteChannel(getName());
 			} catch (Exception e) {
-				NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
-				if (instance != null) {
-					instance.getLogger().info("Failed to delete empty channel " + getName());
-				}
+				assert NetworkChatPlugin.getInstance() != null;
+				NetworkChatPlugin.getInstance().getLogger().info("Failed to delete empty channel " + getName());
 			}
 		} else {
 			ChannelManager.saveChannel(this);
