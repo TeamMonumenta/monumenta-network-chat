@@ -30,7 +30,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
 
-	private static @Nullable NetworkChatPlugin INSTANCE = null;
+	private static NetworkChatPlugin INSTANCE = null;
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
@@ -202,6 +202,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	}
 
 	public static NetworkChatPlugin getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("NetworkChat has not been initialized yet.");
+		}
 		return INSTANCE;
 	}
 

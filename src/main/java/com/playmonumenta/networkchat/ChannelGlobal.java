@@ -84,7 +84,6 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				assert NetworkChatPlugin.getInstance() != null;
 				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}

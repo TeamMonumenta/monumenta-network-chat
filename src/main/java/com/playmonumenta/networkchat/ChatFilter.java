@@ -178,7 +178,6 @@ public class ChatFilter {
 		}
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
-			assert NetworkChatPlugin.getInstance() != null;
 			Logger logger = NetworkChatPlugin.getInstance().getLogger();
 			CommandSender callee = CommandUtils.getCallee(sender);
 			ReplacerWithEscape replacer = new ReplacerWithEscape(logger, sender, mReplacementMiniMessage);
