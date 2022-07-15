@@ -103,7 +103,6 @@ public class ChannelTeam extends Channel {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					assert NetworkChatPlugin.getInstance() != null;
 					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
 					continue;
 				}
@@ -146,7 +145,7 @@ public class ChannelTeam extends Channel {
 			CommandAPI.unregister(command);
 
 			new CommandAPICommand(command)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return runCommandSet(sender);
 				})
 				.register();
@@ -155,7 +154,7 @@ public class ChannelTeam extends Channel {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return runCommandSay(sender, (String) args[0]);
 				})
 				.register();
@@ -163,7 +162,8 @@ public class ChannelTeam extends Channel {
 	}
 
 	private static int runCommandSet(CommandSender sender) throws WrapperCommandSyntaxException {
-		if (!(sender instanceof Player sendingPlayer)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player sendingPlayer)) {
 			sender.sendMessage(Component.translatable("permissions.requires.player"));
 			CommandUtils.fail(sender, "A player is required to run this command here");
 		} else {
@@ -196,7 +196,8 @@ public class ChannelTeam extends Channel {
 	}
 
 	private static int runCommandSay(CommandSender sender, String message) throws WrapperCommandSyntaxException {
-		if (!(sender instanceof Entity sendingEntity)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Entity sendingEntity)) {
 			sender.sendMessage(Component.translatable("permissions.requires.entity"));
 			CommandUtils.fail(sender, "An entity is required to run this command here");
 		} else {
@@ -298,22 +299,20 @@ public class ChannelTeam extends Channel {
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			return false;
 		}
 
-		if (!(sender instanceof Player player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return true;
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
 			if (playerAccess == null) {
-				if (mDefaultAccess.mayChat() != null && !mDefaultAccess.mayChat()) {
+				if (mDefaultAccess.mayChat() == null || !mDefaultAccess.mayChat()) {
 					return false;
 				}
-			} else if (playerAccess.mayChat() != null && !playerAccess.mayChat()) {
+			} else if (playerAccess.mayChat() == null || !playerAccess.mayChat()) {
 				return false;
 			}
 
@@ -327,14 +326,12 @@ public class ChannelTeam extends Channel {
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.team")) {
 			return false;
 		}
 
-		if (!(sender instanceof Player player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return false;
 		} else {
 			UUID playerId = player.getUniqueId();
@@ -358,9 +355,6 @@ public class ChannelTeam extends Channel {
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-			CommandUtils.fail(sender, "You do not have permission to chat.");
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			CommandUtils.fail(sender, "You do not have permission to talk to a team.");
 		}
@@ -400,13 +394,11 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
 			return;
 		}
 		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
 		if (team == null) {
-			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().finer("No such team " + teamName + " on this shard, ignoring.");
 			return;
 		}
@@ -431,7 +423,6 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 			return Component.text("[Could not get team from Message]", NamedTextColor.RED, TextDecoration.BOLD);
@@ -477,7 +468,7 @@ public class ChannelTeam extends Channel {
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
-		if (recipient instanceof Player player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
+		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
 				player.sendMessage(MessagingUtils.noChatState(player));

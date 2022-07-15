@@ -159,7 +159,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			));
 			new CommandAPICommand(command)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return runCommandSet(sender, (String)args[0]);
 				})
 				.register();
@@ -171,14 +171,14 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					return runCommandSay(sender, (String)args[0], (String)args[1]);
 				})
 				.register();
 		}
 
 		new CommandAPICommand(REPLY_COMMAND)
-			.executes((sender, args) -> {
+			.executesNative((sender, args) -> {
 				return runCommandReplySet(sender);
 			})
 			.register();
@@ -187,14 +187,15 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		arguments.add(new GreedyStringArgument("message"));
 		new CommandAPICommand(REPLY_COMMAND)
 			.withArguments(arguments)
-			.executes((sender, args) -> {
+			.executesNative((sender, args) -> {
 				return runCommandReplySay(sender, (String)args[0]);
 			})
 			.register();
 	}
 
 	private static int runCommandSet(CommandSender sender, String recipientName) throws WrapperCommandSyntaxException {
-		if (!(sender instanceof Player sendingPlayer)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player sendingPlayer)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
 			UUID recipientUuid = RemotePlayerManager.getPlayerId(recipientName);
@@ -225,7 +226,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	private static int runCommandSay(CommandSender sender, String recipientName, String message) throws WrapperCommandSyntaxException {
-		if (!(sender instanceof Player sendingPlayer)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player sendingPlayer)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
 			UUID recipientUuid = RemotePlayerManager.getPlayerId(recipientName);
@@ -256,7 +258,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	private static int runCommandReplySet(CommandSender sender) throws WrapperCommandSyntaxException {
-		if (!(sender instanceof Player sendingPlayer)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player sendingPlayer)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
 			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
@@ -270,13 +273,14 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			}
 
 			senderState.setActiveChannel(channel);
-			sender.sendMessage(Component.text("You are now typing replies to the last person to whisper to you.", NamedTextColor.GRAY));
+			callee.sendMessage(Component.text("You are now typing replies to the last person to whisper to you.", NamedTextColor.GRAY));
 		}
 		return 1;
 	}
 
 	private static int runCommandReplySay(CommandSender sender, String message) throws WrapperCommandSyntaxException {
-		if (!(sender instanceof Player sendingPlayer)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player sendingPlayer)) {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
 			PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
@@ -349,10 +353,12 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean isParticipant(CommandSender sender) {
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return false;
+		} else {
+			return isParticipant(player);
 		}
-		return isParticipant((Player) sender);
 	}
 
 	public boolean isParticipant(Player player) {
@@ -418,22 +424,20 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.whisper")) {
 			return false;
 		}
 
-		if (!(sender instanceof Player player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return false;
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
 			if (playerAccess == null) {
-				if (mDefaultAccess.mayChat() != null && !mDefaultAccess.mayChat()) {
+				if (mDefaultAccess.mayChat() == null || !mDefaultAccess.mayChat()) {
 					return false;
 				}
-			} else if (playerAccess.mayChat() != null && !playerAccess.mayChat()) {
+			} else if (playerAccess.mayChat() == null || !playerAccess.mayChat()) {
 				return false;
 			}
 		}
@@ -442,39 +446,35 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.whisper")) {
 			return false;
 		}
 
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return false;
-		}
+		} else {
+			UUID playerId = player.getUniqueId();
 
-		UUID playerId = ((Player) sender).getUniqueId();
-
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			if (mDefaultAccess.mayListen() != null && !mDefaultAccess.mayListen()) {
+			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
+			if (playerAccess == null) {
+				if (mDefaultAccess.mayListen() == null || !mDefaultAccess.mayListen()) {
+					return false;
+				}
+			} else if (playerAccess.mayListen() == null || !playerAccess.mayListen()) {
 				return false;
 			}
-		} else if (playerAccess.mayListen() != null && !playerAccess.mayListen()) {
-			return false;
-		}
 
-		return mParticipants.contains(playerId);
+			return mParticipants.contains(playerId);
+		}
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player)) {
 			CommandUtils.fail(sender, "Only players may whisper.");
 		}
 
-		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-			CommandUtils.fail(sender, "You do not have permission to chat.");
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.whisper")) {
 			CommandUtils.fail(sender, "You do not have permission to whisper.");
 		}
@@ -513,7 +513,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		try {
 			receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 		} catch (Exception e) {
-			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
 			return;
 		}
@@ -527,7 +526,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private void distributeMessageToPlayer(UUID playerId, UUID otherId, Message message) {
 		PlayerState state = PlayerStateManager.getPlayerState(playerId);
 		if (state == null) {
-			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().finer("Receiver not on this shard.");
 			return;
 		}
@@ -555,7 +553,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			UUID receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 			receiverComp = RemotePlayerManager.getPlayerComponent(receiverUuid);
 		} catch (Exception e) {
-			assert NetworkChatPlugin.getInstance() != null;
 			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
 			receiverComp = Component.text("ErrorLoadingName");
 		}
@@ -573,7 +570,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
-		if (recipient instanceof Player player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
+		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
 				player.sendMessage(MessagingUtils.noChatState(player));

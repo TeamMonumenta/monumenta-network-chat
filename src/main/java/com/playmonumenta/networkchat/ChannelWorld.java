@@ -11,6 +11,7 @@ import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import dev.jorel.commandapi.wrappers.NativeProxyCommandSender;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,13 +25,15 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.template.TemplateResolver;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-
-// A channel visible to all shards
-public class ChannelGlobal extends Channel implements ChannelPermissionNode, ChannelAutoJoin {
-	public static final String CHANNEL_CLASS_ID = "global";
+// A channel visible only to this world (and moderators who opt in from elsewhere)
+public class ChannelWorld extends Channel implements ChannelPermissionNode, ChannelAutoJoin {
+	public static final String CHANNEL_CLASS_ID = "world";
 
 	private final UUID mId;
 	private Instant mLastUpdate;
@@ -42,7 +45,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	private boolean mAutoJoin = true;
 	private String mChannelPermission = null;
 
-	private ChannelGlobal(UUID channelId, Instant lastUpdate, String name) {
+	private ChannelWorld(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
 		mName = name;
@@ -52,7 +55,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		mPlayerAccess = new HashMap<>();
 	}
 
-	public ChannelGlobal(String name) {
+	public ChannelWorld(String name) {
 		mLastUpdate = Instant.now();
 		mId = UUID.randomUUID();
 		mName = name;
@@ -65,7 +68,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
-			throw new Exception("Cannot create ChannelGlobal from channel ID " + channelClassId);
+			throw new Exception("Cannot create ChannelWorld from channel ID " + channelClassId);
 		}
 		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
 		UUID channelId = UUID.fromString(uuidString);
@@ -76,7 +79,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 		String name = channelJson.getAsJsonPrimitive("name").getAsString();
 
-		ChannelGlobal channel = new ChannelGlobal(channelId, lastUpdate, name);
+		ChannelWorld channel = new ChannelWorld(channelId, lastUpdate, name);
 
 		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
 		if (messageColorJson != null && messageColorJson.isString()) {
@@ -113,7 +116,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					// TODO Log this
+					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel world reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -172,16 +175,16 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
-						CommandUtils.fail(sender, "You do not have permission to create global channels.");
+					if (!CommandUtils.hasPermission(sender, "networkchat.new.world")) {
+						CommandUtils.fail(sender, "You do not have permission to create world channels.");
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel = null;
+					ChannelWorld newChannel = null;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
-						newChannel = new ChannelGlobal(channelName);
+						newChannel = new ChannelWorld(channelName);
 					} catch (Exception e) {
 						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
@@ -194,16 +197,16 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
-						CommandUtils.fail(sender, "You do not have permission to create global channels.");
+					if (!CommandUtils.hasPermission(sender, "networkchat.new.world")) {
+						CommandUtils.fail(sender, "You do not have permission to create world channels.");
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel = null;
+					ChannelWorld newChannel = null;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
-						newChannel = new ChannelGlobal(channelName);
+						newChannel = new ChannelWorld(channelName);
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
 					} catch (Exception e) {
 						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
@@ -217,16 +220,16 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
-						CommandUtils.fail(sender, "You do not have permission to create global channels.");
+					if (!CommandUtils.hasPermission(sender, "networkchat.new.world")) {
+						CommandUtils.fail(sender, "You do not have permission to create world channels.");
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel = null;
+					ChannelWorld newChannel = null;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
-						newChannel = new ChannelGlobal(channelName);
+						newChannel = new ChannelWorld(channelName);
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
 						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
 					} catch (Exception e) {
@@ -303,16 +306,8 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		return mAutoJoin && player != null && mayListen(player);
 	}
 
-	public String getChannelPermission() {
-		return mChannelPermission;
-	}
-
-	public void setChannelPermission(String newPerm) {
-		mChannelPermission = newPerm;
-	}
-
 	public boolean mayChat(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.say.global")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.world")) {
 			return false;
 		}
 		if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
@@ -333,7 +328,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.see.global")) {
+		if (!CommandUtils.hasPermission(sender, "networkchat.see.world")) {
 			return false;
 		}
 		if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
@@ -356,8 +351,8 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (!CommandUtils.hasPermission(sender, "networkchat.say.global")) {
-			CommandUtils.fail(sender, "You do not have permission to talk in global chat.");
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.world")) {
+			CommandUtils.fail(sender, "You do not have permission to talk in world chat.");
 		}
 		if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
 			CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
@@ -375,7 +370,23 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			}
 		}
 
-		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
+		World world;
+		if (sender instanceof NativeProxyCommandSender nativeSender) {
+			world = nativeSender.getWorld();
+		} else if (sender instanceof Entity entity) {
+			world = entity.getWorld();
+		} else if (sender instanceof BlockCommandSender blockCommandSender) {
+			world = blockCommandSender.getBlock().getWorld();
+		} else {
+			CommandUtils.fail(sender, "Unable to get world for world channel message.");
+			throw new RuntimeException("The previous line should have thrown an exception.");
+		}
+
+		JsonObject extraData = new JsonObject();
+		extraData.addProperty("fromShard", RemotePlayerManager.getShardName());
+		extraData.addProperty("fromWorld", world.getName());
+
+		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
 		if (message == null) {
 			return;
 		}
@@ -388,11 +399,48 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	public void distributeMessage(Message message) {
+		NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
+		JsonObject extraData = message.getExtraData();
+		if (extraData == null) {
+			instance.getLogger().warning("Got world chat message with no fromShard, ignoring.");
+			return;
+		}
+
+		String fromShard;
+		JsonElement fromShardJsonElement = extraData.get("fromShard");
+		if (!fromShardJsonElement.isJsonPrimitive()) {
+			instance.getLogger().warning("Got world chat message with invalid fromShard json, ignoring.");
+			return;
+		}
+		JsonPrimitive fromShardJsonPrimitive = fromShardJsonElement.getAsJsonPrimitive();
+		if (!fromShardJsonPrimitive.isString()) {
+			instance.getLogger().warning("Got world chat message with invalid fromShard json, ignoring.");
+			return;
+		}
+		fromShard = fromShardJsonPrimitive.getAsString();
+		if (!fromShard.equals(RemotePlayerManager.getShardName())) {
+			// TODO Chat spy here
+			return;
+		}
+
+		String fromWorld;
+		JsonElement fromWorldJsonElement = extraData.get("fromWorld");
+		if (!fromWorldJsonElement.isJsonPrimitive()) {
+			instance.getLogger().warning("Got world chat message with invalid fromWorld json, ignoring.");
+			return;
+		}
+		JsonPrimitive fromWorldJsonPrimitive = fromWorldJsonElement.getAsJsonPrimitive();
+		if (!fromWorldJsonPrimitive.isString()) {
+			instance.getLogger().warning("Got world chat message with invalid fromWorld json, ignoring.");
+			return;
+		}
+		fromWorld = fromWorldJsonPrimitive.getAsString();
+
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
 			Player player = state.getPlayer();
-			if (player == null || !mayListen(player)) {
+			if (player == null || !player.getWorld().getName().equals(fromWorld) || !mayListen(player)) {
 				continue;
 			}
 
@@ -433,10 +481,21 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 	}
 
+	@Override
+	public String getChannelPermission() {
+		return mChannelPermission;
+	}
+
+	@Override
+	public void setChannelPermission(String newPerms) {
+		mChannelPermission = newPerms;
+	}
+
 	public boolean getAutoJoin() {
 		return mAutoJoin;
 	}
 
+	@Override
 	public void setAutoJoin(Boolean newAutoJoin) {
 		mAutoJoin = newAutoJoin;
 	}

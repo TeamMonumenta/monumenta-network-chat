@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import java.lang.ref.Cleaner;
 import java.time.Instant;
@@ -85,16 +86,17 @@ public class Message implements AutoCloseable {
 	                                       CommandSender sender,
 	                                       JsonObject extraData,
 	                                       Component message) {
+		CommandSender callee = CommandUtils.getCallee(sender);
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
 		@Nullable UUID senderId = null;
 		@Nullable NamespacedKey senderType = null;
-		if (sender instanceof Entity) {
-			senderId = ((Entity) sender).getUniqueId();
-			senderType = ((Entity) sender).getType().getKey();
+		if (callee instanceof Entity entity) {
+			senderId = entity.getUniqueId();
+			senderType = entity.getType().getKey();
 		}
-		boolean senderIsPlayer = sender instanceof Player;
+		boolean senderIsPlayer = callee instanceof Player;
 		Component senderComponent = MessagingUtils.senderComponent(sender);
 		ChatFilter.ChatFilterResult filterResult = new ChatFilter.ChatFilterResult(message);
 		NetworkChatPlugin.globalFilter().run(sender, filterResult);

@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkchat.utils.ReplacerWithEscape;
 import dev.jorel.commandapi.CommandAPI;
@@ -178,6 +179,7 @@ public class ChatFilter {
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
 			Logger logger = NetworkChatPlugin.getInstance().getLogger();
+			CommandSender callee = CommandUtils.getCallee(sender);
 			ReplacerWithEscape replacer = new ReplacerWithEscape(logger, sender, mReplacementMiniMessage);
 			final ChatFilterResult localResult = filterResult.getCleanCopy();
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
@@ -208,8 +210,8 @@ public class ChatFilter {
 			if (localResult.foundMatch()) {
 				if (mCommand != null) {
 					String command = mCommand.replace("@S", sender.getName());
-					if (sender instanceof Entity) {
-						command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
+					if (callee instanceof Entity entity) {
+						command = command.replace("@U", entity.getUniqueId().toString().toLowerCase());
 					}
 					String originalMessage = MessagingUtils.plainText(localResult.originalComponent());
 					String replacedMessage = MessagingUtils.plainText(localResult.component());

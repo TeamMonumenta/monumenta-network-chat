@@ -30,7 +30,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
 
-	private static @Nullable NetworkChatPlugin INSTANCE = null;
+	private static NetworkChatPlugin INSTANCE = null;
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
@@ -64,6 +64,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><click:run_command\":<message_gui_cmd>\"><hover:show_text:\"<channel_color>Global Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelLocal.CHANNEL_CLASS_ID, NamedTextColor.YELLOW);
 		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Local Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
+		mDefaultMessageColors.put(ChannelWorld.CHANNEL_CLASS_ID, NamedTextColor.BLUE);
+		mDefaultMessageFormats.put(ChannelWorld.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>World Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelParty.CHANNEL_CLASS_ID, NamedTextColor.LIGHT_PURPLE);
 		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Party Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelTeam.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
@@ -200,6 +202,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	}
 
 	public static NetworkChatPlugin getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("NetworkChat has not been initialized yet.");
+		}
 		return INSTANCE;
 	}
 
