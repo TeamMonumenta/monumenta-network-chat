@@ -431,18 +431,16 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player player)) {
 			return false;
+		} else if (!mParticipants.contains(player.getUniqueId())) {
+			return false;
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
 			if (playerAccess == null) {
-				if (mDefaultAccess.mayChat() == null || !mDefaultAccess.mayChat()) {
-					return false;
-				}
-			} else if (playerAccess.mayChat() == null || !playerAccess.mayChat()) {
-				return false;
+				return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
+			} else {
+				return playerAccess.mayChat() == null || playerAccess.mayChat();
 			}
 		}
-
-		return mParticipants.contains(player.getUniqueId());
 	}
 
 	public boolean mayListen(CommandSender sender) {
@@ -455,17 +453,16 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			return false;
 		} else {
 			UUID playerId = player.getUniqueId();
-
-			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-			if (playerAccess == null) {
-				if (mDefaultAccess.mayListen() == null || !mDefaultAccess.mayListen()) {
-					return false;
-				}
-			} else if (playerAccess.mayListen() == null || !playerAccess.mayListen()) {
+			if (!mParticipants.contains(playerId)) {
 				return false;
 			}
 
-			return mParticipants.contains(playerId);
+			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
+			if (playerAccess == null) {
+				return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+			} else {
+				return playerAccess.mayListen() == null || playerAccess.mayListen();
+			}
 		}
 	}
 
