@@ -16,12 +16,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
-import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.Template;
 import net.kyori.adventure.text.minimessage.template.TemplateResolver;
@@ -172,7 +171,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.local")) {
 						CommandUtils.fail(sender, "You do not have permission to create local channels.");
 					}
@@ -194,7 +193,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new BooleanArgument("Auto Join"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.local")) {
 						CommandUtils.fail(sender, "You do not have permission to create local channels.");
 					}
@@ -217,7 +216,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			arguments.add(new GreedyStringArgument("Channel Permission"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.local")) {
 						CommandUtils.fail(sender, "You do not have permission to create local channels.");
 					}
@@ -300,13 +299,11 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	}
 
 	public boolean shouldAutoJoin(PlayerState state) {
-		return mAutoJoin && mayListen(state.getPlayer());
+		Player player = state.getPlayer();
+		return mAutoJoin && player != null && mayListen(player);
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
 			return false;
 		}
@@ -314,22 +311,20 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			return false;
 		}
 
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return true;
-		}
-
-		ChannelAccess playerAccess = mPlayerAccess.get(((Player) sender).getUniqueId());
-		if (playerAccess == null) {
-			return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
 		} else {
-			return playerAccess.mayChat() == null || playerAccess.mayChat();
+			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
+			if (playerAccess == null) {
+				return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
+			} else {
+				return playerAccess.mayChat() == null || playerAccess.mayChat();
+			}
 		}
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.local")) {
 			return false;
 		}
@@ -337,49 +332,48 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			return false;
 		}
 
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return true;
-		}
-
-		UUID playerId = ((Player) sender).getUniqueId();
-
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
 		} else {
-			return playerAccess.mayListen() == null || playerAccess.mayListen();
+			UUID playerId = player.getUniqueId();
+
+			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
+			if (playerAccess == null) {
+				return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+			} else {
+				return playerAccess.mayListen() == null || playerAccess.mayListen();
+			}
 		}
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (sender instanceof Player) {
-			if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-				CommandUtils.fail(sender, "You do not have permission to chat.");
-			}
-			if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
-				CommandUtils.fail(sender, "You do not have permission to talk in local chat.");
-			}
-			if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
-				CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
-			}
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
+			CommandUtils.fail(sender, "You do not have permission to talk in local chat.");
+		}
+		if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
+			CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
+		}
 
-			if (!mayChat(sender)) {
-				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
-			}
+		if (!mayChat(sender)) {
+			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
+		}
 
-			if (messageText.contains("@")) {
-				if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-					CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-				} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
-					CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
-				}
+		if (messageText.contains("@")) {
+			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
+				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
+				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
 
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("fromShard", RemotePlayerManager.getShardName());
 
-		Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		if (message == null) {
+			return;
+		}
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -404,14 +398,15 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
 			return;
 		}
-		if (!RemotePlayerManager.getShardName().equals(fromShardJsonPrimitive.getAsString())) {
+		if (!Objects.equals(RemotePlayerManager.getShardName(), fromShardJsonPrimitive.getAsString())) {
 			// TODO Chat spy here
 			return;
 		}
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
-			if (!mayListen(state.getPlayer())) {
+			Player player = state.getPlayer();
+			if (player == null || !mayListen(player)) {
 				continue;
 			}
 
@@ -422,7 +417,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
-	protected void showMessage(CommandSender recipient, Message message) {
+	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
 			channelColor = mMessageColor;
@@ -431,23 +426,24 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 			.replace("<message_gui_cmd>", message.getGuiCommand())
-		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
+			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
-		UUID senderUuid = message.getSenderId();
-		Identity senderIdentity;
-		if (message.senderIsPlayer()) {
-			senderIdentity = Identity.identity(senderUuid);
-		} else {
-			senderIdentity = Identity.nil();
-		}
-
-		Component fullMessage = Component.empty()
+		return Component.empty()
 			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName),
 				Template.template("sender", message.getSenderComponent()))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
-		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
-			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(message);
+	}
+
+	protected void showMessage(CommandSender recipient, Message message) {
+		UUID senderUuid = message.getSenderId();
+		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
+		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				player.sendMessage(MessagingUtils.noChatState(player));
+				return;
+			}
+			playerState.playMessageSound(message);
 		}
 	}
 

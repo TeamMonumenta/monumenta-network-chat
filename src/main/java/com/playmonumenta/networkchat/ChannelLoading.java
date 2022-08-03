@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 
@@ -65,6 +66,11 @@ public class ChannelLoading extends Channel {
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
 	public void distributeMessage(Message message) {}
+
+	// The channel is loading - we don't know how to display this message yet!
+	protected Component shownMessage(CommandSender recipient, Message message) {
+		return message.getMessage();
+	}
 
 	// The channel is loading - we can't determine who can see this yet!
 	protected void showMessage(CommandSender recipient, Message message) {}

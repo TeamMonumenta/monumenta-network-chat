@@ -91,23 +91,24 @@ public class MessagingUtils {
 	public static MiniMessage getAllowedMiniMessage(CommandSender sender) {
 		TransformationRegistry.Builder transforms = TransformationRegistry.builder().clear();
 
-		if (sender instanceof Player) {
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.color")) {
+		CommandSender caller = CommandUtils.getCaller(sender);
+		if (caller instanceof Player player) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.color")) {
 				transforms.add(TransformationType.COLOR);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.decoration")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.decoration")) {
 				transforms.add(TransformationType.DECORATION);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.keybind")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.keybind")) {
 				transforms.add(TransformationType.KEYBIND);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.font")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.font")) {
 				transforms.add(TransformationType.FONT);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.gradient")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.gradient")) {
 				transforms.add(TransformationType.GRADIENT);
 			}
-			if (CommandUtils.hasPermission(sender, "networkchat.transform.rainbow")) {
+			if (CommandUtils.hasPermission(player, "networkchat.transform.rainbow")) {
 				transforms.add(TransformationType.RAINBOW);
 			}
 		} else {
@@ -129,8 +130,9 @@ public class MessagingUtils {
 	}
 
 	public static Component senderComponent(CommandSender sender) {
-		if (sender instanceof Entity) {
-			return entityComponent((Entity) sender);
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (callee instanceof Entity entity) {
+			return entityComponent(entity);
 		}
 		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
 			TemplateResolver.templates(Template.template("sender_name", sender.getName())));
@@ -189,7 +191,7 @@ public class MessagingUtils {
 			return Component.empty();
 		}
 		@Nullable Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
-		String colorMiniMessage = "";
+		String colorMiniMessage;
 		Component teamPrefix;
 		Component teamDisplayName;
 		Component teamSuffix;
@@ -206,9 +208,7 @@ public class MessagingUtils {
 				 * Instead, null is the appropriate return value.
 				 */
 				color = playerTeam.color();
-				if (color != null) {
-					colorMiniMessage = "<" + color.asHexString() + ">";
-				}
+				colorMiniMessage = "<" + color.asHexString() + ">";
 				teamPrefix = playerTeam.prefix();
 				teamDisplayName = playerTeam.displayName();
 				teamSuffix = playerTeam.suffix();
@@ -316,5 +316,13 @@ public class MessagingUtils {
 			return "";
 		}
 		return "<" + colorToString(color) + ">";
+	}
+
+	public static String noChatStateStr(Player player) {
+		return player.getName() + " has no chat state and must relog.";
+	}
+
+	public static Component noChatState(Player player) {
+		return Component.text(noChatStateStr(player), NamedTextColor.RED);
 	}
 }

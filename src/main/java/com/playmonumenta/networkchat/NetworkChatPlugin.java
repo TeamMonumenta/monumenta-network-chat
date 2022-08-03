@@ -30,7 +30,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
 
-	private static @Nullable NetworkChatPlugin INSTANCE = null;
+	private static NetworkChatPlugin INSTANCE = null;
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
@@ -64,6 +64,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><click:run_command\":<message_gui_cmd>\"><hover:show_text:\"<channel_color>Global Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelLocal.CHANNEL_CLASS_ID, NamedTextColor.YELLOW);
 		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Local Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
+		mDefaultMessageColors.put(ChannelWorld.CHANNEL_CLASS_ID, NamedTextColor.BLUE);
+		mDefaultMessageFormats.put(ChannelWorld.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>World Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelParty.CHANNEL_CLASS_ID, NamedTextColor.LIGHT_PURPLE);
 		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Party Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
 		mDefaultMessageColors.put(ChannelTeam.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
@@ -78,46 +80,44 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 				                        "LOG4J_EXPLOIT",
 				                        false,
-				                        "\\{jndi:.*\\}",
-				                        true);
-			mGlobalChatFilter.getFilter("LOG4J_EXPLOIT").command("auditlogsevereplayer @S \"@S attempted a Log4J exploit\"");
+				                        "\\{jndi:(.+?)\\}",
+				                        true)
+				.command("auditlogsevereplayer @S \"@S attempted a Log4J exploit\"")
+				.replacementMessage("<red>Log4J exploit attempt: $1</red>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
 		try {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-				"N_WORD",
-				false,
-				"n[i1]gg+(a|[e3]r)",
-				true);
-			ChatFilter.ChatFilterPattern filter = mGlobalChatFilter.getFilter("N_WORD");
-			filter.command("auditlogsevereplayer @S \"@S said the N word: @OE\"");
-			filter.replacementMessage("<red>cool kid</red>");
+			                            "N_WORD",
+			                            false,
+			                            "n[i1]gg+(a|[e3]r)",
+			                            true)
+				.command("auditlogsevereplayer @S \"@S said the N word: @OE\"")
+				.replacementMessage("<red>$0</red>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
 		try {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-				"URL",
-				false,
-				"https?://[!#-&(-;=?-\\[\\]-z|~]+",
-				false);
-			ChatFilter.ChatFilterPattern filter = mGlobalChatFilter.getFilter("URL");
-			filter.replacementMessage("<blue><u><click:open_url:\"$0\">$0</click></u></blue>");
+			                            "URL",
+			                            false,
+			                            "https?://[!#-&(-;=?-\\[\\]-z|~]+",
+			                            false)
+				.replacementMessage("<blue><u><click:open_url:\"$0\">$0</click></u></blue>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
 		try {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-				"Spoiler",
-				false,
-				"\\|\\|(.+?)\\|\\|",
-				false);
-			ChatFilter.ChatFilterPattern filter = mGlobalChatFilter.getFilter("Spoiler");
-			filter.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
+			                            "Spoiler",
+			                            false,
+			                            "\\|\\|(.+?)\\|\\|",
+			                            false)
+				.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
@@ -202,6 +202,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	}
 
 	public static NetworkChatPlugin getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("NetworkChat has not been initialized yet.");
+		}
 		return INSTANCE;
 	}
 

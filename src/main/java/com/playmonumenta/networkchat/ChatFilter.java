@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkchat.utils.ReplacerWithEscape;
 import dev.jorel.commandapi.CommandAPI;
@@ -43,8 +44,8 @@ public class ChatFilter {
 		}
 
 		public void copyResults(ChatFilterResult other) {
-			mFoundMatch = other.mFoundMatch;
-			mFoundBadWord = other.mFoundBadWord;
+			mFoundMatch |= other.mFoundMatch;
+			mFoundBadWord |= other.mFoundBadWord;
 			mComponent = other.mComponent;
 		}
 
@@ -162,20 +163,23 @@ public class ChatFilter {
 			return mReplacementMiniMessage;
 		}
 
-		public void replacementMessage(String replacementMiniMessage) {
+		public ChatFilterPattern replacementMessage(String replacementMiniMessage) {
 			mReplacementMiniMessage = replacementMiniMessage;
+			return this;
 		}
 
 		public @Nullable String command() {
 			return mCommand;
 		}
 
-		public void command(@Nullable String command) {
+		public ChatFilterPattern command(@Nullable String command) {
 			mCommand = command;
+			return this;
 		}
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
 			Logger logger = NetworkChatPlugin.getInstance().getLogger();
+			CommandSender callee = CommandUtils.getCallee(sender);
 			ReplacerWithEscape replacer = new ReplacerWithEscape(logger, sender, mReplacementMiniMessage);
 			final ChatFilterResult localResult = filterResult.getCleanCopy();
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
@@ -206,8 +210,8 @@ public class ChatFilter {
 			if (localResult.foundMatch()) {
 				if (mCommand != null) {
 					String command = mCommand.replace("@S", sender.getName());
-					if (sender instanceof Entity) {
-						command = command.replace("@U", ((Entity) sender).getUniqueId().toString().toLowerCase());
+					if (callee instanceof Entity entity) {
+						command = command.replace("@U", entity.getUniqueId().toString().toLowerCase());
 					}
 					String originalMessage = MessagingUtils.plainText(localResult.originalComponent());
 					String replacedMessage = MessagingUtils.plainText(localResult.component());
@@ -257,13 +261,14 @@ public class ChatFilter {
 		return object;
 	}
 
-	public void addFilter(CommandSender sender,
+	public ChatFilterPattern addFilter(CommandSender sender,
 	                      String id,
 	                      boolean isLiteral,
 	                      String regex,
 	                      boolean isBadWord) throws WrapperCommandSyntaxException {
 		ChatFilterPattern filterPattern = new ChatFilterPattern(sender, id, isLiteral, regex, isBadWord);
 		mFilters.put(id, filterPattern);
+		return filterPattern;
 	}
 
 	public void removeFilter(String id) {
@@ -286,9 +291,7 @@ public class ChatFilter {
 
 	public Component run(CommandSender sender, Component component) {
 		ChatFilterResult filterResult = new ChatFilterResult(component);
-		for (ChatFilterPattern filterPattern : mFilters.values()) {
-			filterPattern.run(sender, filterResult);
-		}
+		run(sender, filterResult);
 		return filterResult.component();
 	}
 

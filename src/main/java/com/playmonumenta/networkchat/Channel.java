@@ -6,8 +6,10 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.UUID;
 import javax.annotation.Nullable;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public abstract class Channel {
 	public static Channel fromJson(JsonObject channelJson) throws Exception {
@@ -20,6 +22,7 @@ public abstract class Channel {
 			case ChannelParty.CHANNEL_CLASS_ID -> ChannelParty.fromJsonInternal(channelJson);
 			case ChannelTeam.CHANNEL_CLASS_ID -> ChannelTeam.fromJsonInternal(channelJson);
 			case ChannelWhisper.CHANNEL_CLASS_ID -> ChannelWhisper.fromJsonInternal(channelJson);
+			case ChannelWorld.CHANNEL_CLASS_ID -> ChannelWorld.fromJsonInternal(channelJson);
 			default -> ChannelFuture.fromJsonInternal(channelJson);
 		};
 	}
@@ -71,7 +74,8 @@ public abstract class Channel {
 	public void resetPlayerAccess(UUID playerId) {}
 
 	public boolean shouldAutoJoin(PlayerState state) {
-		return mayListen(state.getPlayer());
+		Player player = state.getPlayer();
+		return player != null && mayListen(player);
 	}
 
 	public boolean mayManage(CommandSender sender) {
@@ -93,6 +97,9 @@ public abstract class Channel {
 	// Distributes a received message to the appropriate local player chat states. May be local or remote messages.
 	// Note that sending to player chat state allows chat to be paused.
 	public abstract void distributeMessage(Message message);
+
+	// Get how the message appears to a given recipient.
+	protected abstract Component shownMessage(CommandSender recipient, Message message);
 
 	// Show a message to a player immediately; must be called from Message via PlayerState, not directly.
 	protected abstract void showMessage(CommandSender recipient, Message message);

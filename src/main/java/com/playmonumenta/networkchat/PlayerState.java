@@ -325,7 +325,7 @@ public class PlayerState {
 		return ignoredNames;
 	}
 
-	public ChannelWhisper getWhisperChannel(UUID recipientUuid) throws WrapperCommandSyntaxException {
+	public @Nullable ChannelWhisper getWhisperChannel(UUID recipientUuid) throws WrapperCommandSyntaxException {
 		@Nullable UUID channelId = mWhisperChannelsByRecipient.get(recipientUuid);
 		@Nullable Channel channel;
 
@@ -341,6 +341,10 @@ public class PlayerState {
 				channelName = ChannelWhisper.getName(participants);
 				channelId = ChannelManager.getChannelId(channelName);
 			}
+		}
+
+		if (channelId == null) {
+			return null;
 		}
 
 		channel = ChannelManager.loadChannel(channelId);
@@ -445,7 +449,11 @@ public class PlayerState {
 	}
 
 	public boolean isListening(Channel channel) {
-		switch (getPlayer().getClientOption(ClientOption.CHAT_VISIBILITY)) {
+		Player player = getPlayer();
+		if (player == null) {
+			return false;
+		}
+		switch (player.getClientOption(ClientOption.CHAT_VISIBILITY)) {
 		case HIDDEN:
 			return false;
 		case SYSTEM:
@@ -477,6 +485,10 @@ public class PlayerState {
 	}
 
 	public void playMessageSound(Message message) {
+		if (getPlayerChatHistory().isReplayingChat()) {
+			return;
+		}
+
 		boolean shouldPlaySound = false;
 
 		@Nullable Channel channel = message.getChannel();
@@ -568,11 +580,17 @@ public class PlayerState {
 			unregisterChannel(channelId);
 			// TODO Group deleted channel messages together.
 			if (showAlert) {
-				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is no longer available.", NamedTextColor.RED));
+				Player player = getPlayer();
+				if (player != null) {
+					player.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is no longer available.", NamedTextColor.RED));
+				}
 			}
 		} else {
 			if (showAlert && !newChannelName.equals(lastKnownName)) {
-				getPlayer().sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newChannelName + ".", NamedTextColor.GRAY));
+				Player player = getPlayer();
+				if (player != null) {
+					player.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newChannelName + ".", NamedTextColor.GRAY));
+				}
 			}
 		}
 	}

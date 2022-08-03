@@ -34,8 +34,8 @@ public class PlayerChatHistory {
 		if (seenMessagesJson != null) {
 			mSeenMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
 			for (JsonElement messageJson : seenMessagesJson) {
-				if (messageJson instanceof JsonObject) {
-					Message message = Message.fromJson((JsonObject) messageJson);
+				if (messageJson instanceof JsonObject messageJsonObject) {
+					Message message = Message.fromJson(messageJsonObject);
 					mSeenMessages.add(message);
 				}
 			}
@@ -45,8 +45,8 @@ public class PlayerChatHistory {
 		if (unseenMessagesJson != null) {
 			mUnseenMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
 			for (JsonElement messageJson : unseenMessagesJson) {
-				if (messageJson instanceof JsonObject) {
-					Message message = Message.fromJson((JsonObject) messageJson);
+				if (messageJson instanceof JsonObject messageJsonObject) {
+					Message message = Message.fromJson(messageJsonObject);
 					mUnseenMessages.add(message);
 				}
 			}
@@ -132,6 +132,10 @@ public class PlayerChatHistory {
 		if (!getPlayerState().isPaused()) {
 			showUnseen();
 		}
+	}
+
+	public boolean isReplayingChat() {
+		return mIsReplayingChat;
 	}
 
 	public boolean isPaused() {

@@ -88,7 +88,7 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 					result = matcher.group();
 				}
 				if (doEscape) {
-					result = StringEscapeUtils.escapeJava(result);
+					result = result.replace("\\", "\\\\").replace("\"", "\\\\\"");
 				}
 				if (result.isBlank()) {
 					debugMessage(mLogger, "    X ","Incorrect numeric group match, got empty!");
@@ -111,6 +111,8 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 			builder.append(remainingReplacement);
 		}
 
-		return builder.toString();
+		String result = builder.toString();
+		debugMessage(mLogger, "result: ", result);
+		return result;
 	}
 }

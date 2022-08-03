@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
-import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -173,7 +172,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.party")) {
 						CommandUtils.fail(sender, "You do not have permission to create party channels.");
 					}
@@ -208,7 +207,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
@@ -244,7 +243,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelName = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
@@ -277,7 +276,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			arguments.add(new MultiLiteralArgument("leave"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.executes((sender, args) -> {
+				.executesNative((sender, args) -> {
 					String channelId = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelId);
 					if (ch == null) {
@@ -362,10 +361,12 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean isParticipant(CommandSender sender) {
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return false;
+		} else {
+			return isParticipant(player);
 		}
-		return isParticipant((Player) sender);
 	}
 
 	public boolean isParticipant(Player player) {
@@ -427,7 +428,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			return true;
 		}
 
-		if (!(sender instanceof Player player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return false;
 		} else {
 			UUID playerId = player.getUniqueId();
@@ -436,14 +438,12 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayChat(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
 			return false;
 		}
 
-		if (!(sender instanceof Player player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return false;
 		} else {
 			UUID playerId = player.getUniqueId();
@@ -460,53 +460,49 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	public boolean mayListen(CommandSender sender) {
-		if (!CommandUtils.hasPermission(sender, "networkchat.see")) {
-			return false;
-		}
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.party")) {
 			return false;
 		}
 
-		if (!(sender instanceof Player)) {
+		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!(callee instanceof Player player)) {
 			return true;
-		}
-
-		UUID playerId = ((Player) sender).getUniqueId();
-		if (!mParticipants.contains(playerId)) {
-			return false;
-		}
-
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
 		} else {
-			return playerAccess.mayListen() == null || playerAccess.mayListen();
+			UUID playerId = player.getUniqueId();
+			if (!mParticipants.contains(playerId)) {
+				return false;
+			}
+
+			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
+			if (playerAccess == null) {
+				return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+			} else {
+				return playerAccess.mayListen() == null || playerAccess.mayListen();
+			}
 		}
 	}
 
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
-		if (sender instanceof Player) {
-			if (!CommandUtils.hasPermission(sender, "networkchat.say")) {
-				CommandUtils.fail(sender, "You do not have permission to chat.");
-			}
-			if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
-				CommandUtils.fail(sender, "You do not have permission to talk in party chat.");
-			}
+		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
+			CommandUtils.fail(sender, "You do not have permission to talk in party chat.");
+		}
 
-			if (!mayChat(sender)) {
-				CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
-			}
+		if (!mayChat(sender)) {
+			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
+		}
 
-			if (messageText.contains("@")) {
-				if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-					CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-				} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
-					CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
-				}
+		if (messageText.contains("@")) {
+			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
+				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
+				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
 
-		Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
+		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
+		if (message == null) {
+			return;
+		}
 
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
@@ -519,7 +515,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
 			PlayerState state = playerStateEntry.getValue();
-			if (!mayListen(state.getPlayer())) {
+			Player player = state.getPlayer();
+			if (player == null || !mayListen(player)) {
 				continue;
 			}
 
@@ -530,7 +527,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	protected void showMessage(CommandSender recipient, Message message) {
+	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
 			channelColor = mMessageColor;
@@ -539,23 +536,24 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
 			.replace("<message_gui_cmd>", message.getGuiCommand())
-		    .replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
+			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
-		UUID senderUuid = message.getSenderId();
-		Identity senderIdentity;
-		if (message.senderIsPlayer()) {
-			senderIdentity = Identity.identity(senderUuid);
-		} else {
-			senderIdentity = Identity.nil();
-		}
-
-		Component fullMessage = Component.empty()
+		return Component.empty()
 			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName),
 				Template.template("sender", message.getSenderComponent()))))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
-		recipient.sendMessage(senderIdentity, fullMessage, message.getMessageType());
-		if (recipient instanceof Player && !((Player) recipient).getUniqueId().equals(senderUuid)) {
-			PlayerStateManager.getPlayerState((Player) recipient).playMessageSound(message);
+	}
+
+	protected void showMessage(CommandSender recipient, Message message) {
+		UUID senderUuid = message.getSenderId();
+		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
+		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				player.sendMessage(MessagingUtils.noChatState(player));
+				return;
+			}
+			playerState.playMessageSound(message);
 		}
 	}
 }
