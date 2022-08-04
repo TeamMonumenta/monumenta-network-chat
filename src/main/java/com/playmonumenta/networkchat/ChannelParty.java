@@ -133,7 +133,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return channel;
 	}
 
-	@Override
 	public JsonObject toJson() {
 		JsonObject allPlayerAccessJson = new JsonObject();
 		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
@@ -299,42 +298,34 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
-	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
-	@Override
 	public void markModified() {
 		mLastUpdate = Instant.now();
 	}
 
-	@Override
 	public Instant lastModified() {
 		return mLastUpdate;
 	}
 
-	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		mName = name;
 	}
 
-	@Override
 	public String getName() {
 		return mName;
 	}
 
-	@Override
 	public @Nullable TextColor color() {
 		return mMessageColor;
 	}
 
-	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		mMessageColor = color;
 	}
@@ -369,7 +360,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
 	public boolean isParticipant(CommandSender sender) {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player player)) {
@@ -379,22 +369,18 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
 	public boolean isParticipant(Player player) {
 		return isParticipant(player.getUniqueId());
 	}
 
-	@Override
 	public boolean isParticipant(UUID playerId) {
 		return mParticipants.contains(playerId);
 	}
 
-	@Override
 	public List<UUID> getParticipantIds() {
 		return new ArrayList<>(mParticipants);
 	}
 
-	@Override
 	public List<String> getParticipantNames() {
 		List<String> names = new ArrayList<>();
 		for (UUID playerId : mParticipants) {
@@ -406,17 +392,14 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return names;
 	}
 
-	@Override
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
 
-	@Override
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
 
-	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
@@ -429,7 +412,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return playerAccess;
 	}
 
-	@Override
 	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
@@ -437,12 +419,10 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		mPlayerAccess.remove(playerId);
 	}
 
-	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		return mParticipants.contains(state.getPlayerUniqueId());
 	}
 
-	@Override
 	public boolean mayManage(CommandSender sender) {
 		if (CommandUtils.hasPermission(sender, "networkchat.moderator")) {
 			return true;
@@ -457,7 +437,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
 	public boolean mayChat(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
 			return false;
@@ -480,7 +459,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
 	public boolean mayListen(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.party")) {
 			return false;
@@ -504,7 +482,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
 			CommandUtils.fail(sender, "You do not have permission to talk in party chat.");
@@ -534,7 +511,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
@@ -551,7 +527,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
@@ -569,7 +544,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
-	@Override
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());

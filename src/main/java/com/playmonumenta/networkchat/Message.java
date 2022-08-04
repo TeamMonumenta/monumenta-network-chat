@@ -30,7 +30,6 @@ public class Message implements AutoCloseable {
 			mId = id;
 		}
 
-		@Override
 		public void run() {
 			MessageManager.unregisterMessage(mId);
 		}
@@ -282,7 +281,6 @@ public class Message implements AutoCloseable {
 		return object;
 	}
 
-	@Override
 	public void close() {
 		mCleanable.clean();
 	}
