@@ -85,7 +85,6 @@ public class RemotePlayerManager implements Listener {
 	public static final String REFRESH_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.refresh";
 
 	private static @Nullable RemotePlayerManager INSTANCE = null;
-	private static String mShardName;
 	private static final Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();
 	private static final Map<UUID, RemotePlayerState> mPlayersByUuid = new ConcurrentSkipListMap<>();
 	private static final Map<String, RemotePlayerState> mPlayersByName = new ConcurrentSkipListMap<>();
@@ -102,10 +101,10 @@ public class RemotePlayerManager implements Listener {
 		if (shardName == null) {
 			throw new RuntimeException("Got null shard name");
 		}
-		mShardName = shardName;
+		String shardName = getShardName();
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
-				if (mShardName.equals(shard)) {
+				if (shardName.equals(shard)) {
 					continue;
 				}
 				NetworkChatPlugin.getInstance().getLogger().fine("Registering shard " + shard);
@@ -131,8 +130,17 @@ public class RemotePlayerManager implements Listener {
 		return INSTANCE;
 	}
 
-	public static @Nullable String getShardName() {
-		return mShardName;
+	public static String getShardName() {
+		@Nullable String shardName = null;
+		try {
+			shardName = NetworkRelayAPI.getShardName();
+		} catch (Exception e) {
+			NetworkChatPlugin.getInstance().getLogger().severe("Failed to get shard name");
+		}
+		if (shardName == null) {
+			throw new RuntimeException("Got null shard name");
+		}
+		return shardName;
 	}
 
 	public static Set<String> onlinePlayerNames() {
@@ -236,7 +244,7 @@ public class RemotePlayerManager implements Listener {
 			}
 		}
 		firstName = true;
-		Component line = Component.text(mShardName + ": ").color(NamedTextColor.BLUE);
+		Component line = Component.text(getShardName() + ": ").color(NamedTextColor.BLUE);
 		for (Component playerComp : shardPlayers.values()) {
 			if (!firstName) {
 				line = line.append(Component.text(", "));
@@ -336,7 +344,7 @@ public class RemotePlayerManager implements Listener {
 		    if (!remotePlayerState.mIsHidden) {
 		        mVisiblePlayers.add(remotePlayerState.mUuid);
 		    }
-		} else if (!mShardName.equals(remotePlayerState.mShard)) {
+		} else if (!getShardName().equals(remotePlayerState.mShard)) {
 			NetworkChatPlugin.getInstance().getLogger().fine("Detected race condition, triggering refresh on " + remotePlayerState.mName);
 			@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayerState.mUuid);
 			if (localPlayer != null) {
@@ -348,7 +356,7 @@ public class RemotePlayerManager implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void destOnlineEvent(DestOnlineEvent event) {
 		String remoteShardName = event.getDest();
-		if (mShardName.equals(remoteShardName)) {
+		if (getShardName().equals(remoteShardName)) {
 			return;
 		}
 		NetworkChatPlugin.getInstance().getLogger().fine("Registering shard " + remoteShardName);

@@ -36,10 +36,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
 	private static ChatFilter mGlobalChatFilter = new ChatFilter();
-	private static ChannelManager mChannelManager;
-	private static MessageManager mMessageManager;
-	private static PlayerStateManager mPlayerStateManager;
-	private static RemotePlayerManager mRemotePlayerManager;
 
 	@Override
 	public void onLoad() {
@@ -142,15 +138,10 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			return;
 		}
 
-		mChannelManager = ChannelManager.getInstance();
-		mMessageManager = MessageManager.getInstance();
-		mPlayerStateManager = PlayerStateManager.getInstance();
-		mRemotePlayerManager = RemotePlayerManager.getInstance();
-
-		getServer().getPluginManager().registerEvents(mChannelManager, this);
-		getServer().getPluginManager().registerEvents(mMessageManager, this);
-		getServer().getPluginManager().registerEvents(mPlayerStateManager, this);
-		getServer().getPluginManager().registerEvents(mRemotePlayerManager, this);
+		getServer().getPluginManager().registerEvents(ChannelManager.getInstance(), this);
+		getServer().getPluginManager().registerEvents(MessageManager.getInstance(), this);
+		getServer().getPluginManager().registerEvents(PlayerStateManager.getInstance(), this);
+		getServer().getPluginManager().registerEvents(RemotePlayerManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(this, this);
 
 		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_MESSAGE_COLORS_KEY)
