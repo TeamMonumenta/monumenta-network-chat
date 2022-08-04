@@ -1,26 +1,29 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import net.ltgt.gradle.errorprone.errorprone
-import net.ltgt.gradle.errorprone.CheckSeverity
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.hidetake.groovy.ssh.core.Remote
 import org.hidetake.groovy.ssh.core.RunHandler
 import org.hidetake.groovy.ssh.core.Service
 import org.hidetake.groovy.ssh.session.SessionHandler
+import net.ltgt.gradle.errorprone.errorprone
+import net.ltgt.gradle.errorprone.CheckSeverity
 
 plugins {
+    java
+    `maven-publish`
+    id("com.palantir.git-version") version "0.12.2"
     id("com.github.johnrengelman.shadow") version "7.1.2"
-    id("java")
-    id("maven-publish")
-    id("net.ltgt.errorprone") version "2.0.2"
-    id("net.ltgt.nullaway") version "1.3.0"
     id("net.minecrell.plugin-yml.bukkit") version "0.5.1" // Generates plugin.yml
     id("org.hidetake.ssh") version "2.10.1"
+    id("net.ltgt.errorprone") version "2.0.2"
+    id("net.ltgt.nullaway") version "1.3.0"
+    checkstyle
+    pmd
 }
 
 repositories {
     mavenLocal()
     maven {
-        url = uri("file://file:///home/bmarohn/dev/monumenta-network-chat//repo")
+        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
 
     maven {
@@ -29,6 +32,10 @@ repositories {
 
     maven {
         url = uri("https://jitpack.io")
+    }
+
+    maven {
+        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
     }
 
     maven {
@@ -48,16 +55,18 @@ repositories {
     }
 
     maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-    }
-
-    maven {
         url = uri("https://repo.dmulloy2.net/repository/public/")
     }
 
     maven {
         url = uri("https://repo.maven.apache.org/maven2/")
     }
+
+    // TODO: This is ridiculously jank - accessing the repo from github when it's local... but can't get it to work otherwise
+	maven {
+		url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-chat/repo/")
+	}
+
 }
 
 dependencies {
@@ -75,26 +84,12 @@ dependencies {
     errorprone("com.uber.nullaway:nullaway:0.9.5")
 }
 
-val basicssh = remotes.create("basicssh") {
-    host = "admin-eu.playmonumenta.com"
-    port = 8822
-    user = "epic"
-    agent = true
-    knownHosts = allowAnyHosts
-}
-
-val adminssh = remotes.create("adminssh") {
-    host = "admin-eu.playmonumenta.com"
-    port = 9922
-    user = "epic"
-    agent = true
-    knownHosts = allowAnyHosts
-}
-
 group = "com.playmonumenta"
-description = "monumenta-network-chat"
-version = "dev"
+val gitVersion: groovy.lang.Closure<String> by extra
+version = gitVersion()
+description = "MonumentaNetworkChat"
 java.sourceCompatibility = JavaVersion.VERSION_16
+java.targetCompatibility = JavaVersion.VERSION_16
 
 // Configure plugin.yml generation
 bukkit {
@@ -113,21 +108,31 @@ bukkit {
     softDepend = listOf()
 }
 
-java {
-    withSourcesJar()
+pmd {
+    isConsoleOutput = true
+    toolVersion = "6.41.0"
+    ruleSets = listOf("$rootDir/pmd-ruleset.xml")
+    setIgnoreFailures(true)
 }
 
 publishing {
     publications.create<MavenPublication>("maven") {
-        from(components["java"])
+        project.shadow.component(this)
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/TeamMonumenta/monumenta-network-chat")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
 }
 
-tasks.withType<JavaCompile>() {
-    options.encoding = "UTF-8"
-}
-
 tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
     options.compilerArgs.add("-Xmaxwarns")
     options.compilerArgs.add("10000")
 
@@ -152,9 +157,20 @@ tasks.withType<JavaCompile>().configureEach {
     }
 }
 
+val basicssh = remotes.create("basicssh") {
+    host = "admin-eu.playmonumenta.com"
+    port = 8822
+    user = "epic"
+    agent = true
+    knownHosts = allowAnyHosts
+}
 
-tasks {
-    shadowJar {}
+val adminssh = remotes.create("adminssh") {
+    host = "admin-eu.playmonumenta.com"
+    port = 9922
+    user = "epic"
+    agent = true
+    knownHosts = allowAnyHosts
 }
 
 tasks.create("dev1-deploy") {
