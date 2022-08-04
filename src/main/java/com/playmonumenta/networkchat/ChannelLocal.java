@@ -35,12 +35,12 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
-	private TextColor mMessageColor;
+	private @Nullable TextColor mMessageColor = null;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
 	private final Map<UUID, ChannelAccess> mPlayerAccess;
 	private boolean mAutoJoin = true;
-	private String mChannelPermission = null;
+	private @Nullable String mChannelPermission = null;
 
 	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;

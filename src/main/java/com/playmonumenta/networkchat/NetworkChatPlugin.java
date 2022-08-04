@@ -30,7 +30,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
 
-	private static NetworkChatPlugin INSTANCE = null;
+	private static @Nullable NetworkChatPlugin INSTANCE = null;
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
@@ -142,7 +142,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			return;
 		}
 
-		mChannelManager = ChannelManager.getInstance(this);
+		mChannelManager = ChannelManager.getInstance();
 		mMessageManager = MessageManager.getInstance(this);
 		mPlayerStateManager = PlayerStateManager.getInstance(this);
 		mRemotePlayerManager = RemotePlayerManager.getInstance(this);
@@ -249,7 +249,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		}
 	}
 
-	public static TextColor messageColor(String id) {
+	public static @Nullable TextColor messageColor(String id) {
 		return mMessageColors.get(id);
 	}
 

@@ -36,33 +36,31 @@ public class Message implements AutoCloseable {
 		}
 	}
 
-	// Member variable used to garbage collect Message objects
-	private final State mState;
 	private final Cleaner.Cleanable mCleanable;
 
 	private final UUID mId;
 	private final Instant mInstant;
-	private final UUID mChannelId;
+	private final @Nullable UUID mChannelId;
 	private final MessageType mMessageType;
-	private final UUID mSenderId;
+	private final @Nullable UUID mSenderId;
 	private final String mSenderName;
-	private final NamespacedKey mSenderType;
+	private final @Nullable NamespacedKey mSenderType;
 	private final boolean mSenderIsPlayer;
 	private final Component mSenderComponent;
-	private final JsonObject mExtraData;
+	private final @Nullable JsonObject mExtraData;
 	private final Component mMessage;
 	private boolean mIsDeleted = false;
 
 	private Message(UUID id,
 	                Instant instant,
-	                UUID channelId,
+	                @Nullable UUID channelId,
 	                MessageType messageType,
-	                UUID senderId,
+	                @Nullable UUID senderId,
 	                String senderName,
-	                NamespacedKey senderType,
+	                @Nullable NamespacedKey senderType,
 	                boolean senderIsPlayer,
 	                Component senderComponent,
-	                JsonObject extraData,
+	                @Nullable JsonObject extraData,
 	                Component message) {
 		mId = id;
 		mInstant = instant;
@@ -76,8 +74,9 @@ public class Message implements AutoCloseable {
 		mExtraData = extraData;
 		mMessage = message;
 
-		mState = new State(mId);
-		mCleanable = MessageManager.cleaner().register(this, mState);
+		// Member variable used to garbage collect Message objects
+		State state = new State(mId);
+		mCleanable = MessageManager.cleaner().register(this, state);
 		MessageManager.registerMessage(this);
 	}
 
@@ -133,7 +132,7 @@ public class Message implements AutoCloseable {
 	// Raw, non-channel messages (use sparingly)
 	protected static Message createRawMessage(MessageType messageType,
 	                                          @Nullable UUID senderId,
-	                                          JsonObject extraData,
+	                                          @Nullable JsonObject extraData,
 	                                          Component message) {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
@@ -171,6 +170,9 @@ public class Message implements AutoCloseable {
 		@Nullable JsonElement idJson = object.get("id");
 		if (idJson != null) {
 			id = UUID.fromString(idJson.getAsString());
+		}
+		if (id == null) {
+			throw new RuntimeException("Incoming message has no ID");
 		}
 		@Nullable Message existingMessage = MessageManager.getMessage(id);
 		if (existingMessage != null) {

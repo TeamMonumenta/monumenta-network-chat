@@ -37,12 +37,12 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
-	private TextColor mMessageColor;
+	private @Nullable TextColor mMessageColor = null;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
 	private final Map<UUID, ChannelAccess> mPlayerAccess;
 	private boolean mAutoJoin = true;
-	private String mChannelPermission = null;
+	private @Nullable String mChannelPermission = null;
 
 	public ChannelAnnouncement(String name) {
 		this(UUID.randomUUID(), Instant.now(), name);
