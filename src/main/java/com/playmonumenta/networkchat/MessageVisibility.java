@@ -8,7 +8,6 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -26,7 +25,7 @@ public class MessageVisibility {
 			mKey = s;
 		}
 
-		public static @Nullable VisibilityKey of(String s) {
+		public static VisibilityKey of(String s) {
 			try {
 				return valueOf(s.toUpperCase());
 			} catch (Exception e) {
@@ -56,7 +55,7 @@ public class MessageVisibility {
 			try {
 				return valueOf(s.toUpperCase());
 			} catch (Exception e) {
-				return DEFAULT;
+				return null;
 			}
 		}
 
@@ -124,7 +123,7 @@ public class MessageVisibility {
 		return result;
 	}
 
-	public void setVisibility(VisibilityKey key, @Nullable VisibilityValue value) {
+	public void setVisibility(VisibilityKey key, VisibilityValue value) {
 		if (key != null) {
 			if (value == null || value == VisibilityValue.DEFAULT) {
 				mVisibilities.remove(key);

@@ -78,11 +78,7 @@ public class PlayerChatHistory {
 	}
 
 	public PlayerState getPlayerState() {
-		PlayerState playerState = PlayerStateManager.getPlayerState(mPlayerId);
-		if (playerState == null) {
-			throw new RuntimeException("PlayerState is somehow null before it should be!");
-		}
-		return playerState;
+		return PlayerStateManager.getPlayerState(mPlayerId);
 	}
 
 	public void receiveMessage(Message message) {

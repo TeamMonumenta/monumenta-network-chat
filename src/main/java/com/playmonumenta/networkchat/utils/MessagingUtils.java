@@ -253,11 +253,7 @@ public class MessagingUtils {
 	public static String getCommandExceptionMessage(WrapperCommandSyntaxException ex) {
 		// TODO If/when CommandAPI exposes the message directly, remove the Brigadier dependency
 		CommandSyntaxException unwrappedEx = ex.getException();
-		@Nullable String result = unwrappedEx.getMessage();
-		if (result == null) {
-			return "";
-		}
-		return result;
+		return unwrappedEx.getMessage();
 	}
 
 	public static void sendStackTrace(CommandSender sender, Exception e) {

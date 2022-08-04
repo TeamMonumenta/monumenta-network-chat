@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -12,7 +11,7 @@ import org.bukkit.plugin.Plugin;
 
 public class NetworkChatProperties {
 
-	private static @Nullable NetworkChatProperties INSTANCE = null;
+	private static NetworkChatProperties INSTANCE = null;
 
 	private boolean mChatCommandCreateEnabled = true;
 	private boolean mChatCommandModifyEnabled = true;
@@ -20,42 +19,47 @@ public class NetworkChatProperties {
 	private boolean mChatRequiresPlayer = false;
 	private boolean mSudoEnabled = false;
 
-	private NetworkChatProperties() {
+	public NetworkChatProperties() {
 		INSTANCE = this;
 	}
 
-	public static NetworkChatProperties getInstance() {
+	private static void ensureInstance() {
 		if (INSTANCE == null) {
-			INSTANCE = new NetworkChatProperties();
+			new NetworkChatProperties();
 		}
-		return INSTANCE;
 	}
 
 	public static boolean getSudoEnabled() {
-		return getInstance().mSudoEnabled;
+		ensureInstance();
+		return INSTANCE.mSudoEnabled;
 	}
 
 	public static boolean getChatCommandCreateEnabled() {
-		return getInstance().mChatCommandCreateEnabled;
+		ensureInstance();
+		return INSTANCE.mChatCommandCreateEnabled;
 	}
 
 	public static boolean getChatCommandModifyEnabled() {
-		return getInstance().mChatCommandModifyEnabled;
+		ensureInstance();
+		return INSTANCE.mChatCommandModifyEnabled;
 	}
 
 	public static boolean getChatCommandDeleteEnabled() {
-		return getInstance().mChatCommandDeleteEnabled;
+		ensureInstance();
+		return INSTANCE.mChatCommandDeleteEnabled;
 	}
 
 	public static boolean getChatRequiresPlayer() {
-		return getInstance().mChatRequiresPlayer;
+		ensureInstance();
+		return INSTANCE.mChatRequiresPlayer;
 	}
 
-	public static void load(Plugin plugin, @Nullable CommandSender sender) {
-		getInstance().loadInternal(plugin, sender);
+	public static void load(Plugin plugin, CommandSender sender) {
+		ensureInstance();
+		INSTANCE.loadInternal(plugin, sender);
 	}
 
-	private void loadInternal(Plugin plugin, @Nullable CommandSender sender) {
+	private void loadInternal(Plugin plugin, CommandSender sender) {
 		File configFile = new File(plugin.getDataFolder(), "config.yml");
 		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
@@ -105,7 +109,8 @@ public class NetworkChatProperties {
 
 
 	public static void save(Plugin plugin) {
-		getInstance().saveConfig(plugin);
+		ensureInstance();
+		INSTANCE.saveConfig(plugin);
 	}
 
 	public void saveConfig(Plugin plugin) {
@@ -113,9 +118,7 @@ public class NetworkChatProperties {
 
 		if (!configFile.exists()) {
 			try {
-				if (configFile.createNewFile()) {
-					plugin.getLogger().info("Created config file.");
-				}
+				configFile.createNewFile();
 			} catch (IOException e) {
 				plugin.getLogger().warning("Catch exception during create new file for config.yml. Reason: " + e.getMessage());
 			}

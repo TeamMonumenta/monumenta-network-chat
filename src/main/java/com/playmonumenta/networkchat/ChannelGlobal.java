@@ -35,12 +35,12 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
-	private @Nullable TextColor mMessageColor = null;
+	private TextColor mMessageColor;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
 	private final Map<UUID, ChannelAccess> mPlayerAccess;
 	private boolean mAutoJoin = true;
-	private @Nullable String mChannelPermission = null;
+	private String mChannelPermission = null;
 
 	private ChannelGlobal(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;

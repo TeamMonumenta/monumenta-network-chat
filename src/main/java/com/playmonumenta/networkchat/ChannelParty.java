@@ -38,7 +38,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
-	private @Nullable TextColor mMessageColor = null;
+	private TextColor mMessageColor;
 	private final Set<UUID> mParticipants;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;

@@ -28,7 +28,7 @@ import org.bukkit.entity.Player;
 public class PlayerState {
 	private final UUID mPlayerId;
 	private boolean mChatPaused;
-	private @Nullable UUID mActiveChannelId;
+	private UUID mActiveChannelId;
 	private ChannelSettings mDefaultChannelSettings = new ChannelSettings();
 	private DefaultChannels mDefaultChannels = new DefaultChannels();
 	private final Map<UUID, ChannelSettings> mChannelSettings = new HashMap<>();
@@ -380,9 +380,6 @@ public class PlayerState {
 	}
 
 	public @Nullable ChannelWhisper getLastWhisperChannel() {
-		if (mLastWhisperChannel == null) {
-			return null;
-		}
 		@Nullable Channel channel = ChannelManager.getChannel(mLastWhisperChannel);
 		if (!(channel instanceof ChannelWhisper)) {
 			return null;
@@ -390,9 +387,9 @@ public class PlayerState {
 		return (ChannelWhisper) channel;
 	}
 
-	public boolean hasNotSeenChannelId(UUID channelId) {
-		return !mWatchedChannelIds.containsKey(channelId)
-			&& !mUnwatchedChannelIds.containsKey(channelId);
+	public boolean hasSeenChannelId(UUID channelId) {
+		return mWatchedChannelIds.containsKey(channelId)
+		    || mUnwatchedChannelIds.containsKey(channelId);
 	}
 
 	public boolean isWatchingChannelId(UUID channelId) {
@@ -589,7 +586,7 @@ public class PlayerState {
 				}
 			}
 		} else {
-			if (showAlert && !lastKnownName.equals(newChannelName)) {
+			if (showAlert && !newChannelName.equals(lastKnownName)) {
 				Player player = getPlayer();
 				if (player != null) {
 					player.sendMessage(Component.text("The channel you knew as " + lastKnownName + " is now known as " + newChannelName + ".", NamedTextColor.GRAY));

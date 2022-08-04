@@ -43,11 +43,7 @@ public class RemotePlayerManager implements Listener {
 		    mComponent = MessagingUtils.playerComponent(player);
 		    mIsHidden = !RemotePlayerManager.isLocalPlayerVisible(player);
 		    mIsOnline = isOnline;
-			@Nullable String shard = RemotePlayerManager.getShardName();
-			if (shard == null) {
-				throw new RuntimeException("Could not get local shard name.");
-			}
-		    mShard = shard;
+		    mShard = RemotePlayerManager.getShardName();
 
 			plugin.getLogger().fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
@@ -86,8 +82,8 @@ public class RemotePlayerManager implements Listener {
 	public static final String REFRESH_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.refresh";
 
 	private static @Nullable RemotePlayerManager INSTANCE = null;
-	private static Plugin mPlugin;
-	private static String mShardName;
+	private static Plugin mPlugin = null;
+	private static @Nullable String mShardName = null;
 	private static final Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();
 	private static final Map<UUID, RemotePlayerState> mPlayersByUuid = new ConcurrentSkipListMap<>();
 	private static final Map<String, RemotePlayerState> mPlayersByName = new ConcurrentSkipListMap<>();
@@ -96,19 +92,17 @@ public class RemotePlayerManager implements Listener {
 	private RemotePlayerManager(Plugin plugin) {
 		INSTANCE = this;
 		mPlugin = plugin;
-		@Nullable String shardName = null;
 		try {
-			shardName = NetworkRelayAPI.getShardName();
+			mShardName = NetworkRelayAPI.getShardName();
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Failed to get shard name");
 		}
-		if (shardName == null) {
+		if (mShardName == null) {
 			throw new RuntimeException("Got null shard name");
 		}
-		mShardName = shardName;
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
-				if (mShardName.equals(shard)) {
+				if (shard.equals(mShardName)) {
 					continue;
 				}
 				mPlugin.getLogger().fine("Registering shard " + shard);
@@ -421,7 +415,9 @@ public class RemotePlayerManager implements Listener {
 				}
 				remotePlayerChange(data);
 			}
-			case REFRESH_CHANNEL -> refreshLocalPlayers();
+			case REFRESH_CHANNEL -> {
+				refreshLocalPlayers();
+			}
 			default -> {
 			}
 		}
