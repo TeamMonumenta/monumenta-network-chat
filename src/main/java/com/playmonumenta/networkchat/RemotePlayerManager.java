@@ -92,15 +92,6 @@ public class RemotePlayerManager implements Listener {
 
 	private RemotePlayerManager() {
 		INSTANCE = this;
-		@Nullable String shardName = null;
-		try {
-			shardName = NetworkRelayAPI.getShardName();
-		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().severe("Failed to get shard name");
-		}
-		if (shardName == null) {
-			throw new RuntimeException("Got null shard name");
-		}
 		String shardName = getShardName();
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
