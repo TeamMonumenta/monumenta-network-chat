@@ -43,14 +43,6 @@ repositories {
     }
 
     maven {
-        url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/")
-    }
-
-    maven {
-        url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-redis-sync/master/mvn-repo/")
-    }
-
-    maven {
         url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     }
 
@@ -60,6 +52,19 @@ repositories {
 
     maven {
         url = uri("https://repo.maven.apache.org/maven2/")
+    }
+
+    // NBT API
+    maven {
+        url = uri("https://repo.codemc.org/repository/maven-public/")
+    }
+
+    maven {
+        url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/")
+    }
+
+    maven {
+        url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-redis-sync/master/mvn-repo/")
     }
 
     // TODO: This is ridiculously jank - accessing the repo from github when it's local... but can't get it to work otherwise
