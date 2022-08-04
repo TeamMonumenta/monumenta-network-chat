@@ -144,3 +144,5 @@ run/
 build
 .gradle
 /*.jar
+
+adventure-text-minimessage

@@ -35,7 +35,7 @@ repositories {
     }
 
     maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+        url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
     }
 
     maven {
@@ -64,7 +64,7 @@ repositories {
 
     // TODO: This is ridiculously jank - accessing the repo from github when it's local... but can't get it to work otherwise
 	maven {
-		url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-chat/repo/")
+		url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-chat/master/repo/")
 	}
 
 }
