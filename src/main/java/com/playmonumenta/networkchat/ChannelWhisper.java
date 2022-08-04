@@ -358,7 +358,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
-		CommandUtils.fail(sender,"Whisper channels do not support custom text colors.");
+		CommandUtils.fail(sender, "Whisper channels do not support custom text colors.");
 	}
 
 	@Override

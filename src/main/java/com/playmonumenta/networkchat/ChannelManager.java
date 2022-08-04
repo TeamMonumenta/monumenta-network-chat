@@ -675,7 +675,7 @@ public class ChannelManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
 		switch (event.getChannel()) {

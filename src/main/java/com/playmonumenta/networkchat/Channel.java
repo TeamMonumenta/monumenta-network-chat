@@ -41,7 +41,8 @@ public abstract class Channel {
 	// Return this channel's UUID
 	public abstract UUID getUniqueId();
 
-	public void markModified() {}
+	public void markModified() {
+	}
 
 	// Used to make sure this is the latest version
 	public Instant lastModified() {
@@ -71,7 +72,8 @@ public abstract class Channel {
 		throw new RuntimeException("Player access not available for this channel type.");
 	}
 
-	public void resetPlayerAccess(UUID playerId) {}
+	public void resetPlayerAccess(UUID playerId) {
+	}
 
 	public boolean shouldAutoJoin(PlayerState state) {
 		Player player = state.getPlayer();

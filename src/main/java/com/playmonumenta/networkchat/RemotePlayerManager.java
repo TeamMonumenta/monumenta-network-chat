@@ -344,7 +344,7 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void destOnlineEvent(DestOnlineEvent event) {
 		String remoteShardName = event.getDest();
 		if (getShardName().equals(remoteShardName)) {
@@ -354,7 +354,7 @@ public class RemotePlayerManager implements Listener {
 		mRemotePlayersByShard.put(remoteShardName, new ConcurrentSkipListMap<>());
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void destOfflineEvent(DestOfflineEvent event) {
 		String remoteShardName = event.getDest();
 		@Nullable Map<String, RemotePlayerState> remotePlayers = mRemotePlayersByShard.get(remoteShardName);
@@ -371,7 +371,7 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	// Player ran a command
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void playerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
 		String command = event.getMessage();
 
@@ -389,13 +389,13 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		refreshLocalPlayer(player);
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		RemotePlayerState remotePlayerState = new RemotePlayerState(player, false);
@@ -403,7 +403,7 @@ public class RemotePlayerManager implements Listener {
 		remotePlayerState.broadcast();
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		switch (event.getChannel()) {
 			case REMOTE_PLAYER_CHANNEL -> {

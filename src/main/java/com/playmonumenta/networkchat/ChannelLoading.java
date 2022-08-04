@@ -64,7 +64,7 @@ public class ChannelLoading extends Channel {
 
 	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
-		CommandUtils.fail(sender,"This channel is still loading, please try again.");
+		CommandUtils.fail(sender, "This channel is still loading, please try again.");
 	}
 
 	@Override
@@ -74,7 +74,8 @@ public class ChannelLoading extends Channel {
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
 	@Override
-	public void distributeMessage(Message message) {}
+	public void distributeMessage(Message message) {
+	}
 
 	// The channel is loading - we don't know how to display this message yet!
 	@Override
@@ -84,7 +85,8 @@ public class ChannelLoading extends Channel {
 
 	// The channel is loading - we can't determine who can see this yet!
 	@Override
-	protected void showMessage(CommandSender recipient, Message message) {}
+	protected void showMessage(CommandSender recipient, Message message) {
+	}
 
 	// Register a player state waiting for this channel to finish loading.
 	public void addWaitingPlayerState(PlayerState playerState) {

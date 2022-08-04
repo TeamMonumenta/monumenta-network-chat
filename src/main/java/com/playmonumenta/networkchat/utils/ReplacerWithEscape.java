@@ -45,7 +45,7 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 			if (matcher.find()) {
 				String part = matcher.group();
 				if (part.isBlank()) {
-					debugMessage(mLogger, "    X ","Incorrect literal match, got empty!");
+					debugMessage(mLogger, "    X ", "Incorrect literal match, got empty!");
 				} else {
 					debugMessage(mLogger, "- ", part);
 					builder.append(part);
@@ -58,7 +58,7 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 			if (matcher.find()) {
 				String part = matcher.group();
 				if (part.isBlank()) {
-					debugMessage(mLogger, "    X ","Incorrect escape match, got empty!");
+					debugMessage(mLogger, "    X ", "Incorrect escape match, got empty!");
 				} else {
 					debugMessage(mLogger, "- ", part);
 					builder.append(part);
@@ -80,7 +80,7 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 					if (0 <= groupIndex && groupIndex <= matchResult.groupCount()) {
 						result = matchResult.group(groupIndex);
 					} else {
-						debugMessage(mLogger, "    X ","Out of bounds (" + groupIndex + " not in 0.." + matchResult.groupCount() + "), using literal instead");
+						debugMessage(mLogger, "    X ", "Out of bounds (" + groupIndex + " not in 0.." + matchResult.groupCount() + "), using literal instead");
 						result = matcher.group();
 					}
 				} catch (NumberFormatException e) {
@@ -91,7 +91,7 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 					result = result.replace("\\", "\\\\").replace("\"", "\\\\\"");
 				}
 				if (result.isBlank()) {
-					debugMessage(mLogger, "    X ","Incorrect numeric group match, got empty!");
+					debugMessage(mLogger, "    X ", "Incorrect numeric group match, got empty!");
 				} else {
 					debugMessage(mLogger, "- ", result);
 					builder.append(result);
