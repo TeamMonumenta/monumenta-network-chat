@@ -47,6 +47,7 @@ public class ChannelManager implements Listener {
 	private static final Map<UUID, Channel> mChannels = new ConcurrentSkipListMap<>();
 
 	private static class ForceloadStreamingChannel implements ValueStreamingChannel<String> {
+		@Override
 		public void onValue(String value /*Channel UUID*/) {
 			try {
 				UUID channelId = UUID.fromString(value);

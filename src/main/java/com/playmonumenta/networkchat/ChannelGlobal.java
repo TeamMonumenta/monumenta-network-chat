@@ -134,6 +134,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		return channel;
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject allPlayerAccessJson = new JsonObject();
 		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
@@ -239,46 +240,57 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 	}
 
+	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
+	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
+	@Override
 	public void markModified() {
 		mLastUpdate = Instant.now();
 	}
 
+	@Override
 	public Instant lastModified() {
 		return mLastUpdate;
 	}
 
+	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		mName = name;
 	}
 
+	@Override
 	public String getName() {
 		return mName;
 	}
 
+	@Override
 	public @Nullable TextColor color() {
 		return mMessageColor;
 	}
 
+	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		mMessageColor = color;
 	}
 
+	@Override
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
 
+	@Override
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
 
+	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
@@ -291,6 +303,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		return playerAccess;
 	}
 
+	@Override
 	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
@@ -298,19 +311,23 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		mPlayerAccess.remove(playerId);
 	}
 
+	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		Player player = state.getPlayer();
 		return mAutoJoin && player != null && mayListen(player);
 	}
 
+	@Override
 	public String getChannelPermission() {
 		return mChannelPermission;
 	}
 
+	@Override
 	public void setChannelPermission(String newPerm) {
 		mChannelPermission = newPerm;
 	}
 
+	@Override
 	public boolean mayChat(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.global")) {
 			return false;
@@ -332,6 +349,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 	}
 
+	@Override
 	public boolean mayListen(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.global")) {
 			return false;
@@ -355,6 +373,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 	}
 
+	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.global")) {
 			CommandUtils.fail(sender, "You do not have permission to talk in global chat.");
@@ -387,6 +406,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 	}
 
+	@Override
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
@@ -403,6 +423,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 	}
 
+	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
@@ -420,6 +441,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
+	@Override
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
@@ -433,10 +455,12 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		}
 	}
 
+	@Override
 	public boolean getAutoJoin() {
 		return mAutoJoin;
 	}
 
+	@Override
 	public void setAutoJoin(Boolean newAutoJoin) {
 		mAutoJoin = newAutoJoin;
 	}

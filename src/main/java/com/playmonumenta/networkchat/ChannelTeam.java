@@ -114,6 +114,7 @@ public class ChannelTeam extends Channel {
 		return channel;
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject allPlayerAccessJson = new JsonObject();
 		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
@@ -167,7 +168,7 @@ public class ChannelTeam extends Channel {
 			sender.sendMessage(Component.translatable("permissions.requires.player"));
 			CommandUtils.fail(sender, "A player is required to run this command here");
 		} else {
-			Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam((sendingPlayer).getName());
+			Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(sendingPlayer.getName());
 			if (team == null) {
 				sender.sendMessage(Component.translatable("commands.teammsg.failed.noteam"));
 				CommandUtils.fail(sender, sendingPlayer.getName() + " must be on a team to message their team.");
@@ -234,47 +235,58 @@ public class ChannelTeam extends Channel {
 		return 1;
 	}
 
+	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
+	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
+	@Override
 	public void markModified() {
 		mLastUpdate = Instant.now();
 	}
 
+	@Override
 	public Instant lastModified() {
 		return mLastUpdate;
 	}
 
+	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		CommandAPI.fail("Team channels may not be named.");
 	}
 
+	@Override
 	public String getName() {
 		return "Team_" + mTeamName;
 	}
 
+	@Override
 	public @Nullable
 	TextColor color() {
 		return null;
 	}
 
+	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		CommandUtils.fail(sender, "Team channels do not support custom text colors.");
 	}
 
+	@Override
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
 
+	@Override
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
 
+	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
@@ -287,6 +299,7 @@ public class ChannelTeam extends Channel {
 		return playerAccess;
 	}
 
+	@Override
 	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
@@ -294,10 +307,12 @@ public class ChannelTeam extends Channel {
 		mPlayerAccess.remove(playerId);
 	}
 
+	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		return true;
 	}
 
+	@Override
 	public boolean mayChat(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			return false;
@@ -325,6 +340,7 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
+	@Override
 	public boolean mayListen(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.team")) {
 			return false;
@@ -354,6 +370,7 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
+	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			CommandUtils.fail(sender, "You do not have permission to talk to a team.");
@@ -386,6 +403,7 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
+	@Override
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
 
@@ -417,6 +435,7 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
+	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		JsonObject extraData = message.getExtraData();
 		String teamName;
@@ -465,6 +484,7 @@ public class ChannelTeam extends Channel {
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
+	@Override
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());

@@ -30,49 +30,60 @@ public class ChannelLoading extends Channel {
 
 	// NOTE: This channel type should never be saved, as it could overwrite a real channel.
 	// toJson() shouldn't even be called for this class.
+	@Override
 	public JsonObject toJson() {
 		return null;
 	}
 
 	// NOTE: If this class ID is ever read, it means the channel hasn't loaded and should be ignored.
+	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
+	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
+	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		CommandAPI.fail("This channel is still loading, please try again.");
 	}
 
 	// NOTE: This should not be called for this class.
+	@Override
 	public String getName() {
 		return null;
 	}
 
+	@Override
 	public @Nullable TextColor color() {
 		return null;
 	}
 
+	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		CommandUtils.fail(sender,"This channel is still loading, please try again.");
 	}
 
+	@Override
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
 		CommandUtils.fail(sender, "This channel is still loading, please try again.");
 	}
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
+	@Override
 	public void distributeMessage(Message message) {}
 
 	// The channel is loading - we don't know how to display this message yet!
+	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		return message.getMessage();
 	}
 
 	// The channel is loading - we can't determine who can see this yet!
+	@Override
 	protected void showMessage(CommandSender recipient, Message message) {}
 
 	// Register a player state waiting for this channel to finish loading.
