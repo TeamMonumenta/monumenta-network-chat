@@ -227,7 +227,7 @@ public class PlayerStateManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
@@ -285,7 +285,7 @@ public class PlayerStateManager implements Listener {
 	}
 
 	/* Whenever player data is saved, also save the local data */
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void playerSaveEvent(PlayerSaveEvent event) {
 		Player player = event.getPlayer();
 
@@ -295,7 +295,7 @@ public class PlayerStateManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
@@ -390,7 +390,7 @@ public class PlayerStateManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
 		switch (event.getChannel()) {
