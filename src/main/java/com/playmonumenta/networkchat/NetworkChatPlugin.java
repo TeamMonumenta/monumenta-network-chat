@@ -36,10 +36,10 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
 	private static ChatFilter mGlobalChatFilter = new ChatFilter();
-	private static @Nullable ChannelManager mChannelManager = null;
-	private static @Nullable MessageManager mMessageManager = null;
-	private static @Nullable PlayerStateManager mPlayerStateManager = null;
-	private static @Nullable RemotePlayerManager mRemotePlayerManager = null;
+	private static ChannelManager mChannelManager;
+	private static MessageManager mMessageManager;
+	private static PlayerStateManager mPlayerStateManager;
+	private static RemotePlayerManager mRemotePlayerManager;
 
 	@Override
 	public void onLoad() {
@@ -143,9 +143,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		}
 
 		mChannelManager = ChannelManager.getInstance();
-		mMessageManager = MessageManager.getInstance(this);
-		mPlayerStateManager = PlayerStateManager.getInstance(this);
-		mRemotePlayerManager = RemotePlayerManager.getInstance(this);
+		mMessageManager = MessageManager.getInstance();
+		mPlayerStateManager = PlayerStateManager.getInstance();
+		mRemotePlayerManager = RemotePlayerManager.getInstance();
 
 		getServer().getPluginManager().registerEvents(mChannelManager, this);
 		getServer().getPluginManager().registerEvents(mMessageManager, this);
@@ -245,7 +245,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			getInstance().getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -288,7 +288,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			getInstance().getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -324,7 +324,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			getInstance().getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
