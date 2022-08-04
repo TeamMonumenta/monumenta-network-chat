@@ -406,7 +406,7 @@ public class PlayerState {
 	public void leaveChannel(Channel channel) {
 		UUID channelId = channel.getUniqueId();
 		String channelName = channel.getName();
-		if (channelId == mActiveChannelId) {
+		if (channelId.equals(mActiveChannelId)) {
 			unsetActiveChannel();
 		}
 		mWatchedChannelIds.remove(channelId);
