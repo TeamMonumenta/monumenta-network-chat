@@ -126,7 +126,7 @@ public class MessagingUtils {
 	}
 
 	public static String translatePlayerName(Player player, String message) {
-		return (message.replaceAll("@S", player.getName()));
+		return message.replaceAll("@S", player.getName());
 	}
 
 	public static Component senderComponent(CommandSender sender) {

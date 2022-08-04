@@ -134,6 +134,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		return channel;
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject allPlayerAccessJson = new JsonObject();
 		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
@@ -239,46 +240,57 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
+	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
+	@Override
 	public void markModified() {
 		mLastUpdate = Instant.now();
 	}
 
+	@Override
 	public Instant lastModified() {
 		return mLastUpdate;
 	}
 
+	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		mName = name;
 	}
 
+	@Override
 	public String getName() {
 		return mName;
 	}
 
+	@Override
 	public @Nullable TextColor color() {
 		return mMessageColor;
 	}
 
+	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		mMessageColor = color;
 	}
 
+	@Override
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
 
+	@Override
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
 
+	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
@@ -291,6 +303,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		return playerAccess;
 	}
 
+	@Override
 	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
@@ -298,11 +311,13 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		mPlayerAccess.remove(playerId);
 	}
 
+	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		Player player = state.getPlayer();
 		return mAutoJoin && player != null && mayListen(player);
 	}
 
+	@Override
 	public boolean mayChat(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
 			return false;
@@ -324,6 +339,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	public boolean mayListen(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.local")) {
 			return false;
@@ -347,6 +363,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
 			CommandUtils.fail(sender, "You do not have permission to talk in local chat.");
@@ -382,6 +399,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	public void distributeMessage(Message message) {
 		JsonObject extraData = message.getExtraData();
 		if (extraData == null) {
@@ -417,6 +435,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
@@ -434,6 +453,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
+	@Override
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
@@ -457,6 +477,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		mChannelPermission = newPerms;
 	}
 
+	@Override
 	public boolean getAutoJoin() {
 		return mAutoJoin;
 	}
