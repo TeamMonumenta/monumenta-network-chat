@@ -9,10 +9,4 @@
 	<suppress files=".*[\\/]bungeecord[\\/].*"
 			  checks="RegexpSinglelineJava"
 			  message="Event handlers must specify ignoreCancelled"/>
-	<suppress files=".*[\\/]VersionAdapter_.*java"
-			  checks="TypeName"
-			  message=".*Type name.*must match pattern.*"/>
-	<suppress files=".*[\\/]ClientModHandler.java"
-			  checks="MemberName"
-			  message=".*Member name.*must match pattern.*"/>
 </suppressions>
