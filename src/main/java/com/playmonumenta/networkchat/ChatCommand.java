@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1588,7 +1587,7 @@ public class ChatCommand {
 					@Nullable BufferedReader helpFile = null;
 					if (node.mExternalPath != null) {
 						try {
-							helpFile = new BufferedReader(new InputStreamReader(new FileInputStream(node.mExternalPath), StandardCharsets.UTF_8));
+							helpFile = new BufferedReader(new InputStreamReader(new FileInputStream(node.mExternalPath)));
 						} catch (IOException ex) {
 							callee.sendMessage(Component.text("Unable to load server-specific help file. Attempting to load default help file...", NamedTextColor.RED));
 						}
@@ -1596,7 +1595,7 @@ public class ChatCommand {
 					if (helpFile == null && node.mResourcePath != null && zip != null) {
 						ZipEntry zipEntry = zip.getEntry(node.mResourcePath);
 						try {
-							helpFile = new BufferedReader(new InputStreamReader(zip.getInputStream(zipEntry), StandardCharsets.UTF_8));
+							helpFile = new BufferedReader(new InputStreamReader(zip.getInputStream(zipEntry)));
 						} catch (IOException ex) {
 							CommandUtils.fail(callee, "Unable to load help file. This shard may need to restart.");
 							return 0;
