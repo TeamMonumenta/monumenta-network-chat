@@ -1677,7 +1677,7 @@ public class ChatCommand {
 		return 1;
 	}
 
-	private static int changeChannelPerms(CommandSender sender, String channelName, String newPerms) throws WrapperCommandSyntaxException {
+	private static int changeChannelPerms(CommandSender sender, String channelName, @Nullable String newPerms) throws WrapperCommandSyntaxException {
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
 			CommandUtils.fail(sender, "No such channel " + channelName + ".");

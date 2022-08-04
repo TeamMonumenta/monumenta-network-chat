@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -67,7 +68,7 @@ public class DefaultChannels {
 		return true;
 	}
 
-	public Channel getDefaultChannel(String key) {
+	public @Nullable Channel getDefaultChannel(String key) {
 		UUID channelId = mDefaultsByType.get(key);
 		if (channelId == null) {
 			return null;
@@ -75,7 +76,7 @@ public class DefaultChannels {
 		return ChannelManager.getChannel(channelId);
 	}
 
-	public UUID getDefaultId(String key) {
+	public @Nullable UUID getDefaultId(String key) {
 		return mDefaultsByType.get(key);
 	}
 

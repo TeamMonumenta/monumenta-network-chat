@@ -60,15 +60,15 @@ public abstract class Channel {
 	public abstract void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException;
 
 	public ChannelSettings channelSettings() {
-		return null;
+		throw new RuntimeException("Channel settings not available for this channel type.");
 	}
 
 	public ChannelAccess channelAccess() {
-		return null;
+		throw new RuntimeException("Channel access not available for this channel type.");
 	}
 
 	public ChannelAccess playerAccess(UUID playerId) {
-		return null;
+		throw new RuntimeException("Player access not available for this channel type.");
 	}
 
 	public void resetPlayerAccess(UUID playerId) {}

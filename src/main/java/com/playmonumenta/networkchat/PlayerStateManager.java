@@ -12,7 +12,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -47,8 +46,8 @@ public class PlayerStateManager implements Listener {
 	private static final String IDENTIFIER = "NetworkChat";
 	private static final String REDIS_PLAYER_EVENT_SETTINGS_KEY = "player_event_settings";
 
-	private static PlayerStateManager INSTANCE = null;
-	private static Plugin mPlugin = null;
+	private static @Nullable PlayerStateManager INSTANCE = null;
+	private static Plugin mPlugin;
 	private static final Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
 	private static final Map<UUID, PlayerChatHistory> mPlayerChatHistories = new HashMap<>();
 	private static MessageVisibility mMessageVisibility = new MessageVisibility();
@@ -126,6 +125,9 @@ public class PlayerStateManager implements Listener {
 	}
 
 	public static PlayerStateManager getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("PlayerStateManager not initialized.");
+		}
 		return INSTANCE;
 	}
 
@@ -202,11 +204,11 @@ public class PlayerStateManager implements Listener {
 		return new HashMap<>(mPlayerChatHistories);
 	}
 
-	public static PlayerChatHistory getPlayerChatHistory(Player player) {
+	public static @Nullable PlayerChatHistory getPlayerChatHistory(Player player) {
 		return mPlayerChatHistories.get(player.getUniqueId());
 	}
 
-	public static PlayerChatHistory getPlayerChatHistory(UUID playerId) {
+	public static @Nullable PlayerChatHistory getPlayerChatHistory(UUID playerId) {
 		return mPlayerChatHistories.get(playerId);
 	}
 
@@ -263,7 +265,7 @@ public class PlayerStateManager implements Listener {
 
 		for (Channel channel : ChannelManager.getLoadedChannels()) {
 			if (!(channel instanceof ChannelInviteOnly)) {
-				if (!playerState.hasSeenChannelId(channel.getUniqueId())) {
+				if (playerState.hasNotSeenChannelId(channel.getUniqueId())) {
 					if (channel.shouldAutoJoin(playerState)) {
 						playerState.joinChannel(channel);
 					}
@@ -273,7 +275,7 @@ public class PlayerStateManager implements Listener {
 				if (!channelInvOnly.isParticipant(player)) {
 					continue;
 				}
-				if (!playerState.hasSeenChannelId(channel.getUniqueId())) {
+				if (playerState.hasNotSeenChannelId(channel.getUniqueId())) {
 					playerState.joinChannel(channel);
 				}
 			}
@@ -320,7 +322,10 @@ public class PlayerStateManager implements Listener {
 		Bukkit.getScheduler().runTaskLater(mPlugin, () -> mPlayerStates.remove(playerId), 1);
 
 		// Broadcast the player's current chat history
-		PlayerChatHistory oldChatHistory = mPlayerChatHistories.get(playerId);
+		@Nullable PlayerChatHistory oldChatHistory = mPlayerChatHistories.get(playerId);
+		if (oldChatHistory == null) {
+			return;
+		}
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY,
 			                                             oldChatHistory.toJson(),

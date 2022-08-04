@@ -19,8 +19,8 @@ public class MessageManager implements Listener {
 	public static final String NETWORK_CHAT_DELETE_MESSAGE = "com.playmonumenta.networkchat.Message.delete";
 	public static final String NETWORK_CHAT_DELETE_FROM_SENDER = "com.playmonumenta.networkchat.Message.deleteFromSender";
 
-	private static MessageManager INSTANCE = null;
-	private static Plugin mPlugin = null;
+	private static @Nullable MessageManager INSTANCE = null;
+	private static Plugin mPlugin;
 	private static final Cleaner mCleaner = Cleaner.create();
 	private static final Map<UUID, WeakReference<Message>> mMessages = new HashMap<>();
 
@@ -30,6 +30,9 @@ public class MessageManager implements Listener {
 	}
 
 	public static MessageManager getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("MessageManager not initialized.");
+		}
 		return INSTANCE;
 	}
 
