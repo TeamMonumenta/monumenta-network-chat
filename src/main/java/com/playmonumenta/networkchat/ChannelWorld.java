@@ -295,9 +295,6 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 
 	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
-		if (playerId == null) {
-			return null;
-		}
 		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 		if (playerAccess == null) {
 			playerAccess = new ChannelAccess();
