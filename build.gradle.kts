@@ -161,6 +161,15 @@ tasks.withType<JavaCompile>().configureEach {
         check("InlineMeSuggester", CheckSeverity.OFF) // This seems way overkill
     }
 }
+// Relocation / shading
+tasks {
+	shadowJar {
+		relocate(
+			"org.apache.commons.text",
+			"com.playmonumenta.networkchat.internal.org.apache.commons.text"
+		) // Dependency of several things
+	}
+}
 
 val basicssh = remotes.create("basicssh") {
     host = "admin-eu.playmonumenta.com"
