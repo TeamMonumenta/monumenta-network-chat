@@ -30,7 +30,6 @@ import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -345,7 +344,7 @@ public class PlayerStateManager implements Listener {
 		}
 
 		Component message = event.message();
-		String messageStr = PlainComponentSerializer.plain().serialize(message);
+		String messageStr = MessagingUtils.PLAIN_SERIALIZER.serialize(message);
 
 		Channel channel = playerState.getActiveChannel();
 		if (channel == null) {

@@ -38,8 +38,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -772,7 +771,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
-					if (!CommandUtils.checkSudoCommand(sender)) {
+					if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 						CommandUtils.fail(sender, "You may not change other players' ignored players.");
 					}
 					CommandSender callee = CommandUtils.getCallee(sender);
@@ -808,7 +807,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
-					if (!CommandUtils.checkSudoCommand(sender)) {
+					if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 						CommandUtils.fail(sender, "You may not change other players' ignored players.");
 					}
 					CommandSender callee = CommandUtils.getCallee(sender);
@@ -842,7 +841,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("show"));
 			arguments.add(new StringArgument("name").replaceSuggestions(info -> {
 				CommandSender sender = info.sender();
-				if (!CommandUtils.checkSudoCommand(sender)) {
+				if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 					return new String[] {};
 				}
 				CommandSender callee = CommandUtils.getCallee(sender);
@@ -859,7 +858,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
-					if (!CommandUtils.checkSudoCommand(sender)) {
+					if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 						CommandUtils.fail(sender, "You may not change other players' ignored players.");
 					}
 					CommandSender callee = CommandUtils.getCallee(sender);
@@ -956,7 +955,7 @@ public class ChatCommand {
 					if (!(callee instanceof Player target)) {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
 					} else {
-						if (!CommandUtils.checkSudoCommand(sender)) {
+						if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 							CommandUtils.fail(sender, "You may not change other player's profile messages on this shard.");
 						}
 
@@ -1033,7 +1032,7 @@ public class ChatCommand {
 							CommandUtils.fail(sender, "This command can only be run as a player.");
 							return 0;
 						} else {
-							if (!CommandUtils.checkSudoCommand(sender)) {
+							if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 								CommandUtils.fail(sender, "You may not change other players' default channel on this shard.");
 							}
 
@@ -1072,7 +1071,7 @@ public class ChatCommand {
 							CommandUtils.fail(sender, "This command can only be run as a player.");
 							return 0;
 						} else {
-							if (!CommandUtils.checkSudoCommand(sender)) {
+							if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 								CommandUtils.fail(sender, "You may not change other players' default channel on this shard.");
 							}
 
@@ -1136,7 +1135,7 @@ public class ChatCommand {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
 						return 0;
 					} else {
-						if (!CommandUtils.checkSudoCommand(sender)) {
+						if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 							CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
 						}
 
@@ -1170,7 +1169,7 @@ public class ChatCommand {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
 						return 0;
 					} else {
-						if (!CommandUtils.checkSudoCommand(sender)) {
+						if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 							CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
 						}
 
@@ -1198,7 +1197,7 @@ public class ChatCommand {
 						CommandUtils.fail(sender, "This command can only be run as a player.");
 						return 0;
 					} else {
-						if (!CommandUtils.checkSudoCommand(sender)) {
+						if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 							CommandUtils.fail(sender, "You may not edit other player's settings on this shard.");
 						}
 
@@ -1317,9 +1316,10 @@ public class ChatCommand {
 					} else {
 						String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
 						Component fullMessage = Component.empty()
-							.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", "ExampleChannel"),
-								Template.template("sender", senderComponent),
-								Template.template("receiver", senderComponent))))
+							.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix,
+								Placeholder.unparsed("channel_name", "ExampleChannel"),
+								Placeholder.component("sender", senderComponent),
+								Placeholder.component("receiver", senderComponent)))
 							.append(Component.empty().color(color).append(Component.text("Test message")));
 
 						sender.sendMessage(Component.text("Example message:", color));
@@ -1364,9 +1364,10 @@ public class ChatCommand {
 						} else {
 							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
 							Component fullMessage = Component.empty()
-								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", "ExampleChannel"),
-									Template.template("sender", senderComponent),
-									Template.template("receiver", senderComponent))))
+								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix,
+									Placeholder.unparsed("channel_name", "ExampleChannel"),
+									Placeholder.component("sender", senderComponent),
+									Placeholder.component("receiver", senderComponent)))
 								.append(Component.empty().color(color).append(Component.text("Test message")));
 
 							sender.sendMessage(Component.text("Example message:", color));
@@ -1571,7 +1572,7 @@ public class ChatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
-					if (!CommandUtils.checkSudoCommand(sender)) {
+					if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 						CommandUtils.fail(sender, "You may not show other players help info.");
 					}
 					CommandSender callee = CommandUtils.getCallee(sender);
@@ -1716,7 +1717,7 @@ public class ChatCommand {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 			return 0;
 		} else {
-			if (!CommandUtils.checkSudoCommand(sender)) {
+			if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 				CommandUtils.fail(sender, "You may not make other players join channels on this shard.");
 			}
 
@@ -1742,7 +1743,7 @@ public class ChatCommand {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 			return 0;
 		} else {
-			if (!CommandUtils.checkSudoCommand(sender)) {
+			if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 				CommandUtils.fail(sender, "You may not make other players leave channels on this shard.");
 			}
 
@@ -1768,7 +1769,7 @@ public class ChatCommand {
 			CommandUtils.fail(sender, "Only players have an active channel.");
 			return 0;
 		} else {
-			if (!CommandUtils.checkSudoCommand(sender)) {
+			if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 				CommandUtils.fail(sender, "You may not change other players' active channel on this shard.");
 			}
 
@@ -1794,7 +1795,7 @@ public class ChatCommand {
 			CommandUtils.fail(sender, "Only players have an active channel.");
 			return 0;
 		} else {
-			if (!CommandUtils.checkSudoCommand(sender)) {
+			if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 				CommandUtils.fail(sender, "You may not change other players' active channel on this shard.");
 			}
 
@@ -1889,7 +1890,7 @@ public class ChatCommand {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 			return 0;
 		} else {
-			if (!CommandUtils.checkSudoCommand(sender)) {
+			if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 				CommandUtils.fail(sender, "You may not pause chat for other players on this shard.");
 			}
 
@@ -1910,7 +1911,7 @@ public class ChatCommand {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 			return 0;
 		} else {
-			if (!CommandUtils.checkSudoCommand(sender)) {
+			if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 				CommandUtils.fail(sender, "You may not unpause chat for other players on this shard.");
 			}
 
@@ -1931,7 +1932,7 @@ public class ChatCommand {
 			CommandUtils.fail(sender, "This command can only be run as a player.");
 			return 0;
 		} else {
-			if (!CommandUtils.checkSudoCommand(sender)) {
+			if (CommandUtils.checkSudoCommandDisallowed(sender)) {
 				CommandUtils.fail(sender, "You may not pause chat for other players on this shard.");
 			}
 

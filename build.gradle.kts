@@ -22,6 +22,7 @@ plugins {
 
 repositories {
     mavenLocal()
+	mavenCentral()
     maven {
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
@@ -76,7 +77,7 @@ repositories {
 
 dependencies {
     implementation("com.mojang:brigadier:1.0.15")
-    implementation("net.kyori:adventure-text-minimessage:4.2-ab62718")
+	implementation("net.kyori:adventure-text-minimessage:4.11.0")
     implementation("org.apache.commons:commons-text:1.3")
     compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
     compileOnly("dev.jorel.CommandAPI:commandapi-core:6.0.0")

@@ -19,13 +19,12 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
-import net.kyori.adventure.text.minimessage.transformation.TransformationRegistry;
-import net.kyori.adventure.text.minimessage.transformation.TransformationType;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -39,32 +38,30 @@ import org.bukkit.scoreboard.Team;
 public class MessagingUtils {
 	public static final GsonComponentSerializer GSON_SERIALIZER = GsonComponentSerializer.gson();
 	public static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
-	public static final PlainComponentSerializer PLAIN_SERIALIZER = PlainComponentSerializer.plain();
+	public static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
 	public static final Pattern REGEX_LEGACY_PREFIX = Pattern.compile("[&\u00a7]");
 	public static final Pattern REGEX_LEGACY_RGB_1 = Pattern.compile("(?<!<)[&\u00a7]?#([0-9a-fA-F]{6})(?!>)");
 	public static final Pattern REGEX_LEGACY_RGB_2 = Pattern.compile("(?<!<)[&\u00a7]#(([&\u00a7][0-9a-fA-F]){6})(?!>)");
 	public static final MiniMessage CHANNEL_HEADER_FMT_MINIMESSAGE = MiniMessage.builder()
-		.transformations(
-			TransformationRegistry.builder().clear()
-				.add(TransformationType.COLOR)
-				.add(TransformationType.DECORATION)
-				.build()
+		.tags(
+			TagResolver.builder().resolvers(StandardTags.color(),
+				StandardTags.decorations()
+			).build()
 		)
 		.build();
 	public static final MiniMessage SENDER_FMT_MINIMESSAGE = MiniMessage.builder()
-		.transformations(
-			TransformationRegistry.builder().clear()
-				.add(TransformationType.COLOR)
-				.add(TransformationType.DECORATION)
-				.add(TransformationType.HOVER_EVENT)
-				.add(TransformationType.CLICK_EVENT)
-				.add(TransformationType.KEYBIND)
-				.add(TransformationType.TRANSLATABLE)
-				.add(TransformationType.INSERTION)
-				.add(TransformationType.FONT)
-				.add(TransformationType.GRADIENT)
-				.add(TransformationType.RAINBOW)
-				.build()
+		.tags(
+			TagResolver.builder().resolvers(StandardTags.color(),
+				StandardTags.decorations(),
+				StandardTags.hoverEvent(),
+				StandardTags.clickEvent(),
+				StandardTags.keybind(),
+				StandardTags.translatable(),
+				StandardTags.insertion(),
+				StandardTags.font(),
+				StandardTags.gradient(),
+				StandardTags.rainbow()
+			).build()
 		)
 		.build();
 
@@ -90,39 +87,39 @@ public class MessagingUtils {
 	}
 
 	public static MiniMessage getAllowedMiniMessage(CommandSender sender) {
-		TransformationRegistry.Builder transforms = TransformationRegistry.builder().clear();
+		TagResolver.Builder tags = TagResolver.builder();
 
 		CommandSender caller = CommandUtils.getCaller(sender);
 		if (caller instanceof Player player) {
 			if (CommandUtils.hasPermission(player, "networkchat.transform.color")) {
-				transforms.add(TransformationType.COLOR);
+				tags.resolver(StandardTags.color());
 			}
 			if (CommandUtils.hasPermission(player, "networkchat.transform.decoration")) {
-				transforms.add(TransformationType.DECORATION);
+				tags.resolver(StandardTags.decorations());
 			}
 			if (CommandUtils.hasPermission(player, "networkchat.transform.keybind")) {
-				transforms.add(TransformationType.KEYBIND);
+				tags.resolver(StandardTags.keybind());
 			}
 			if (CommandUtils.hasPermission(player, "networkchat.transform.font")) {
-				transforms.add(TransformationType.FONT);
+				tags.resolver(StandardTags.font());
 			}
 			if (CommandUtils.hasPermission(player, "networkchat.transform.gradient")) {
-				transforms.add(TransformationType.GRADIENT);
+				tags.resolver(StandardTags.gradient());
 			}
 			if (CommandUtils.hasPermission(player, "networkchat.transform.rainbow")) {
-				transforms.add(TransformationType.RAINBOW);
+				tags.resolver(StandardTags.rainbow());
 			}
 		} else {
-			transforms.add(TransformationType.COLOR)
-				.add(TransformationType.DECORATION)
-				.add(TransformationType.KEYBIND)
-				.add(TransformationType.FONT)
-				.add(TransformationType.GRADIENT)
-				.add(TransformationType.RAINBOW);
+			tags.resolvers(StandardTags.color(),
+				StandardTags.decorations(),
+				StandardTags.keybind(),
+				StandardTags.font(),
+				StandardTags.gradient(),
+				StandardTags.rainbow());
 		}
 
 		return MiniMessage.builder()
-			.transformations(transforms.build())
+			.tags(tags.build())
 			.build();
 	}
 
@@ -136,7 +133,7 @@ public class MessagingUtils {
 			return entityComponent(entity);
 		}
 		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
-			TemplateResolver.templates(Template.template("sender_name", sender.getName())));
+			Placeholder.unparsed("sender_name", sender.getName()));
 	}
 
 	public static Component entityComponent(Entity entity) {
@@ -178,13 +175,13 @@ public class MessagingUtils {
 		}
 
 		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("entity")),
-			TemplateResolver.templates(Template.template("entity_type", type.toString()),
-				Template.template("entity_uuid", id.toString()),
-				Template.template("entity_name", entityName),
-				Template.template("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
-				Template.template("team_prefix", teamPrefix),
-				Template.template("team_displayname", teamDisplayName),
-				Template.template("team_suffix", teamSuffix)));
+			Placeholder.parsed("entity_type", type.toString()),
+			Placeholder.parsed("entity_uuid", id.toString()),
+			Placeholder.component("entity_name", entityName),
+			Placeholder.parsed("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+			Placeholder.component("team_prefix", teamPrefix),
+			Placeholder.component("team_displayname", teamDisplayName),
+			Placeholder.component("team_suffix", teamSuffix));
 	}
 
 	public static Component playerComponent(Player player) {
@@ -233,22 +230,21 @@ public class MessagingUtils {
 			.replace("<hover:show_text:\"\"></hover>", "");
 		postPapiProcessing = legacyToMiniMessage(postPapiProcessing);
 		return SENDER_FMT_MINIMESSAGE.deserialize(postPapiProcessing,
-			TemplateResolver.templates(Template.template("team_color", colorMiniMessage),
-				Template.template("team_prefix", teamPrefix),
-				Template.template("team_displayname", teamDisplayName),
-				Template.template("team_suffix", teamSuffix),
-				Template.template("profile_message", profileMessage),
-				Template.template("item", () -> {
-					if (!CommandUtils.hasPermission(player, "networkchat.transform.item")) {
-						return Component.empty();
-					}
-
-					ItemStack item = player.getInventory().getItemInMainHand();
-					if (item.getType() != Material.AIR) {
-						return item.displayName().hoverEvent(item);
-					}
+			Placeholder.component("team_prefix", teamPrefix),
+			Placeholder.component("team_displayname", teamDisplayName),
+			Placeholder.component("team_suffix", teamSuffix),
+			Placeholder.component("profile_message", profileMessage),
+			Placeholder.component("item", () -> {
+				if (!CommandUtils.hasPermission(player, "networkchat.transform.item")) {
 					return Component.empty();
-			})));
+				}
+
+				ItemStack item = player.getInventory().getItemInMainHand();
+				if (item.getType() != Material.AIR) {
+					return item.displayName().hoverEvent(item);
+				}
+				return Component.empty();
+			}));
 	}
 
 	public static boolean containsPlayerMention(String text) {

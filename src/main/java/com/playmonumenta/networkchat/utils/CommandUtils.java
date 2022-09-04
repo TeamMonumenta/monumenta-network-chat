@@ -34,14 +34,14 @@ public class CommandUtils {
 		return permissionHolder.hasPermission(permission);
 	}
 
-	public static boolean checkSudoCommand(CommandSender sender) {
+	public static boolean checkSudoCommandDisallowed(CommandSender sender) {
 		if (sender instanceof ProxiedCommandSender) {
 			CommandSender callee = ((ProxiedCommandSender) sender).getCallee();
 			CommandSender caller = ((ProxiedCommandSender) sender).getCaller();
 
-			return callee.equals(caller) || NetworkChatProperties.getSudoEnabled();
+			return !callee.equals(caller) && !NetworkChatProperties.getSudoEnabled();
 		}
-		return true;
+		return false;
 	}
 
 	@Contract("_, _ -> fail")

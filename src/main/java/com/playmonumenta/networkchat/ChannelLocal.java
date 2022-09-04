@@ -22,8 +22,7 @@ import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -448,8 +447,9 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName),
-				Template.template("sender", message.getSenderComponent()))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+				Placeholder.unparsed("channel_name", mName),
+				Placeholder.component("sender", message.getSenderComponent())))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 

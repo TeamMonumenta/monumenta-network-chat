@@ -23,8 +23,7 @@ import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
@@ -428,7 +427,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, Placeholder.unparsed("channel_name", mName)))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 

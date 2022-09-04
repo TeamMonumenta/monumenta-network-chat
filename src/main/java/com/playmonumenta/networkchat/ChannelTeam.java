@@ -21,8 +21,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -476,11 +475,12 @@ public class ChannelTeam extends Channel {
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("sender", message.getSenderComponent()),
-				Template.template("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
-				Template.template("team_prefix", teamPrefix),
-				Template.template("team_displayname", teamDisplayName),
-				Template.template("team_suffix", teamSuffix))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+				Placeholder.component("sender", message.getSenderComponent()),
+				Placeholder.parsed("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+				Placeholder.component("team_prefix", teamPrefix),
+				Placeholder.component("team_displayname", teamDisplayName),
+				Placeholder.component("team_suffix", teamSuffix)))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
