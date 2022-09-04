@@ -38,6 +38,7 @@ public class Trie<V> {
 		mValue = null;
 	}
 
+	@Override
 	public Trie<V> clone() {
 		Trie<V> result = new Trie<>(mDepth);
 		result.mValue = mValue;
@@ -96,7 +97,7 @@ public class Trie<V> {
 		return result;
 	}
 
-	public V put(String key, V value) {
+	public @Nullable V put(String key, V value) {
 		if (value == null) {
 			remove(key);
 			return null;
