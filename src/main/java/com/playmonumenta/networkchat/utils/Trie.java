@@ -6,11 +6,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 
 // A data structure used to efficiently complete many strings, and/or map them to values.
 public class Trie<V> {
 	private final Map<Character, Trie<V>> mChildren;
-	private V mValue;
+	private @Nullable V mValue;
 	private final int mDepth;
 
 	private Trie(int depth) {
@@ -59,7 +60,7 @@ public class Trie<V> {
 		return child.containsKey(key);
 	}
 
-	public V get(String key) {
+	public @Nullable V get(String key) {
 		if (key == null || key.length() == mDepth) {
 			return mValue;
 		}
@@ -123,7 +124,7 @@ public class Trie<V> {
 		}
 	}
 
-	public V remove(String key) {
+	public @Nullable V remove(String key) {
 		if (key == null || key.length() == mDepth) {
 			mValue = null;
 			return null;
