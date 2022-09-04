@@ -225,6 +225,9 @@ public class ChatFilter {
 				}
 			}
 			filterResult.copyResults(localResult);
+
+			NetworkChatPlugin.getInstance().getLogger().finer(() -> "- " + mId + ":");
+			NetworkChatPlugin.getInstance().getLogger().finer(() -> MessagingUtils.GSON_SERIALIZER.serialize(filterResult.component()));
 		}
 	}
 
@@ -284,6 +287,8 @@ public class ChatFilter {
 	}
 
 	public void run(CommandSender sender, ChatFilterResult filterResult) {
+		NetworkChatPlugin.getInstance().getLogger().finer("Start:");
+		NetworkChatPlugin.getInstance().getLogger().finer(() -> MessagingUtils.GSON_SERIALIZER.serialize(filterResult.component()));
 		for (ChatFilterPattern filterPattern : mFilters.values()) {
 			filterPattern.run(sender, filterResult);
 		}

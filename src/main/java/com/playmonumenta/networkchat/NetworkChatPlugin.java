@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.commands.ChangeLogLevel;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -31,6 +33,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
 
 	private static @Nullable NetworkChatPlugin INSTANCE = null;
+	private @Nullable CustomLogger mLogger = null;
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
@@ -39,6 +42,10 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 	@Override
 	public void onLoad() {
+		if (mLogger == null) {
+			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
+		}
+
 		NetworkChatProperties.load(this, null);
 
 		mDefaultMessageFormats.put("player", "<insert:<player_name>>"
@@ -118,6 +125,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
+		ChangeLogLevel.register();
 		@Nullable ZipFile zip = null;
 		try {
 			zip = new ZipFile(getFile());
@@ -197,6 +205,14 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			throw new RuntimeException("NetworkChat has not been initialized yet.");
 		}
 		return INSTANCE;
+	}
+
+	@Override
+	public Logger getLogger() {
+		if (mLogger == null) {
+			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
+		}
+		return mLogger;
 	}
 
 	public static int getMessageTtl() {
