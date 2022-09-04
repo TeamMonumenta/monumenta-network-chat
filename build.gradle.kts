@@ -67,17 +67,11 @@ repositories {
     maven {
         url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-redis-sync/master/mvn-repo/")
     }
-
-    // TODO: This is ridiculously jank - accessing the repo from github when it's local... but can't get it to work otherwise
-	maven {
-		url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-chat/master/repo/")
-	}
-
 }
 
 dependencies {
     implementation("com.mojang:brigadier:1.0.15")
-	implementation("net.kyori:adventure-text-minimessage:4.11.0")
+    implementation("net.kyori:adventure-text-minimessage:4.11.0")
     implementation("org.apache.commons:commons-text:1.3")
     compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
     compileOnly("dev.jorel.CommandAPI:commandapi-core:6.0.0")
@@ -162,16 +156,6 @@ tasks.withType<JavaCompile>().configureEach {
         check("InlineMeSuggester", CheckSeverity.OFF) // This seems way overkill
     }
 }
-// Relocation / shading
-tasks {
-	shadowJar {
-		relocate(
-			"org.apache.commons.text",
-			"com.playmonumenta.networkchat.internal.org.apache.commons.text"
-		) // Dependency of several things
-	}
-}
-
 val basicssh = remotes.create("basicssh") {
     host = "admin-eu.playmonumenta.com"
     port = 8822
