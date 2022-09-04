@@ -41,10 +41,10 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	public void onLoad() {
 		NetworkChatProperties.load(this, null);
 
-		mDefaultMessageFormats.put("player", "<insert:%player_name%>"
-			+ "<click:suggest_command:/tell %player_name% >"
-			+ "<hover:show_entity:'minecraft:player':%player_uuid%:%player_name%>"
-			+ "<team_color><team_prefix>%player_name%<team_suffix>"
+		mDefaultMessageFormats.put("player", "<insert:<player_name>>"
+			+ "<click:suggest_command:/tell <player_name> >"
+			+ "<hover:show_entity:'minecraft:player':<player_uuid>:<player_name>>"
+			+ "<team_color><team_prefix><player_name><team_suffix>"
 			+ "</hover></click></insert>");
 
 		mDefaultMessageFormats.put("entity", "<insert:<entity_uuid>>"
