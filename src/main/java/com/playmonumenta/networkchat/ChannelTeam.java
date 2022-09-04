@@ -383,7 +383,7 @@ public class ChannelTeam extends Channel {
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
 				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}

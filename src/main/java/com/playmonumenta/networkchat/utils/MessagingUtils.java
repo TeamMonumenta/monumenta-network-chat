@@ -6,6 +6,7 @@ import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -248,6 +249,47 @@ public class MessagingUtils {
 					}
 					return Component.empty();
 			})));
+	}
+
+	public static boolean containsPlayerMention(String text) {
+		if (!text.contains("@")) {
+			return false;
+		}
+
+		Trie<Boolean> allPlayers = new Trie<>();
+		for (String playerName : MonumentaRedisSyncAPI.getAllCachedPlayerNames()) {
+			allPlayers.put(playerName, true);
+		}
+
+		int start = 0;
+		boolean hasMention = false;
+		while (true) {
+			start = text.indexOf('@', start) + 1;
+			if (start == 0) {
+				break;
+			}
+
+			for (int length = 1; length <= 16; ++length) {
+				int end = start + length;
+				if (end > text.length()) {
+					break;
+				}
+
+				String substring = text.substring(start, end);
+				if (allPlayers.containsKey(substring)) {
+					hasMention = true;
+					break;
+				}
+				if (allPlayers.suggestions(substring, 1).size() == 0) {
+					break;
+				}
+			}
+			if (hasMention) {
+				break;
+			}
+		}
+
+		return hasMention;
 	}
 
 	public static String getCommandExceptionMessage(WrapperCommandSyntaxException ex) {
