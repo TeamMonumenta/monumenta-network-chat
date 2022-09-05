@@ -190,12 +190,20 @@ public class ChatFilter {
 						localResult.foundBadWord(true);
 					}
 					String content = textBuilder.content();
+					String finalContent = content;
+					NetworkChatPlugin.getInstance().getLogger().finer(() -> "    <- " + finalContent);
 					content = mPattern.matcher(content).replaceAll(replacer);
-					return MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
+					String finalContent1 = content;
+					NetworkChatPlugin.getInstance().getLogger().finer(() -> "    -- " + finalContent1);
+					Component replacementResult = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
+					NetworkChatPlugin.getInstance().getLogger().finer(() -> "    -> " + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(replacementResult));
+					return replacementResult;
 				})
 				.build();
 
+			NetworkChatPlugin.getInstance().getLogger().finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
 			localResult.component(localResult.component().replaceText(replacementConfig));
+			NetworkChatPlugin.getInstance().getLogger().finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
 
 			String plainText = MessagingUtils.plainText(localResult.component());
 			String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
@@ -227,7 +235,7 @@ public class ChatFilter {
 			filterResult.copyResults(localResult);
 
 			NetworkChatPlugin.getInstance().getLogger().finer(() -> "- " + mId + ":");
-			NetworkChatPlugin.getInstance().getLogger().finer(() -> MessagingUtils.GSON_SERIALIZER.serialize(filterResult.component()));
+			NetworkChatPlugin.getInstance().getLogger().finer(() -> MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(filterResult.component()));
 		}
 	}
 
@@ -288,7 +296,7 @@ public class ChatFilter {
 
 	public void run(CommandSender sender, ChatFilterResult filterResult) {
 		NetworkChatPlugin.getInstance().getLogger().finer("Start:");
-		NetworkChatPlugin.getInstance().getLogger().finer(() -> MessagingUtils.GSON_SERIALIZER.serialize(filterResult.component()));
+		NetworkChatPlugin.getInstance().getLogger().finer(() -> MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(filterResult.component()));
 		for (ChatFilterPattern filterPattern : mFilters.values()) {
 			filterPattern.run(sender, filterResult);
 		}
