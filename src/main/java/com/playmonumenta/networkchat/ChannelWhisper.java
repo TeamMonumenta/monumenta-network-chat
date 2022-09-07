@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
@@ -532,7 +533,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		try {
 			receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
+			MMLog.warning("Could not get receiver from Message; reason: " + e.getMessage());
 			return;
 		}
 		UUID senderUuid = message.getSenderId();
@@ -545,7 +546,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private void distributeMessageToPlayer(UUID playerId, UUID otherId, Message message) {
 		PlayerState state = PlayerStateManager.getPlayerState(playerId);
 		if (state == null) {
-			NetworkChatPlugin.getInstance().getLogger().finer("Receiver not on this shard.");
+			MMLog.finer("Receiver not on this shard.");
 			return;
 		}
 		state.setWhisperChannel(otherId, this);
@@ -573,7 +574,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			UUID receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
 			receiverComp = RemotePlayerManager.getPlayerComponent(receiverUuid);
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Could not get receiver from Message; reason: " + e.getMessage());
+			MMLog.warning("Could not get receiver from Message; reason: " + e.getMessage());
 			receiverComp = Component.text("ErrorLoadingName");
 		}
 

@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
@@ -86,7 +87,7 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+				MMLog.warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
 
@@ -115,7 +116,7 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel world reason: " + e.getMessage());
+					MMLog.warning("Catch exception during converting json to channel world reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -413,22 +414,21 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 
 	@Override
 	public void distributeMessage(Message message) {
-		NetworkChatPlugin instance = NetworkChatPlugin.getInstance();
 		JsonObject extraData = message.getExtraData();
 		if (extraData == null) {
-			instance.getLogger().warning("Got world chat message with no fromShard, ignoring.");
+			MMLog.warning("Got world chat message with no fromShard, ignoring.");
 			return;
 		}
 
 		String fromShard;
 		JsonElement fromShardJsonElement = extraData.get("fromShard");
 		if (!fromShardJsonElement.isJsonPrimitive()) {
-			instance.getLogger().warning("Got world chat message with invalid fromShard json, ignoring.");
+			MMLog.warning("Got world chat message with invalid fromShard json, ignoring.");
 			return;
 		}
 		JsonPrimitive fromShardJsonPrimitive = fromShardJsonElement.getAsJsonPrimitive();
 		if (!fromShardJsonPrimitive.isString()) {
-			instance.getLogger().warning("Got world chat message with invalid fromShard json, ignoring.");
+			MMLog.warning("Got world chat message with invalid fromShard json, ignoring.");
 			return;
 		}
 		fromShard = fromShardJsonPrimitive.getAsString();
@@ -440,12 +440,12 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 		String fromWorld;
 		JsonElement fromWorldJsonElement = extraData.get("fromWorld");
 		if (!fromWorldJsonElement.isJsonPrimitive()) {
-			instance.getLogger().warning("Got world chat message with invalid fromWorld json, ignoring.");
+			MMLog.warning("Got world chat message with invalid fromWorld json, ignoring.");
 			return;
 		}
 		JsonPrimitive fromWorldJsonPrimitive = fromWorldJsonElement.getAsJsonPrimitive();
 		if (!fromWorldJsonPrimitive.isString()) {
-			instance.getLogger().warning("Got world chat message with invalid fromWorld json, ignoring.");
+			MMLog.warning("Got world chat message with invalid fromWorld json, ignoring.");
 			return;
 		}
 		fromWorld = fromWorldJsonPrimitive.getAsString();

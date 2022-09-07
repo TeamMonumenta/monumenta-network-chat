@@ -2,6 +2,7 @@ package com.playmonumenta.networkchat;
 
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.FileUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -87,13 +88,13 @@ public class ChatCommand {
 			File directory = new File(folderLocation);
 			if (!directory.exists()) {
 				if (directory.mkdirs()) {
-					plugin.getLogger().info("Created plugin help directory.");
+					MMLog.info("Created plugin help directory.");
 				}
 			}
 
 			listOfFiles = FileUtils.getFilesInDirectory(folderLocation, ".txt");
 		} catch (IOException e) {
-			plugin.getLogger().severe("Caught exception trying to load help files from plugin folder.");
+			MMLog.severe("Caught exception trying to load help files from plugin folder.");
 			return;
 		}
 		Collections.sort(listOfFiles);

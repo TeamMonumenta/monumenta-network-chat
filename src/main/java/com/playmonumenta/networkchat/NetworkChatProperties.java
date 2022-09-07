@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat;
 
+import com.playmonumenta.networkchat.utils.MMLog;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,12 +80,12 @@ public class NetworkChatProperties {
 			mSudoEnabled = config.getBoolean("SudoEnabled", mChatCommandDeleteEnabled);
 		}
 
-		plugin.getLogger().info("Properties:");
+		MMLog.info("Properties:");
 		if (sender != null) {
 			sender.sendMessage("Properties:");
 		}
 		for (String str : toDisplay()) {
-			plugin.getLogger().info("  " + str);
+			MMLog.info("  " + str);
 			if (sender != null) {
 				sender.sendMessage("  " + str);
 			}
@@ -114,10 +115,10 @@ public class NetworkChatProperties {
 		if (!configFile.exists()) {
 			try {
 				if (configFile.createNewFile()) {
-					plugin.getLogger().info("Created config file.");
+					MMLog.info("Created config file.");
 				}
 			} catch (IOException e) {
-				plugin.getLogger().warning("Catch exception during create new file for config.yml. Reason: " + e.getMessage());
+				MMLog.warning("Catch exception during create new file for config.yml. Reason: " + e.getMessage());
 			}
 		}
 
@@ -146,7 +147,7 @@ public class NetworkChatProperties {
 		try {
 			config.save(configFile);
 		} catch (IOException e) {
-			plugin.getLogger().warning("Catch exception while save config.yml. Reason: " + e.getMessage());
+			MMLog.warning("Catch exception while save config.yml. Reason: " + e.getMessage());
 		}
 	}
 }

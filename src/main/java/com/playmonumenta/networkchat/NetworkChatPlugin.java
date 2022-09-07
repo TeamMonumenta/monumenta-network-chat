@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.commands.ChangeLogLevel;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -130,7 +131,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		try {
 			zip = new ZipFile(getFile());
 		} catch (IOException ex) {
-			getLogger().log(Level.SEVERE, "Could not load help data from plugin.");
+			MMLog.severe("Could not load help data from plugin.");
 		}
 		ChatCommand.register(this, zip);
 	}
@@ -141,7 +142,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 		/* Check for Placeholder API */
 		if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-			getLogger().log(Level.SEVERE, "Could not find PlaceholderAPI! This plugin is required.");
+			MMLog.severe("Could not find PlaceholderAPI! This plugin is required.");
 			Bukkit.getPluginManager().disablePlugin(this);
 			return;
 		}
@@ -252,7 +253,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			getInstance().getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -295,7 +296,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			getInstance().getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -331,7 +332,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			getInstance().getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -342,7 +343,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE -> {
 				data = event.getData();
 				if (data == null) {
-					getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
+					MMLog.severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
 					return;
 				}
 				@Nullable JsonObject messageColorsJson = data.getAsJsonObject(REDIS_MESSAGE_COLORS_KEY);

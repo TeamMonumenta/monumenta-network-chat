@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -87,7 +88,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+				MMLog.warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
 
@@ -121,7 +122,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Party reason: " + e.getMessage());
+					MMLog.warning("Catch exception during converting json to channel Party reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -361,7 +362,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			try {
 				ChannelManager.deleteChannel(getName());
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().info("Failed to delete empty channel " + getName());
+				MMLog.info("Failed to delete empty channel " + getName());
 			}
 		} else {
 			ChannelManager.saveChannel(this);

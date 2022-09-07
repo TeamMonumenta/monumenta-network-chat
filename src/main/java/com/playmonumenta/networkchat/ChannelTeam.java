@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -102,7 +103,7 @@ public class ChannelTeam extends Channel {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
+					MMLog.warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -411,12 +412,12 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
+			MMLog.warning("Could not get Team from Message; reason: " + e.getMessage());
 			return;
 		}
 		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
 		if (team == null) {
-			NetworkChatPlugin.getInstance().getLogger().finer("No such team " + teamName + " on this shard, ignoring.");
+			MMLog.finer("No such team " + teamName + " on this shard, ignoring.");
 			return;
 		}
 
@@ -441,7 +442,7 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
+			MMLog.warning("Could not get Team from Message; reason: " + e.getMessage());
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 			return Component.text("[Could not get team from Message]", NamedTextColor.RED, TextDecoration.BOLD);
 		}

@@ -2,6 +2,7 @@ package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MMLog;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
@@ -40,7 +41,7 @@ public class DefaultChannels {
 				try {
 					defaults.mDefaultsByType.put(key, UUID.fromString(valueJson.getAsString()));
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Failed to set default for " + key);
+					MMLog.warning("Failed to set default for " + key);
 				}
 			}
 		}

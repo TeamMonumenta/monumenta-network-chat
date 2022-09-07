@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
@@ -83,7 +84,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+				MMLog.warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
 
@@ -112,7 +113,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting ChannelAccess from json: " + e.getMessage());
+					MMLog.warning("Caught exception getting ChannelAccess from json: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);

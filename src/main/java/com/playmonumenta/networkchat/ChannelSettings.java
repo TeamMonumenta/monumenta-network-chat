@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.MMLog;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
@@ -125,7 +126,7 @@ public class ChannelSettings {
 					try {
 						settings.mSounds.add(CSound.fromJson(element.getAsJsonObject()));
 					} catch (Exception e) {
-						NetworkChatPlugin.getInstance().getLogger().warning("Caught an exception while converting SoundsList to object. Reason: " + e.getMessage());
+						MMLog.warning("Caught an exception while converting SoundsList to object. Reason: " + e.getMessage());
 					}
 				}
 			}

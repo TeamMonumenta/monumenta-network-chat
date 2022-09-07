@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -140,13 +141,13 @@ public class PlayerStateManager implements Listener {
 	}
 
 	public static void loadSettings(JsonObject playerEventSettingsJson) {
-		NetworkChatPlugin.getInstance().getLogger().info("Loading PlayerStateManager settings...");
+		MMLog.info("Loading PlayerStateManager settings...");
 		mMessageVisibility = MessageVisibility.fromJson(playerEventSettingsJson.getAsJsonObject("message_visibility"));
 		mIsDefaultChatPlugin = playerEventSettingsJson.getAsJsonPrimitive("is_default_chat").getAsBoolean();
 	}
 
 	public static void saveSettings() {
-		NetworkChatPlugin.getInstance().getLogger().info("Saving PlayerStateManager settings...");
+		MMLog.info("Saving PlayerStateManager settings...");
 		JsonObject playerEventSettingsJson = new JsonObject();
 		playerEventSettingsJson.add("message_visibility", mMessageVisibility.toJson());
 		playerEventSettingsJson.addProperty("is_default_chat", mIsDefaultChatPlugin);
@@ -160,7 +161,7 @@ public class PlayerStateManager implements Listener {
 			                                             wrappedConfigJson,
 			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -239,16 +240,16 @@ public class PlayerStateManager implements Listener {
 		if (data == null) {
 			playerState = new PlayerState(player);
 			mPlayerStates.put(playerId, playerState);
-			NetworkChatPlugin.getInstance().getLogger().info("Created new chat state for for player " + player.getName());
+			MMLog.info("Created new chat state for for player " + player.getName());
 		} else {
 			try {
 				playerState = PlayerState.fromJson(player, data);
 				mPlayerStates.put(playerId, playerState);
-				NetworkChatPlugin.getInstance().getLogger().info("Loaded chat state for player " + player.getName());
+				MMLog.info("Loaded chat state for player " + player.getName());
 			} catch (Exception e) {
 				playerState = new PlayerState(player);
 				mPlayerStates.put(playerId, playerState);
-				NetworkChatPlugin.getInstance().getLogger().warning("Player's chat state could not be loaded and was reset " + player.getName());
+				MMLog.warning("Player's chat state could not be loaded and was reset " + player.getName());
 			}
 		}
 
@@ -320,7 +321,7 @@ public class PlayerStateManager implements Listener {
 			                                             oldChatHistory.toJson(),
 			                                             PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().severe("Failed to broadcast " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY);
+			MMLog.severe("Failed to broadcast " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY);
 			mPlayerChatHistories.remove(playerId);
 		}
 	}
@@ -357,7 +358,7 @@ public class PlayerStateManager implements Listener {
 		} catch (WrapperCommandSyntaxException ex) {
 			String error = MessagingUtils.getCommandExceptionMessage(ex);
 			player.sendMessage(Component.text(error, NamedTextColor.RED));
-			NetworkChatPlugin.getInstance().getLogger().warning(error);
+			MMLog.warning(error);
 		} catch (Exception ex) {
 			MessagingUtils.sendStackTrace(player, ex);
 		}
@@ -384,7 +385,7 @@ public class PlayerStateManager implements Listener {
 					}
 				}.runTaskLater(NetworkChatPlugin.getInstance(), 20 * PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with invalid data");
+				MMLog.severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with invalid data");
 			}
 		}
 	}
@@ -396,7 +397,7 @@ public class PlayerStateManager implements Listener {
 			case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE -> {
 				data = event.getData();
 				if (data == null) {
-					NetworkChatPlugin.getInstance().getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " with null data");
+					MMLog.severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " with null data");
 					return;
 				}
 				JsonObject playerEventSettingsJson = data.getAsJsonObject(REDIS_PLAYER_EVENT_SETTINGS_KEY);
@@ -407,7 +408,7 @@ public class PlayerStateManager implements Listener {
 			case PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY -> {
 				data = event.getData();
 				if (data == null) {
-					NetworkChatPlugin.getInstance().getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with null data");
+					MMLog.severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with null data");
 					return;
 				}
 				handleRemotePlayerChatHistoryMessage(data);

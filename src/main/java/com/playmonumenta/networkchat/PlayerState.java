@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
@@ -65,12 +66,12 @@ public class PlayerState {
 			try {
 				lastLoginMillis = lastLoginJson.getAsLong();
 			} catch (NumberFormatException e) {
-				NetworkChatPlugin.getInstance().getLogger().warning("Could not get lastSaved time for player " + player.getName());
+				MMLog.warning("Could not get lastSaved time for player " + player.getName());
 			}
 
 			if (lastLoginMillis != null) {
 				long millisOffline = nowMillis - lastLoginMillis;
-				NetworkChatPlugin.getInstance().getLogger().finer(player.getName() + " was offline for " + millisOffline / 1000.0 + " seconds.");
+				MMLog.finer(player.getName() + " was offline for " + millisOffline / 1000.0 + " seconds.");
 			}
 		}
 
@@ -91,7 +92,7 @@ public class PlayerState {
 					UUID ignoredUuid = UUID.fromString(ignoredUuidJson.getAsString());
 					state.mIgnoredPlayers.add(ignoredUuid);
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s ignoredPlayers to array. Reason: " + e.getMessage());
+					MMLog.warning("Catch an exception while converting " + player.getName() + "'s ignoredPlayers to array. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -107,7 +108,7 @@ public class PlayerState {
 					state.mWhisperChannelsByRecipient.put(recipientUuid, channelUuid);
 					state.mWhisperRecipientByChannels.put(channelUuid, recipientUuid);
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s whisperChannels to object. Reason: " + e.getMessage());
+					MMLog.warning("Catch an exception while converting " + player.getName() + "'s whisperChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -127,7 +128,7 @@ public class PlayerState {
 				try {
 					state.mWatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s watchedChannels to object. Reason: " + e.getMessage());
+					MMLog.warning("Catch an exception while converting " + player.getName() + "'s watchedChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -140,7 +141,7 @@ public class PlayerState {
 				try {
 					state.mUnwatchedChannelIds.put(UUID.fromString(channelId), lastKnownChannelName.getAsString());
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s unwatchedChannels to object. Reason: " + e.getMessage());
+					MMLog.warning("Catch an exception while converting " + player.getName() + "'s unwatchedChannels to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -164,7 +165,7 @@ public class PlayerState {
 					ChannelSettings channelSettings = ChannelSettings.fromJson(channelSettingJson.getAsJsonObject());
 					state.mChannelSettings.put(UUID.fromString(channelId), channelSettings);
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch an exception while converting " + player.getName() + "'s channelSettings to object. Reason: " + e.getMessage());
+					MMLog.warning("Catch an exception while converting " + player.getName() + "'s channelSettings to object. Reason: " + e.getMessage());
 				}
 			}
 		}
@@ -317,7 +318,7 @@ public class PlayerState {
 		for (UUID ignoredId : mIgnoredPlayers) {
 			@Nullable String ignoredName = MonumentaRedisSyncAPI.cachedUuidToName(ignoredId);
 			if (ignoredName == null) {
-				NetworkChatPlugin.getInstance().getLogger().warning("Could not get name of ignored player with UUID " + ignoredId.toString());
+				MMLog.warning("Could not get name of ignored player with UUID " + ignoredId.toString());
 			} else {
 				ignoredNames.add(ignoredName);
 			}

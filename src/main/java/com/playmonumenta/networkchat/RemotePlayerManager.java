@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.DestOfflineEvent;
 import com.playmonumenta.networkrelay.DestOnlineEvent;
@@ -48,7 +49,7 @@ public class RemotePlayerManager implements Listener {
 			}
 		    mShard = shard;
 
-		    NetworkChatPlugin.getInstance().getLogger().fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+		    MMLog.fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
 	    public RemotePlayerState(JsonObject remoteData) {
@@ -59,7 +60,7 @@ public class RemotePlayerManager implements Listener {
 			mIsOnline = remoteData.get("isOnline").getAsBoolean();
 			mShard = remoteData.get("shard").getAsString();
 
-		    NetworkChatPlugin.getInstance().getLogger().fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+		    MMLog.fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
 	    public void broadcast() {
@@ -76,7 +77,7 @@ public class RemotePlayerManager implements Listener {
 			                                                 remotePlayerData,
 			                                                 NetworkChatPlugin.getMessageTtl());
 		    } catch (Exception e) {
-			    NetworkChatPlugin.getInstance().getLogger().severe("Failed to broadcast " + RemotePlayerManager.REMOTE_PLAYER_CHANNEL);
+			    MMLog.severe("Failed to broadcast " + RemotePlayerManager.REMOTE_PLAYER_CHANNEL);
 		    }
 	    }
 	}
@@ -98,11 +99,11 @@ public class RemotePlayerManager implements Listener {
 				if (shardName.equals(shard)) {
 					continue;
 				}
-				NetworkChatPlugin.getInstance().getLogger().fine("Registering shard " + shard);
+				MMLog.fine("Registering shard " + shard);
 				mRemotePlayersByShard.put(shard, new ConcurrentSkipListMap<>());
 			}
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().severe("Failed to get remote shard names");
+			MMLog.severe("Failed to get remote shard names");
 			throw new RuntimeException("Failed to get remote shard names");
 		}
 		try {
@@ -110,7 +111,7 @@ public class RemotePlayerManager implements Listener {
 			                                             new JsonObject(),
 			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().severe("Failed to broadcast " + REFRESH_CHANNEL);
+			MMLog.severe("Failed to broadcast " + REFRESH_CHANNEL);
 		}
 	}
 
@@ -126,7 +127,7 @@ public class RemotePlayerManager implements Listener {
 		try {
 			shardName = NetworkRelayAPI.getShardName();
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().severe("Failed to get shard name");
+			MMLog.severe("Failed to get shard name");
 		}
 		if (shardName == null) {
 			throw new RuntimeException("Got null shard name");
@@ -280,11 +281,11 @@ public class RemotePlayerManager implements Listener {
 
 	// Run this on any player to update their displayed name
 	public static void refreshLocalPlayer(Player player) {
-		NetworkChatPlugin.getInstance().getLogger().fine("Refreshing local player " + player.getName());
+		MMLog.fine("Refreshing local player " + player.getName());
 		RemotePlayerState remotePlayerState = new RemotePlayerState(player, true);
 
 		unregisterPlayer(remotePlayerState.mUuid);
-		NetworkChatPlugin.getInstance().getLogger().fine("Registering player " + remotePlayerState.mName);
+		MMLog.fine("Registering player " + remotePlayerState.mName);
 		mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		if (remotePlayerState.mIsHidden) {
@@ -299,7 +300,7 @@ public class RemotePlayerManager implements Listener {
 	private static void unregisterPlayer(UUID playerId) {
 		@Nullable RemotePlayerState lastRemotePlayerState = mPlayersByUuid.get(playerId);
 		if (lastRemotePlayerState != null) {
-			NetworkChatPlugin.getInstance().getLogger().fine("Unregistering player " + lastRemotePlayerState.mName);
+			MMLog.fine("Unregistering player " + lastRemotePlayerState.mName);
 		    String lastLocation = lastRemotePlayerState.mShard;
 		    @Nullable Map<String, RemotePlayerState> lastShardRemotePlayers = mRemotePlayersByShard.get(lastLocation);
 		    if (lastShardRemotePlayers != null) {
@@ -317,9 +318,9 @@ public class RemotePlayerManager implements Listener {
 		try {
 			remotePlayerState = new RemotePlayerState(data);
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with invalid data");
-			NetworkChatPlugin.getInstance().getLogger().severe(data.toString());
-			NetworkChatPlugin.getInstance().getLogger().severe(e.toString());
+			MMLog.severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with invalid data");
+			MMLog.severe(data.toString());
+			MMLog.severe(e.toString());
 			return;
 		}
 
@@ -329,14 +330,14 @@ public class RemotePlayerManager implements Listener {
 		    if (shardRemotePlayers != null) {
 		        shardRemotePlayers.put(remotePlayerState.mName, remotePlayerState);
 		    }
-			NetworkChatPlugin.getInstance().getLogger().fine("Registering player " + remotePlayerState.mName);
+			MMLog.fine("Registering player " + remotePlayerState.mName);
 		    mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		    mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		    if (!remotePlayerState.mIsHidden) {
 		        mVisiblePlayers.add(remotePlayerState.mUuid);
 		    }
 		} else if (!getShardName().equals(remotePlayerState.mShard)) {
-			NetworkChatPlugin.getInstance().getLogger().fine("Detected race condition, triggering refresh on " + remotePlayerState.mName);
+			MMLog.fine("Detected race condition, triggering refresh on " + remotePlayerState.mName);
 			@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayerState.mUuid);
 			if (localPlayer != null) {
 				refreshLocalPlayer(localPlayer);
@@ -350,7 +351,7 @@ public class RemotePlayerManager implements Listener {
 		if (getShardName().equals(remoteShardName)) {
 			return;
 		}
-		NetworkChatPlugin.getInstance().getLogger().fine("Registering shard " + remoteShardName);
+		MMLog.fine("Registering shard " + remoteShardName);
 		mRemotePlayersByShard.put(remoteShardName, new ConcurrentSkipListMap<>());
 	}
 
@@ -361,7 +362,7 @@ public class RemotePlayerManager implements Listener {
 		if (remotePlayers == null) {
 			return;
 		}
-		NetworkChatPlugin.getInstance().getLogger().fine("Unregistering shard " + remoteShardName);
+		MMLog.fine("Unregistering shard " + remoteShardName);
 		Map<String, RemotePlayerState> remotePlayersCopy = new ConcurrentSkipListMap<>(remotePlayers);
 		for (Map.Entry<String, RemotePlayerState> playerDetails : remotePlayersCopy.entrySet()) {
 			RemotePlayerState remotePlayerState = playerDetails.getValue();
@@ -409,7 +410,7 @@ public class RemotePlayerManager implements Listener {
 			case REMOTE_PLAYER_CHANNEL -> {
 				@Nullable JsonObject data = event.getData();
 				if (data == null) {
-					NetworkChatPlugin.getInstance().getLogger().severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with null data");
+					MMLog.severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with null data");
 					return;
 				}
 				remotePlayerChange(data);
