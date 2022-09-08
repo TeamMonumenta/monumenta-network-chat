@@ -504,7 +504,7 @@ public class PlayerState {
 			return;
 		}
 		String plainMessage = message.getPlainMessage();
-		if (plainMessage.contains("@" + player.getName())) {
+		if (MessagingUtils.isPlayerMentioned(plainMessage, player.getName())) {
 			shouldPlaySound = true;
 		} else if (plainMessage.contains("@everyone")) {
 			shouldPlaySound = true;

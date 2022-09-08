@@ -252,11 +252,6 @@ public class MessagingUtils {
 			return false;
 		}
 
-		Trie<Boolean> allPlayers = new Trie<>();
-		for (String playerName : MonumentaRedisSyncAPI.getAllCachedPlayerNames()) {
-			allPlayers.put(playerName, true);
-		}
-
 		int start = 0;
 		boolean hasMention = false;
 		while (true) {
@@ -265,27 +260,34 @@ public class MessagingUtils {
 				break;
 			}
 
-			for (int length = 1; length <= 16; ++length) {
-				int end = start + length;
-				if (end > text.length()) {
-					break;
-				}
-
-				String substring = text.substring(start, end);
-				if (allPlayers.containsKey(substring)) {
-					hasMention = true;
-					break;
-				}
-				if (allPlayers.suggestions(substring, 1).size() == 0) {
-					break;
-				}
-			}
-			if (hasMention) {
+			String substring = text.substring(start);
+			String mentionedPlayer = MonumentaRedisSyncAPI.getClosestPlayerName(substring);
+			if (!mentionedPlayer.isBlank()) {
+				MMLog.finer(() -> "Detected mention for @" + mentionedPlayer);
+				hasMention = true;
 				break;
 			}
 		}
 
 		return hasMention;
+	}
+
+	public static boolean isPlayerMentioned(String text, String playerName) {
+		String mentionText = "@" + playerName;
+		int start = 0;
+		while (true) {
+			start = text.indexOf(mentionText, start) + 1;
+			if (start == 0) {
+				break;
+			}
+
+			String substring = text.substring(start);
+			String mentionedPlayer = MonumentaRedisSyncAPI.getClosestPlayerName(substring);
+			if (playerName.equals(mentionedPlayer)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static String getCommandExceptionMessage(WrapperCommandSyntaxException ex) {

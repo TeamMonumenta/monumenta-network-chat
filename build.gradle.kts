@@ -76,7 +76,7 @@ dependencies {
     compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
     compileOnly("dev.jorel.CommandAPI:commandapi-core:6.0.0")
     compileOnly("com.playmonumenta:monumenta-network-relay:1.1")
-    compileOnly("com.playmonumenta:redissync:3.0")
+    compileOnly("com.playmonumenta:redissync:3.8")
     compileOnly("io.lettuce:lettuce-core:5.3.5.RELEASE")
     compileOnly("me.clip:placeholderapi:2.10.9")
     compileOnly("com.comphenix.protocol:ProtocolLib:4.7.0")
