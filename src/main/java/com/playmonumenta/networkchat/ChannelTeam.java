@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -21,8 +22,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -103,7 +103,7 @@ public class ChannelTeam extends Channel {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
+					MMLog.warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -114,6 +114,7 @@ public class ChannelTeam extends Channel {
 		return channel;
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject allPlayerAccessJson = new JsonObject();
 		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
@@ -167,7 +168,7 @@ public class ChannelTeam extends Channel {
 			sender.sendMessage(Component.translatable("permissions.requires.player"));
 			CommandUtils.fail(sender, "A player is required to run this command here");
 		} else {
-			Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam((sendingPlayer).getName());
+			Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(sendingPlayer.getName());
 			if (team == null) {
 				sender.sendMessage(Component.translatable("commands.teammsg.failed.noteam"));
 				CommandUtils.fail(sender, sendingPlayer.getName() + " must be on a team to message their team.");
@@ -234,47 +235,58 @@ public class ChannelTeam extends Channel {
 		return 1;
 	}
 
+	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
+	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
+	@Override
 	public void markModified() {
 		mLastUpdate = Instant.now();
 	}
 
+	@Override
 	public Instant lastModified() {
 		return mLastUpdate;
 	}
 
+	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		CommandAPI.fail("Team channels may not be named.");
 	}
 
+	@Override
 	public String getName() {
 		return "Team_" + mTeamName;
 	}
 
+	@Override
 	public @Nullable
 	TextColor color() {
 		return null;
 	}
 
+	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		CommandUtils.fail(sender, "Team channels do not support custom text colors.");
 	}
 
+	@Override
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
 
+	@Override
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
 
+	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
@@ -287,6 +299,7 @@ public class ChannelTeam extends Channel {
 		return playerAccess;
 	}
 
+	@Override
 	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
@@ -294,10 +307,12 @@ public class ChannelTeam extends Channel {
 		mPlayerAccess.remove(playerId);
 	}
 
+	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		return true;
 	}
 
+	@Override
 	public boolean mayChat(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			return false;
@@ -325,6 +340,7 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
+	@Override
 	public boolean mayListen(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.team")) {
 			return false;
@@ -354,6 +370,7 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
+	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			CommandUtils.fail(sender, "You do not have permission to talk to a team.");
@@ -366,7 +383,7 @@ public class ChannelTeam extends Channel {
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
 				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
@@ -386,6 +403,7 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
+	@Override
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
 
@@ -394,12 +412,12 @@ public class ChannelTeam extends Channel {
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
+			MMLog.warning("Could not get Team from Message; reason: " + e.getMessage());
 			return;
 		}
 		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamName);
 		if (team == null) {
-			NetworkChatPlugin.getInstance().getLogger().finer("No such team " + teamName + " on this shard, ignoring.");
+			MMLog.finer("No such team " + teamName + " on this shard, ignoring.");
 			return;
 		}
 
@@ -417,13 +435,14 @@ public class ChannelTeam extends Channel {
 		}
 	}
 
+	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		JsonObject extraData = message.getExtraData();
 		String teamName;
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Could not get Team from Message; reason: " + e.getMessage());
+			MMLog.warning("Could not get Team from Message; reason: " + e.getMessage());
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 			return Component.text("[Could not get team from Message]", NamedTextColor.RED, TextDecoration.BOLD);
 		}
@@ -457,14 +476,16 @@ public class ChannelTeam extends Channel {
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("sender", message.getSenderComponent()),
-				Template.template("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
-				Template.template("team_prefix", teamPrefix),
-				Template.template("team_displayname", teamDisplayName),
-				Template.template("team_suffix", teamSuffix))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+				Placeholder.component("sender", message.getSenderComponent()),
+				Placeholder.parsed("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
+				Placeholder.component("team_prefix", teamPrefix),
+				Placeholder.component("team_displayname", teamDisplayName),
+				Placeholder.component("team_suffix", teamSuffix)))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
+	@Override
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());

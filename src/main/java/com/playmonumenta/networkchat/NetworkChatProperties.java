@@ -1,9 +1,11 @@
 package com.playmonumenta.networkchat;
 
+import com.playmonumenta.networkchat.utils.MMLog;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -11,7 +13,7 @@ import org.bukkit.plugin.Plugin;
 
 public class NetworkChatProperties {
 
-	private static NetworkChatProperties INSTANCE = null;
+	private static @Nullable NetworkChatProperties INSTANCE = null;
 
 	private boolean mChatCommandCreateEnabled = true;
 	private boolean mChatCommandModifyEnabled = true;
@@ -19,47 +21,42 @@ public class NetworkChatProperties {
 	private boolean mChatRequiresPlayer = false;
 	private boolean mSudoEnabled = false;
 
-	public NetworkChatProperties() {
+	private NetworkChatProperties() {
 		INSTANCE = this;
 	}
 
-	private static void ensureInstance() {
+	public static NetworkChatProperties getInstance() {
 		if (INSTANCE == null) {
-			new NetworkChatProperties();
+			INSTANCE = new NetworkChatProperties();
 		}
+		return INSTANCE;
 	}
 
 	public static boolean getSudoEnabled() {
-		ensureInstance();
-		return INSTANCE.mSudoEnabled;
+		return getInstance().mSudoEnabled;
 	}
 
 	public static boolean getChatCommandCreateEnabled() {
-		ensureInstance();
-		return INSTANCE.mChatCommandCreateEnabled;
+		return getInstance().mChatCommandCreateEnabled;
 	}
 
 	public static boolean getChatCommandModifyEnabled() {
-		ensureInstance();
-		return INSTANCE.mChatCommandModifyEnabled;
+		return getInstance().mChatCommandModifyEnabled;
 	}
 
 	public static boolean getChatCommandDeleteEnabled() {
-		ensureInstance();
-		return INSTANCE.mChatCommandDeleteEnabled;
+		return getInstance().mChatCommandDeleteEnabled;
 	}
 
 	public static boolean getChatRequiresPlayer() {
-		ensureInstance();
-		return INSTANCE.mChatRequiresPlayer;
+		return getInstance().mChatRequiresPlayer;
 	}
 
-	public static void load(Plugin plugin, CommandSender sender) {
-		ensureInstance();
-		INSTANCE.loadInternal(plugin, sender);
+	public static void load(Plugin plugin, @Nullable CommandSender sender) {
+		getInstance().loadInternal(plugin, sender);
 	}
 
-	private void loadInternal(Plugin plugin, CommandSender sender) {
+	private void loadInternal(Plugin plugin, @Nullable CommandSender sender) {
 		File configFile = new File(plugin.getDataFolder(), "config.yml");
 		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
@@ -83,12 +80,12 @@ public class NetworkChatProperties {
 			mSudoEnabled = config.getBoolean("SudoEnabled", mChatCommandDeleteEnabled);
 		}
 
-		plugin.getLogger().info("Properties:");
+		MMLog.info("Properties:");
 		if (sender != null) {
 			sender.sendMessage("Properties:");
 		}
 		for (String str : toDisplay()) {
-			plugin.getLogger().info("  " + str);
+			MMLog.info("  " + str);
 			if (sender != null) {
 				sender.sendMessage("  " + str);
 			}
@@ -109,8 +106,7 @@ public class NetworkChatProperties {
 
 
 	public static void save(Plugin plugin) {
-		ensureInstance();
-		INSTANCE.saveConfig(plugin);
+		getInstance().saveConfig(plugin);
 	}
 
 	public void saveConfig(Plugin plugin) {
@@ -118,9 +114,11 @@ public class NetworkChatProperties {
 
 		if (!configFile.exists()) {
 			try {
-				configFile.createNewFile();
+				if (configFile.createNewFile()) {
+					MMLog.info("Created config file.");
+				}
 			} catch (IOException e) {
-				plugin.getLogger().warning("Catch exception during create new file for config.yml. Reason: " + e.getMessage());
+				MMLog.warning("Catch exception during create new file for config.yml. Reason: " + e.getMessage());
 			}
 		}
 
@@ -149,7 +147,7 @@ public class NetworkChatProperties {
 		try {
 			config.save(configFile);
 		} catch (IOException e) {
-			plugin.getLogger().warning("Catch exception while save config.yml. Reason: " + e.getMessage());
+			MMLog.warning("Catch exception while save config.yml. Reason: " + e.getMessage());
 		}
 	}
 }

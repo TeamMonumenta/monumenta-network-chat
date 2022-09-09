@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -25,8 +26,7 @@ import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -38,7 +38,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
-	private TextColor mMessageColor;
+	private @Nullable TextColor mMessageColor = null;
 	private final Set<UUID> mParticipants;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
@@ -88,7 +88,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+				MMLog.warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
 
@@ -122,7 +122,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel Party reason: " + e.getMessage());
+					MMLog.warning("Catch exception during converting json to channel Party reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -133,6 +133,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return channel;
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject allPlayerAccessJson = new JsonObject();
 		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
@@ -298,34 +299,42 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
+	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
+	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
+	@Override
 	public void markModified() {
 		mLastUpdate = Instant.now();
 	}
 
+	@Override
 	public Instant lastModified() {
 		return mLastUpdate;
 	}
 
+	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		mName = name;
 	}
 
+	@Override
 	public String getName() {
 		return mName;
 	}
 
+	@Override
 	public @Nullable TextColor color() {
 		return mMessageColor;
 	}
 
+	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		mMessageColor = color;
 	}
@@ -353,13 +362,14 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			try {
 				ChannelManager.deleteChannel(getName());
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().info("Failed to delete empty channel " + getName());
+				MMLog.info("Failed to delete empty channel " + getName());
 			}
 		} else {
 			ChannelManager.saveChannel(this);
 		}
 	}
 
+	@Override
 	public boolean isParticipant(CommandSender sender) {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player player)) {
@@ -369,18 +379,22 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
+	@Override
 	public boolean isParticipant(Player player) {
 		return isParticipant(player.getUniqueId());
 	}
 
+	@Override
 	public boolean isParticipant(UUID playerId) {
 		return mParticipants.contains(playerId);
 	}
 
+	@Override
 	public List<UUID> getParticipantIds() {
 		return new ArrayList<>(mParticipants);
 	}
 
+	@Override
 	public List<String> getParticipantNames() {
 		List<String> names = new ArrayList<>();
 		for (UUID playerId : mParticipants) {
@@ -392,14 +406,17 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return names;
 	}
 
+	@Override
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
 
+	@Override
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
 
+	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
@@ -412,6 +429,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return playerAccess;
 	}
 
+	@Override
 	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
@@ -419,10 +437,12 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		mPlayerAccess.remove(playerId);
 	}
 
+	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		return mParticipants.contains(state.getPlayerUniqueId());
 	}
 
+	@Override
 	public boolean mayManage(CommandSender sender) {
 		if (CommandUtils.hasPermission(sender, "networkchat.moderator")) {
 			return true;
@@ -437,6 +457,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
+	@Override
 	public boolean mayChat(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
 			return false;
@@ -459,6 +480,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
+	@Override
 	public boolean mayListen(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.party")) {
 			return false;
@@ -482,6 +504,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
+	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
 			CommandUtils.fail(sender, "You do not have permission to talk in party chat.");
@@ -494,7 +517,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
 				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
@@ -511,6 +534,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
+	@Override
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
@@ -527,6 +551,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
+	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
@@ -539,11 +564,13 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName),
-				Template.template("sender", message.getSenderComponent()))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+				Placeholder.unparsed("channel_name", mName),
+				Placeholder.component("sender", message.getSenderComponent())))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
+	@Override
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());

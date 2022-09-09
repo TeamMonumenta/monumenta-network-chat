@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.DestOfflineEvent;
 import com.playmonumenta.networkrelay.DestOnlineEvent;
@@ -25,7 +26,6 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.metadata.MetadataValue;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class RemotePlayerManager implements Listener {
@@ -37,18 +37,22 @@ public class RemotePlayerManager implements Listener {
 		public final boolean mIsOnline;
 		public final String mShard;
 
-	    public RemotePlayerState(Plugin plugin, Player player, boolean isOnline) {
+	    public RemotePlayerState(Player player, boolean isOnline) {
 		    mUuid = player.getUniqueId();
 		    mName = player.getName();
 		    mComponent = MessagingUtils.playerComponent(player);
 		    mIsHidden = !RemotePlayerManager.isLocalPlayerVisible(player);
 		    mIsOnline = isOnline;
-		    mShard = RemotePlayerManager.getShardName();
+			@Nullable String shard = RemotePlayerManager.getShardName();
+			if (shard == null) {
+				throw new RuntimeException("Could not get local shard name.");
+			}
+		    mShard = shard;
 
-			plugin.getLogger().fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+		    MMLog.fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
-	    public RemotePlayerState(Plugin plugin, JsonObject remoteData) {
+	    public RemotePlayerState(JsonObject remoteData) {
 			mUuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 			mName = remoteData.get("playerName").getAsString();
 			mComponent = MessagingUtils.fromJson(remoteData.get("playerComponent"));
@@ -56,7 +60,7 @@ public class RemotePlayerManager implements Listener {
 			mIsOnline = remoteData.get("isOnline").getAsBoolean();
 			mShard = remoteData.get("shard").getAsString();
 
-			plugin.getLogger().fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+		    MMLog.fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }
 
 	    public void broadcast() {
@@ -73,7 +77,7 @@ public class RemotePlayerManager implements Listener {
 			                                                 remotePlayerData,
 			                                                 NetworkChatPlugin.getMessageTtl());
 		    } catch (Exception e) {
-			    mPlugin.getLogger().severe("Failed to broadcast " + RemotePlayerManager.REMOTE_PLAYER_CHANNEL);
+			    MMLog.severe("Failed to broadcast " + RemotePlayerManager.REMOTE_PLAYER_CHANNEL);
 		    }
 	    }
 	}
@@ -82,57 +86,53 @@ public class RemotePlayerManager implements Listener {
 	public static final String REFRESH_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.refresh";
 
 	private static @Nullable RemotePlayerManager INSTANCE = null;
-	private static Plugin mPlugin = null;
-	private static @Nullable String mShardName = null;
 	private static final Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();
 	private static final Map<UUID, RemotePlayerState> mPlayersByUuid = new ConcurrentSkipListMap<>();
 	private static final Map<String, RemotePlayerState> mPlayersByName = new ConcurrentSkipListMap<>();
 	private static final Set<UUID> mVisiblePlayers = new ConcurrentSkipListSet<>();
 
-	private RemotePlayerManager(Plugin plugin) {
+	private RemotePlayerManager() {
 		INSTANCE = this;
-		mPlugin = plugin;
-		try {
-			mShardName = NetworkRelayAPI.getShardName();
-		} catch (Exception e) {
-			mPlugin.getLogger().severe("Failed to get shard name");
-		}
-		if (mShardName == null) {
-			throw new RuntimeException("Got null shard name");
-		}
+		String shardName = getShardName();
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
-				if (shard.equals(mShardName)) {
+				if (shardName.equals(shard)) {
 					continue;
 				}
-				mPlugin.getLogger().fine("Registering shard " + shard);
+				MMLog.fine("Registering shard " + shard);
 				mRemotePlayersByShard.put(shard, new ConcurrentSkipListMap<>());
 			}
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Failed to get remote shard names");
+			MMLog.severe("Failed to get remote shard names");
+			throw new RuntimeException("Failed to get remote shard names");
 		}
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(REFRESH_CHANNEL,
 			                                             new JsonObject(),
 			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Failed to broadcast " + REFRESH_CHANNEL);
+			MMLog.severe("Failed to broadcast " + REFRESH_CHANNEL);
 		}
 	}
 
-	public static @Nullable RemotePlayerManager getInstance() {
-		return INSTANCE;
-	}
-
-	public static RemotePlayerManager getInstance(Plugin plugin) {
+	public static RemotePlayerManager getInstance() {
 		if (INSTANCE == null) {
-			INSTANCE = new RemotePlayerManager(plugin);
+			INSTANCE = new RemotePlayerManager();
 		}
 		return INSTANCE;
 	}
 
-	public static @Nullable String getShardName() {
-		return mShardName;
+	public static String getShardName() {
+		@Nullable String shardName = null;
+		try {
+			shardName = NetworkRelayAPI.getShardName();
+		} catch (Exception e) {
+			MMLog.severe("Failed to get shard name");
+		}
+		if (shardName == null) {
+			throw new RuntimeException("Got null shard name");
+		}
+		return shardName;
 	}
 
 	public static Set<String> onlinePlayerNames() {
@@ -236,7 +236,7 @@ public class RemotePlayerManager implements Listener {
 			}
 		}
 		firstName = true;
-		Component line = Component.text(mShardName + ": ").color(NamedTextColor.BLUE);
+		Component line = Component.text(getShardName() + ": ").color(NamedTextColor.BLUE);
 		for (Component playerComp : shardPlayers.values()) {
 			if (!firstName) {
 				line = line.append(Component.text(", "));
@@ -281,11 +281,11 @@ public class RemotePlayerManager implements Listener {
 
 	// Run this on any player to update their displayed name
 	public static void refreshLocalPlayer(Player player) {
-		mPlugin.getLogger().fine("Refreshing local player " + player.getName());
-		RemotePlayerState remotePlayerState = new RemotePlayerState(mPlugin, player, true);
+		MMLog.fine("Refreshing local player " + player.getName());
+		RemotePlayerState remotePlayerState = new RemotePlayerState(player, true);
 
 		unregisterPlayer(remotePlayerState.mUuid);
-		mPlugin.getLogger().fine("Registering player " + remotePlayerState.mName);
+		MMLog.fine("Registering player " + remotePlayerState.mName);
 		mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		if (remotePlayerState.mIsHidden) {
@@ -300,7 +300,7 @@ public class RemotePlayerManager implements Listener {
 	private static void unregisterPlayer(UUID playerId) {
 		@Nullable RemotePlayerState lastRemotePlayerState = mPlayersByUuid.get(playerId);
 		if (lastRemotePlayerState != null) {
-		    mPlugin.getLogger().fine("Unregistering player " + lastRemotePlayerState.mName);
+			MMLog.fine("Unregistering player " + lastRemotePlayerState.mName);
 		    String lastLocation = lastRemotePlayerState.mShard;
 		    @Nullable Map<String, RemotePlayerState> lastShardRemotePlayers = mRemotePlayersByShard.get(lastLocation);
 		    if (lastShardRemotePlayers != null) {
@@ -316,11 +316,11 @@ public class RemotePlayerManager implements Listener {
 		RemotePlayerState remotePlayerState;
 
 		try {
-			remotePlayerState = new RemotePlayerState(mPlugin, data);
+			remotePlayerState = new RemotePlayerState(data);
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with invalid data");
-			mPlugin.getLogger().severe(data.toString());
-			mPlugin.getLogger().severe(e.toString());
+			MMLog.severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with invalid data");
+			MMLog.severe(data.toString());
+			MMLog.severe(e.toString());
 			return;
 		}
 
@@ -330,14 +330,14 @@ public class RemotePlayerManager implements Listener {
 		    if (shardRemotePlayers != null) {
 		        shardRemotePlayers.put(remotePlayerState.mName, remotePlayerState);
 		    }
-		    mPlugin.getLogger().fine("Registering player " + remotePlayerState.mName);
+			MMLog.fine("Registering player " + remotePlayerState.mName);
 		    mPlayersByUuid.put(remotePlayerState.mUuid, remotePlayerState);
 		    mPlayersByName.put(remotePlayerState.mName, remotePlayerState);
 		    if (!remotePlayerState.mIsHidden) {
 		        mVisiblePlayers.add(remotePlayerState.mUuid);
 		    }
-		} else if (!mShardName.equals(remotePlayerState.mShard)) {
-			mPlugin.getLogger().fine("Detected race condition, triggering refresh on " + remotePlayerState.mName);
+		} else if (!getShardName().equals(remotePlayerState.mShard)) {
+			MMLog.fine("Detected race condition, triggering refresh on " + remotePlayerState.mName);
 			@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayerState.mUuid);
 			if (localPlayer != null) {
 				refreshLocalPlayer(localPlayer);
@@ -345,24 +345,24 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void destOnlineEvent(DestOnlineEvent event) {
 		String remoteShardName = event.getDest();
-		if (mShardName.equals(remoteShardName)) {
+		if (getShardName().equals(remoteShardName)) {
 			return;
 		}
-		mPlugin.getLogger().fine("Registering shard " + remoteShardName);
+		MMLog.fine("Registering shard " + remoteShardName);
 		mRemotePlayersByShard.put(remoteShardName, new ConcurrentSkipListMap<>());
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void destOfflineEvent(DestOfflineEvent event) {
 		String remoteShardName = event.getDest();
 		@Nullable Map<String, RemotePlayerState> remotePlayers = mRemotePlayersByShard.get(remoteShardName);
 		if (remotePlayers == null) {
 			return;
 		}
-		mPlugin.getLogger().fine("Unregistering shard " + remoteShardName);
+		MMLog.fine("Unregistering shard " + remoteShardName);
 		Map<String, RemotePlayerState> remotePlayersCopy = new ConcurrentSkipListMap<>(remotePlayers);
 		for (Map.Entry<String, RemotePlayerState> playerDetails : remotePlayersCopy.entrySet()) {
 			RemotePlayerState remotePlayerState = playerDetails.getValue();
@@ -372,7 +372,7 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	// Player ran a command
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void playerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
 		String command = event.getMessage();
 
@@ -386,38 +386,36 @@ public class RemotePlayerManager implements Listener {
 				public void run() {
 					refreshLocalPlayers();
 				}
-			}.runTaskLater(mPlugin, 0);
+			}.runTaskLater(NetworkChatPlugin.getInstance(), 0);
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		refreshLocalPlayer(player);
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
-		RemotePlayerState remotePlayerState = new RemotePlayerState(mPlugin, player, false);
+		RemotePlayerState remotePlayerState = new RemotePlayerState(player, false);
 		unregisterPlayer(remotePlayerState.mUuid);
 		remotePlayerState.broadcast();
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		switch (event.getChannel()) {
 			case REMOTE_PLAYER_CHANNEL -> {
 				@Nullable JsonObject data = event.getData();
 				if (data == null) {
-					mPlugin.getLogger().severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with null data");
+					MMLog.severe("Got " + REMOTE_PLAYER_CHANNEL + " channel with null data");
 					return;
 				}
 				remotePlayerChange(data);
 			}
-			case REFRESH_CHANNEL -> {
-				refreshLocalPlayers();
-			}
+			case REFRESH_CHANNEL -> refreshLocalPlayers();
 			default -> {
 			}
 		}

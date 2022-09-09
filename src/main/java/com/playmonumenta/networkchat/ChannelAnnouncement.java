@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
@@ -23,8 +24,7 @@ import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
@@ -37,12 +37,12 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
-	private TextColor mMessageColor;
+	private @Nullable TextColor mMessageColor = null;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
 	private final Map<UUID, ChannelAccess> mPlayerAccess;
 	private boolean mAutoJoin = true;
-	private String mChannelPermission = null;
+	private @Nullable String mChannelPermission = null;
 
 	public ChannelAnnouncement(String name) {
 		this(UUID.randomUUID(), Instant.now(), name);
@@ -84,7 +84,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+				MMLog.warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
 
@@ -113,7 +113,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting ChannelAccess from json: " + e.getMessage());
+					MMLog.warning("Caught exception getting ChannelAccess from json: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -134,6 +134,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		return channel;
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject allPlayerAccessJson = new JsonObject();
 		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
@@ -239,46 +240,57 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		}
 	}
 
+	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
+	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
+	@Override
 	public void markModified() {
 		mLastUpdate = Instant.now();
 	}
 
+	@Override
 	public Instant lastModified() {
 		return mLastUpdate;
 	}
 
+	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		mName = name;
 	}
 
+	@Override
 	public String getName() {
 		return mName;
 	}
 
+	@Override
 	public @Nullable TextColor color() {
 		return mMessageColor;
 	}
 
+	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		mMessageColor = color;
 	}
 
+	@Override
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
 
+	@Override
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
 
+	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
@@ -291,6 +303,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		return playerAccess;
 	}
 
+	@Override
 	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
@@ -298,11 +311,13 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		mPlayerAccess.remove(playerId);
 	}
 
+	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		Player player = state.getPlayer();
 		return mAutoJoin && player != null && mayListen(player);
 	}
 
+	@Override
 	public boolean mayChat(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.announcement")) {
 			return false;
@@ -324,6 +339,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		}
 	}
 
+	@Override
 	public boolean mayListen(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.announcement")) {
 			return false;
@@ -347,6 +363,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		}
 	}
 
+	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.announcement")) {
 			CommandUtils.fail(sender, "You do not have permission to make announcements.");
@@ -362,7 +379,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
 				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
@@ -381,6 +398,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		}
 	}
 
+	@Override
 	public void distributeMessage(Message message) {
 		showMessage(Bukkit.getConsoleSender(), message);
 		for (Map.Entry<UUID, PlayerState> playerStateEntry : PlayerStateManager.getPlayerStates().entrySet()) {
@@ -397,6 +415,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		}
 	}
 
+	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
@@ -409,10 +428,11 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, Placeholder.unparsed("channel_name", mName)))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
+	@Override
 	protected void showMessage(CommandSender recipient, Message message) {
 		recipient.sendMessage(Identity.nil(), shownMessage(recipient, message), message.getMessageType());
 		if (recipient instanceof Player player) {
@@ -425,10 +445,12 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		}
 	}
 
+	@Override
 	public String getChannelPermission() {
 		return mChannelPermission;
 	}
 
+	@Override
 	public void setChannelPermission(String newPerms) {
 		mChannelPermission = newPerms;
 	}

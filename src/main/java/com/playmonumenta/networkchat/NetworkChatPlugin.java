@@ -3,6 +3,8 @@ package com.playmonumenta.networkchat;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.commands.ChangeLogLevel;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -12,6 +14,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -30,25 +33,26 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
 
-	private static NetworkChatPlugin INSTANCE = null;
+	private static @Nullable NetworkChatPlugin INSTANCE = null;
+	private @Nullable CustomLogger mLogger = null;
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
 	private static ChatFilter mGlobalChatFilter = new ChatFilter();
-	private static @Nullable ChannelManager mChannelManager = null;
-	private static @Nullable MessageManager mMessageManager = null;
-	private static @Nullable PlayerStateManager mPlayerStateManager = null;
-	private static @Nullable RemotePlayerManager mRemotePlayerManager = null;
 
 	@Override
 	public void onLoad() {
+		if (mLogger == null) {
+			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
+		}
+
 		NetworkChatProperties.load(this, null);
 
-		mDefaultMessageFormats.put("player", "<insert:%player_name%>"
-			+ "<click:suggest_command:/tell %player_name% >"
-			+ "<hover:show_entity:'minecraft:player':%player_uuid%:%player_name%>"
-			+ "<team_color><team_prefix>%player_name%<team_suffix>"
+		mDefaultMessageFormats.put("player", "<insert:<player_name>>"
+			+ "<click:suggest_command:/tell <player_name> >"
+			+ "<hover:show_entity:'minecraft:player':<player_uuid>:<player_name>>"
+			+ "<team_color><team_prefix><player_name><team_suffix>"
 			+ "</hover></click></insert>");
 
 		mDefaultMessageFormats.put("entity", "<insert:<entity_uuid>>"
@@ -122,11 +126,12 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
+		ChangeLogLevel.register();
 		@Nullable ZipFile zip = null;
 		try {
 			zip = new ZipFile(getFile());
 		} catch (IOException ex) {
-			getLogger().log(Level.SEVERE, "Could not load help data from plugin.");
+			MMLog.severe("Could not load help data from plugin.");
 		}
 		ChatCommand.register(this, zip);
 	}
@@ -137,20 +142,15 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 		/* Check for Placeholder API */
 		if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-			getLogger().log(Level.SEVERE, "Could not find PlaceholderAPI! This plugin is required.");
+			MMLog.severe("Could not find PlaceholderAPI! This plugin is required.");
 			Bukkit.getPluginManager().disablePlugin(this);
 			return;
 		}
 
-		mChannelManager = ChannelManager.getInstance(this);
-		mMessageManager = MessageManager.getInstance(this);
-		mPlayerStateManager = PlayerStateManager.getInstance(this);
-		mRemotePlayerManager = RemotePlayerManager.getInstance(this);
-
-		getServer().getPluginManager().registerEvents(mChannelManager, this);
-		getServer().getPluginManager().registerEvents(mMessageManager, this);
-		getServer().getPluginManager().registerEvents(mPlayerStateManager, this);
-		getServer().getPluginManager().registerEvents(mRemotePlayerManager, this);
+		getServer().getPluginManager().registerEvents(ChannelManager.getInstance(), this);
+		getServer().getPluginManager().registerEvents(MessageManager.getInstance(), this);
+		getServer().getPluginManager().registerEvents(PlayerStateManager.getInstance(), this);
+		getServer().getPluginManager().registerEvents(RemotePlayerManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(this, this);
 
 		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_MESSAGE_COLORS_KEY)
@@ -208,6 +208,14 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		return INSTANCE;
 	}
 
+	@Override
+	public Logger getLogger() {
+		if (mLogger == null) {
+			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
+		}
+		return mLogger;
+	}
+
 	public static int getMessageTtl() {
 		return 5;
 	}
@@ -245,11 +253,11 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
-	public static TextColor messageColor(String id) {
+	public static @Nullable TextColor messageColor(String id) {
 		return mMessageColors.get(id);
 	}
 
@@ -288,7 +296,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -324,18 +332,18 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                                             wrappedConfigJson,
 			                                             getMessageTtl());
 		} catch (Exception e) {
-			INSTANCE.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		@Nullable JsonObject data;
 		switch (event.getChannel()) {
 			case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE -> {
 				data = event.getData();
 				if (data == null) {
-					getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
+					MMLog.severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
 					return;
 				}
 				@Nullable JsonObject messageColorsJson = data.getAsJsonObject(REDIS_MESSAGE_COLORS_KEY);

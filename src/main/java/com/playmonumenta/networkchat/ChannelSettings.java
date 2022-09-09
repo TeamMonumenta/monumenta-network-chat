@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.MMLog;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -30,7 +32,7 @@ public class ChannelSettings {
 			mKey = s;
 		}
 
-		public static FlagKey of(String s) {
+		public static @Nullable FlagKey of(String s) {
 			try {
 				return valueOf(s.toUpperCase());
 			} catch (Exception e) {
@@ -54,7 +56,7 @@ public class ChannelSettings {
 			mValue = s;
 		}
 
-		public static FlagValue of(String s) {
+		public static @Nullable FlagValue of(String s) {
 			try {
 				return valueOf(s.toUpperCase());
 			} catch (Exception e) {
@@ -124,7 +126,7 @@ public class ChannelSettings {
 					try {
 						settings.mSounds.add(CSound.fromJson(element.getAsJsonObject()));
 					} catch (Exception e) {
-						NetworkChatPlugin.getInstance().getLogger().warning("Caught an exception while converting SoundsList to object. Reason: " + e.getMessage());
+						MMLog.warning("Caught an exception while converting SoundsList to object. Reason: " + e.getMessage());
 					}
 				}
 			}
@@ -170,11 +172,11 @@ public class ChannelSettings {
 		return Stream.of(FlagValue.values()).map(FlagValue::getValue).toArray(String[]::new);
 	}
 
-	public Boolean getFlag(String key) {
+	public @Nullable Boolean getFlag(String key) {
 		return mFlags.get(FlagKey.of(key));
 	}
 
-	public void setFlag(String key, Boolean value) {
+	public void setFlag(String key, @Nullable Boolean value) {
 		FlagKey flagKey = FlagKey.of(key);
 		if (flagKey != null) {
 			if (value == null) {

@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
@@ -22,8 +23,7 @@ import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.Template;
-import net.kyori.adventure.text.minimessage.template.TemplateResolver;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -35,12 +35,12 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 	private final UUID mId;
 	private Instant mLastUpdate;
 	private String mName;
-	private TextColor mMessageColor;
+	private @Nullable TextColor mMessageColor = null;
 	private ChannelSettings mDefaultSettings;
 	private ChannelAccess mDefaultAccess;
 	private final Map<UUID, ChannelAccess> mPlayerAccess;
 	private boolean mAutoJoin = true;
-	private String mChannelPermission = null;
+	private @Nullable String mChannelPermission = null;
 
 	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) {
 		mId = channelId;
@@ -84,7 +84,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			try {
 				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
 			} catch (Exception e) {
-				NetworkChatPlugin.getInstance().getLogger().warning("Caught exception getting mMessageColor from json: " + e.getMessage());
+				MMLog.warning("Caught exception getting mMessageColor from json: " + e.getMessage());
 			}
 		}
 
@@ -113,7 +113,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 					playerId = UUID.fromString(playerPermEntry.getKey());
 					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Catch exception during converting json to channel local reason: " + e.getMessage());
+					MMLog.warning("Catch exception during converting json to channel local reason: " + e.getMessage());
 					continue;
 				}
 				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
@@ -134,6 +134,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		return channel;
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject allPlayerAccessJson = new JsonObject();
 		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
@@ -239,46 +240,57 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	public String getClassId() {
 		return CHANNEL_CLASS_ID;
 	}
 
+	@Override
 	public UUID getUniqueId() {
 		return mId;
 	}
 
+	@Override
 	public void markModified() {
 		mLastUpdate = Instant.now();
 	}
 
+	@Override
 	public Instant lastModified() {
 		return mLastUpdate;
 	}
 
+	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
 		mName = name;
 	}
 
+	@Override
 	public String getName() {
 		return mName;
 	}
 
+	@Override
 	public @Nullable TextColor color() {
 		return mMessageColor;
 	}
 
+	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		mMessageColor = color;
 	}
 
+	@Override
 	public ChannelSettings channelSettings() {
 		return mDefaultSettings;
 	}
 
+	@Override
 	public ChannelAccess channelAccess() {
 		return mDefaultAccess;
 	}
 
+	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
 		if (playerId == null) {
 			return null;
@@ -291,6 +303,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		return playerAccess;
 	}
 
+	@Override
 	public void resetPlayerAccess(UUID playerId) {
 		if (playerId == null) {
 			return;
@@ -298,11 +311,13 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		mPlayerAccess.remove(playerId);
 	}
 
+	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		Player player = state.getPlayer();
 		return mAutoJoin && player != null && mayListen(player);
 	}
 
+	@Override
 	public boolean mayChat(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
 			return false;
@@ -324,6 +339,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	public boolean mayListen(CommandSender sender) {
 		if (!CommandUtils.hasPermission(sender, "networkchat.see.local")) {
 			return false;
@@ -347,6 +363,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.local")) {
 			CommandUtils.fail(sender, "You do not have permission to talk in local chat.");
@@ -362,7 +379,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player")) {
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
 				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
@@ -382,20 +399,21 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	public void distributeMessage(Message message) {
 		JsonObject extraData = message.getExtraData();
 		if (extraData == null) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with no fromShard, ignoring.");
+			MMLog.warning("Got local chat message with no fromShard, ignoring.");
 			return;
 		}
 		JsonElement fromShardJsonElement = extraData.get("fromShard");
 		if (!fromShardJsonElement.isJsonPrimitive()) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
+			MMLog.warning("Got local chat message with invalid fromShard json, ignoring.");
 			return;
 		}
 		JsonPrimitive fromShardJsonPrimitive = fromShardJsonElement.getAsJsonPrimitive();
 		if (!fromShardJsonPrimitive.isString()) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Got local chat message with invalid fromShard json, ignoring.");
+			MMLog.warning("Got local chat message with invalid fromShard json, ignoring.");
 			return;
 		}
 		if (!Objects.equals(RemotePlayerManager.getShardName(), fromShardJsonPrimitive.getAsString())) {
@@ -417,6 +435,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		}
 	}
 
+	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
@@ -429,11 +448,13 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, TemplateResolver.templates(Template.template("channel_name", mName),
-				Template.template("sender", message.getSenderComponent()))))
+			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+				Placeholder.unparsed("channel_name", mName),
+				Placeholder.component("sender", message.getSenderComponent())))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 
+	@Override
 	protected void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
@@ -457,6 +478,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 		mChannelPermission = newPerms;
 	}
 
+	@Override
 	public boolean getAutoJoin() {
 		return mAutoJoin;
 	}

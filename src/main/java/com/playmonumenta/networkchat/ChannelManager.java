@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
@@ -29,7 +30,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.plugin.Plugin;
 
 public class ChannelManager implements Listener {
 	public static final String NETWORK_CHAT_CHANNEL_UPDATE = "com.playmonumenta.networkchat.Channel.update";
@@ -38,8 +38,7 @@ public class ChannelManager implements Listener {
 	private static final String REDIS_FORCELOADED_CHANNEL_PATH = "networkchat:forceloaded_channels";
 	private static final String REDIS_DEFAULT_CHANNELS_KEY = "default_channels";
 
-	private static ChannelManager INSTANCE = null;
-	private static Plugin mPlugin = null;
+	private static @Nullable ChannelManager INSTANCE = null;
 	private static DefaultChannels mDefaultChannels = new DefaultChannels();
 	private static final Set<UUID> mForceLoadedChannels = new ConcurrentSkipListSet<>();
 	private static final Map<String, UUID> mChannelIdsByName = new ConcurrentSkipListMap<>();
@@ -47,31 +46,27 @@ public class ChannelManager implements Listener {
 	private static final Map<UUID, Channel> mChannels = new ConcurrentSkipListMap<>();
 
 	private static class ForceloadStreamingChannel implements ValueStreamingChannel<String> {
+		@Override
 		public void onValue(String value /*Channel UUID*/) {
 			try {
 				UUID channelId = UUID.fromString(value);
 				mForceLoadedChannels.add(channelId);
 				loadChannel(channelId);
 			} catch (Exception e) {
-				mPlugin.getLogger().warning("Could not force-load channel ID " + value + ".");
+				MMLog.warning("Could not force-load channel ID " + value + ".");
 			}
 		}
 	}
 
-	private ChannelManager(Plugin plugin) {
+	private ChannelManager() {
 		INSTANCE = this;
-		mPlugin = plugin;
 		reload();
 		loadAllChannelNames();
 	}
 
 	public static ChannelManager getInstance() {
-		return INSTANCE;
-	}
-
-	public static ChannelManager getInstance(Plugin plugin) {
 		if (INSTANCE == null) {
-			INSTANCE = new ChannelManager(plugin);
+			INSTANCE = new ChannelManager();
 		}
 		return INSTANCE;
 	}
@@ -105,7 +100,7 @@ public class ChannelManager implements Listener {
 			                                             wrappedConfigJson,
 			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -123,11 +118,11 @@ public class ChannelManager implements Listener {
 		return matches;
 	}
 
-	public static String getChannelName(UUID channelId) {
+	public static @Nullable String getChannelName(UUID channelId) {
 		return mChannelNames.get(channelId);
 	}
 
-	public static UUID getChannelId(String channelName) {
+	public static @Nullable UUID getChannelId(String channelName) {
 		return mChannelIdsByName.get(channelName);
 	}
 
@@ -212,7 +207,7 @@ public class ChannelManager implements Listener {
 		}
 
 		String channelName = channel.getName();
-		UUID oldChannelId = mChannelIdsByName.get(channelName);
+		@Nullable UUID oldChannelId = mChannelIdsByName.get(channelName);
 		if (oldChannelId != null) {
 			CommandAPI.fail("Channel " + channelName + " already exists!");
 		}
@@ -224,7 +219,7 @@ public class ChannelManager implements Listener {
 		saveChannel(channel);
 
 		for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
-			if (!state.hasSeenChannelId(channelId)) {
+			if (state.hasNotSeenChannelId(channelId)) {
 				if (channel.shouldAutoJoin(state)) {
 					state.joinChannel(channel);
 				}
@@ -261,7 +256,7 @@ public class ChannelManager implements Listener {
 
 		if (!(channel instanceof ChannelInviteOnly)) {
 			for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
-				if (!state.hasSeenChannelId(channelId)) {
+				if (state.hasNotSeenChannelId(channelId)) {
 					state.joinChannel(channel);
 				}
 			}
@@ -272,7 +267,7 @@ public class ChannelManager implements Listener {
 				if (state == null) {
 					continue;
 				}
-				if (!state.hasSeenChannelId(channelId)) {
+				if (state.hasNotSeenChannelId(channelId)) {
 					state.joinChannel(channel);
 				}
 			}
@@ -299,8 +294,8 @@ public class ChannelManager implements Listener {
 		return mChannels.get(channelId);
 	}
 
-	public static Channel getChannel(String channelName) {
-		UUID channelId = mChannelIdsByName.get(channelName);
+	public static @Nullable Channel getChannel(String channelName) {
+		@Nullable UUID channelId = mChannelIdsByName.get(channelName);
 		if (channelId == null) {
 			return null;
 		}
@@ -319,7 +314,7 @@ public class ChannelManager implements Listener {
 		@Nullable UUID existingChannelId = mChannelIdsByName.get(newName);
 		if (existingChannelId != null) {
 			if (!existingChannelId.equals(channelId)) {
-				mPlugin.getLogger().info("Replacing channel " + newName);
+				MMLog.info("Replacing channel " + newName);
 				String channelIdStr = channelId.toString();
 
 				// Update Redis
@@ -338,7 +333,7 @@ public class ChannelManager implements Listener {
 						wrappedChannelJson,
 						NetworkChatPlugin.getMessageTtl());
 				} catch (Exception e) {
-					mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
+					MMLog.severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
 				}
 			}
 		}
@@ -352,7 +347,7 @@ public class ChannelManager implements Listener {
 	}
 
 	public static void renameChannel(String oldName, String newName) throws WrapperCommandSyntaxException {
-		UUID oldChannelId = mChannelIdsByName.get(oldName);
+		@Nullable UUID oldChannelId = mChannelIdsByName.get(oldName);
 		if (oldChannelId == null) {
 			CommandAPI.fail("Channel " + oldName + " does not exist!");
 		}
@@ -383,7 +378,7 @@ public class ChannelManager implements Listener {
 			CommandAPI.fail("Channel " + channelName + " does not exist!");
 		}
 
-		mPlugin.getLogger().info("Deleting channel " + channelName);
+		MMLog.info("Deleting channel " + channelName);
 
 		UUID channelId = channel.getUniqueId();
 		String channelIdStr = channelId.toString();
@@ -404,7 +399,7 @@ public class ChannelManager implements Listener {
 			                                             wrappedChannelJson,
 			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
+			MMLog.severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
 		}
 	}
 
@@ -438,7 +433,7 @@ public class ChannelManager implements Listener {
 		}
 
 		// Mark the channel as loading
-		mPlugin.getLogger().finer("Attempting to load channel " + channelId.toString() + ".");
+		MMLog.finer("Attempting to load channel " + channelId.toString() + ".");
 		ChannelLoading loadingChannel = new ChannelLoading(channelId);
 		mChannels.put(channelId, loadingChannel);
 
@@ -480,7 +475,7 @@ public class ChannelManager implements Listener {
 		}
 		if (channelData == null) {
 			// No channel was found, alert the player it was deleted.
-			mPlugin.getLogger().warning("Channel " + channelId.toString() + " was not found.");
+			MMLog.warning("Channel " + channelId.toString() + " was not found.");
 			mChannels.remove(channelId);
 			PlayerStateManager.unregisterChannel(channelId);
 		} else {
@@ -507,14 +502,14 @@ public class ChannelManager implements Listener {
 		Channel channel;
 		try {
 			channel = Channel.fromJson(channelJson);
-			mPlugin.getLogger().finer("Channel " + channelId.toString() + " loaded, registering...");
+			MMLog.finer("Channel " + channelId.toString() + " loaded, registering...");
 			registerLoadedChannel(channel);
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Caught exception trying to load channel " + channelId.toString() + ":");
+			MMLog.severe("Caught exception trying to load channel " + channelId.toString() + ":");
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			mPlugin.getLogger().severe(sw.toString());
+			MMLog.severe(sw.toString());
 			return;
 		}
 
@@ -548,7 +543,7 @@ public class ChannelManager implements Listener {
 		JsonObject channelJson = channel.toJson();
 		String channelJsonStr = channelJson.toString();
 
-		mPlugin.getLogger().finer("Saving channel " + channelIdStr + ".");
+		MMLog.finer("Saving channel " + channelIdStr + ".");
 		RedisAsyncCommands<String, String> redisAsync = RedisAPI.getInstance().async();
 		redisAsync.hset(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName, channelIdStr);
 		redisAsync.hset(REDIS_CHANNELS_PATH, channelIdStr, channelJsonStr);
@@ -561,9 +556,9 @@ public class ChannelManager implements Listener {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CHANNEL_UPDATE,
 			                                             wrappedChannelJson,
 			                                             NetworkChatPlugin.getMessageTtl());
-			mPlugin.getLogger().finer("Broadcast channel " + channelIdStr + " changes.");
+			MMLog.finer("Broadcast channel " + channelIdStr + " changes.");
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
+			MMLog.severe("Failed to broadcast " + NETWORK_CHAT_CHANNEL_UPDATE);
 		}
 		if (!(channel instanceof ChannelInviteOnly)) {
 			forceLoadChannel(channel);
@@ -627,7 +622,7 @@ public class ChannelManager implements Listener {
 				}
 			}
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with invalid data");
+			MMLog.severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with invalid data");
 			return;
 		}
 		String logIdName = "ID " + channelId;
@@ -636,9 +631,9 @@ public class ChannelManager implements Listener {
 			logIdName = oldName;
 		}
 		if (channelData == null) {
-			mPlugin.getLogger().info("Got deletion notice for channel " + logIdName);
+			MMLog.info("Got deletion notice for channel " + logIdName);
 		} else {
-			mPlugin.getLogger().finer("Got update for channel " + logIdName);
+			MMLog.finer("Got update for channel " + logIdName);
 		}
 		Channel oldChannel = mChannels.get(channelId);
 		if (oldChannel != null) {
@@ -661,14 +656,14 @@ public class ChannelManager implements Listener {
 				try {
 					newName = channelData.getAsJsonPrimitive("name").getAsString();
 				} catch (Exception e) {
-					mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with no name");
+					MMLog.severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with no name");
 					return;
 				}
 
 				mChannelIdsByName.remove(oldName);
 				mChannelIdsByName.put(newName, channelId);
 				mChannelNames.put(channelId, newName);
-				mPlugin.getLogger().info("Renamed channel " + oldName + " to " + newName);
+				MMLog.info("Renamed channel " + oldName + " to " + newName);
 			}
 
 			return;
@@ -681,14 +676,14 @@ public class ChannelManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
 		switch (event.getChannel()) {
 			case NETWORK_CHAT_CHANNEL_UPDATE -> {
 				data = event.getData();
 				if (data == null) {
-					mPlugin.getLogger().severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with null data");
+					MMLog.severe("Got " + NETWORK_CHAT_CHANNEL_UPDATE + " channel with null data");
 					return;
 				}
 				networkRelayChannelUpdate(data);
@@ -696,7 +691,7 @@ public class ChannelManager implements Listener {
 			case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE -> {
 				data = event.getData();
 				if (data == null) {
-					mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
+					MMLog.severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " channel with null data");
 					return;
 				}
 				JsonObject defaultChannelsJson = data.getAsJsonObject(REDIS_DEFAULT_CHANNELS_KEY);

@@ -2,6 +2,7 @@ package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MMLog;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
@@ -9,6 +10,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -39,7 +41,7 @@ public class DefaultChannels {
 				try {
 					defaults.mDefaultsByType.put(key, UUID.fromString(valueJson.getAsString()));
 				} catch (Exception e) {
-					NetworkChatPlugin.getInstance().getLogger().warning("Failed to set default for " + key);
+					MMLog.warning("Failed to set default for " + key);
 				}
 			}
 		}
@@ -67,7 +69,7 @@ public class DefaultChannels {
 		return true;
 	}
 
-	public Channel getDefaultChannel(String key) {
+	public @Nullable Channel getDefaultChannel(String key) {
 		UUID channelId = mDefaultsByType.get(key);
 		if (channelId == null) {
 			return null;
@@ -75,7 +77,7 @@ public class DefaultChannels {
 		return ChannelManager.getChannel(channelId);
 	}
 
-	public UUID getDefaultId(String key) {
+	public @Nullable UUID getDefaultId(String key) {
 		return mDefaultsByType.get(key);
 	}
 

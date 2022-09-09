@@ -4,13 +4,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkchat.utils.ReplacerWithEscape;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -178,9 +178,8 @@ public class ChatFilter {
 		}
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
-			Logger logger = NetworkChatPlugin.getInstance().getLogger();
 			CommandSender callee = CommandUtils.getCallee(sender);
-			ReplacerWithEscape replacer = new ReplacerWithEscape(logger, sender, mReplacementMiniMessage);
+			ReplacerWithEscape replacer = new ReplacerWithEscape(sender, mReplacementMiniMessage);
 			final ChatFilterResult localResult = filterResult.getCleanCopy();
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
 				.match(mPattern)
@@ -190,12 +189,20 @@ public class ChatFilter {
 						localResult.foundBadWord(true);
 					}
 					String content = textBuilder.content();
+					String finalContent = content;
+					MMLog.finer(() -> "    <- " + finalContent);
 					content = mPattern.matcher(content).replaceAll(replacer);
-					return MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
+					String finalContent1 = content;
+					MMLog.finer(() -> "    -- " + finalContent1);
+					Component replacementResult = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
+					MMLog.finer(() -> "    -> " + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(replacementResult));
+					return replacementResult;
 				})
 				.build();
 
+			MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
 			localResult.component(localResult.component().replaceText(replacementConfig));
+			MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
 
 			String plainText = MessagingUtils.plainText(localResult.component());
 			String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
@@ -225,6 +232,9 @@ public class ChatFilter {
 				}
 			}
 			filterResult.copyResults(localResult);
+
+			MMLog.finer(() -> "- " + mId + ":");
+			MMLog.finer(() -> MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(filterResult.component()));
 		}
 	}
 
@@ -241,7 +251,7 @@ public class ChatFilter {
 						ChatFilterPattern pattern = ChatFilterPattern.fromJson(sender, patternObject);
 						filter.mFilters.put(pattern.id(), pattern);
 					} catch (Exception e) {
-						NetworkChatPlugin.getInstance().getLogger().warning("Failed to load chat filter pattern: " + e.getMessage());
+						MMLog.warning("Failed to load chat filter pattern: " + e.getMessage());
 					}
 				}
 			}
@@ -284,6 +294,8 @@ public class ChatFilter {
 	}
 
 	public void run(CommandSender sender, ChatFilterResult filterResult) {
+		MMLog.finer("Start:");
+		MMLog.finer(() -> MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(filterResult.component()));
 		for (ChatFilterPattern filterPattern : mFilters.values()) {
 			filterPattern.run(sender, filterResult);
 		}

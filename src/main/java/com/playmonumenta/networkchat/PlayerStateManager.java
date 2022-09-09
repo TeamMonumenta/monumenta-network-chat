@@ -12,7 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
@@ -31,7 +31,6 @@ import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -40,24 +39,21 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerStateManager implements Listener {
 	private static final String IDENTIFIER = "NetworkChat";
 	private static final String REDIS_PLAYER_EVENT_SETTINGS_KEY = "player_event_settings";
 
-	private static PlayerStateManager INSTANCE = null;
-	private static Plugin mPlugin = null;
+	private static @Nullable PlayerStateManager INSTANCE = null;
 	private static final Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
 	private static final Map<UUID, PlayerChatHistory> mPlayerChatHistories = new HashMap<>();
 	private static MessageVisibility mMessageVisibility = new MessageVisibility();
 	private static boolean mIsDefaultChatPlugin = true;
 
-	private PlayerStateManager(Plugin plugin) {
+	private PlayerStateManager() {
 		INSTANCE = this;
-		mPlugin = plugin;
-		ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin,
+		ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(NetworkChatPlugin.getInstance(),
 		                                                                         ListenerPriority.NORMAL,
 		                                                                         PacketType.Play.Server.CHAT) {
 			@Override
@@ -126,12 +122,8 @@ public class PlayerStateManager implements Listener {
 	}
 
 	public static PlayerStateManager getInstance() {
-		return INSTANCE;
-	}
-
-	public static PlayerStateManager getInstance(Plugin plugin) {
 		if (INSTANCE == null) {
-			INSTANCE = new PlayerStateManager(plugin);
+			INSTANCE = new PlayerStateManager();
 		}
 		return INSTANCE;
 	}
@@ -149,13 +141,13 @@ public class PlayerStateManager implements Listener {
 	}
 
 	public static void loadSettings(JsonObject playerEventSettingsJson) {
-		mPlugin.getLogger().info("Loading PlayerStateManager settings...");
+		MMLog.info("Loading PlayerStateManager settings...");
 		mMessageVisibility = MessageVisibility.fromJson(playerEventSettingsJson.getAsJsonObject("message_visibility"));
 		mIsDefaultChatPlugin = playerEventSettingsJson.getAsJsonPrimitive("is_default_chat").getAsBoolean();
 	}
 
 	public static void saveSettings() {
-		mPlugin.getLogger().info("Saving PlayerStateManager settings...");
+		MMLog.info("Saving PlayerStateManager settings...");
 		JsonObject playerEventSettingsJson = new JsonObject();
 		playerEventSettingsJson.add("message_visibility", mMessageVisibility.toJson());
 		playerEventSettingsJson.addProperty("is_default_chat", mIsDefaultChatPlugin);
@@ -169,7 +161,7 @@ public class PlayerStateManager implements Listener {
 			                                             wrappedConfigJson,
 			                                             NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
+			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
 	}
 
@@ -202,11 +194,11 @@ public class PlayerStateManager implements Listener {
 		return new HashMap<>(mPlayerChatHistories);
 	}
 
-	public static PlayerChatHistory getPlayerChatHistory(Player player) {
+	public static @Nullable PlayerChatHistory getPlayerChatHistory(Player player) {
 		return mPlayerChatHistories.get(player.getUniqueId());
 	}
 
-	public static PlayerChatHistory getPlayerChatHistory(UUID playerId) {
+	public static @Nullable PlayerChatHistory getPlayerChatHistory(UUID playerId) {
 		return mPlayerChatHistories.get(playerId);
 	}
 
@@ -235,7 +227,7 @@ public class PlayerStateManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
@@ -248,22 +240,22 @@ public class PlayerStateManager implements Listener {
 		if (data == null) {
 			playerState = new PlayerState(player);
 			mPlayerStates.put(playerId, playerState);
-			mPlugin.getLogger().info("Created new chat state for for player " + player.getName());
+			MMLog.info("Created new chat state for for player " + player.getName());
 		} else {
 			try {
 				playerState = PlayerState.fromJson(player, data);
 				mPlayerStates.put(playerId, playerState);
-				mPlugin.getLogger().info("Loaded chat state for player " + player.getName());
+				MMLog.info("Loaded chat state for player " + player.getName());
 			} catch (Exception e) {
 				playerState = new PlayerState(player);
 				mPlayerStates.put(playerId, playerState);
-				mPlugin.getLogger().warning("Player's chat state could not be loaded and was reset " + player.getName());
+				MMLog.warning("Player's chat state could not be loaded and was reset " + player.getName());
 			}
 		}
 
 		for (Channel channel : ChannelManager.getLoadedChannels()) {
 			if (!(channel instanceof ChannelInviteOnly)) {
-				if (!playerState.hasSeenChannelId(channel.getUniqueId())) {
+				if (playerState.hasNotSeenChannelId(channel.getUniqueId())) {
 					if (channel.shouldAutoJoin(playerState)) {
 						playerState.joinChannel(channel);
 					}
@@ -273,7 +265,7 @@ public class PlayerStateManager implements Listener {
 				if (!channelInvOnly.isParticipant(player)) {
 					continue;
 				}
-				if (!playerState.hasSeenChannelId(channel.getUniqueId())) {
+				if (playerState.hasNotSeenChannelId(channel.getUniqueId())) {
 					playerState.joinChannel(channel);
 				}
 			}
@@ -293,7 +285,7 @@ public class PlayerStateManager implements Listener {
 	}
 
 	/* Whenever player data is saved, also save the local data */
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void playerSaveEvent(PlayerSaveEvent event) {
 		Player player = event.getPlayer();
 
@@ -303,7 +295,7 @@ public class PlayerStateManager implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
@@ -317,16 +309,19 @@ public class PlayerStateManager implements Listener {
 			}
 		}
 		// delete the data one tick later, as the save event still needs it (and is fired after the quit event)
-		Bukkit.getScheduler().runTaskLater(mPlugin, () -> mPlayerStates.remove(playerId), 1);
+		Bukkit.getScheduler().runTaskLater(NetworkChatPlugin.getInstance(), () -> mPlayerStates.remove(playerId), 1);
 
 		// Broadcast the player's current chat history
-		PlayerChatHistory oldChatHistory = mPlayerChatHistories.get(playerId);
+		@Nullable PlayerChatHistory oldChatHistory = mPlayerChatHistories.get(playerId);
+		if (oldChatHistory == null) {
+			return;
+		}
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY,
 			                                             oldChatHistory.toJson(),
 			                                             PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Failed to broadcast " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY);
+			MMLog.severe("Failed to broadcast " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY);
 			mPlayerChatHistories.remove(playerId);
 		}
 	}
@@ -350,7 +345,7 @@ public class PlayerStateManager implements Listener {
 		}
 
 		Component message = event.message();
-		String messageStr = PlainComponentSerializer.plain().serialize(message);
+		String messageStr = MessagingUtils.PLAIN_SERIALIZER.serialize(message);
 
 		Channel channel = playerState.getActiveChannel();
 		if (channel == null) {
@@ -363,7 +358,7 @@ public class PlayerStateManager implements Listener {
 		} catch (WrapperCommandSyntaxException ex) {
 			String error = MessagingUtils.getCommandExceptionMessage(ex);
 			player.sendMessage(Component.text(error, NamedTextColor.RED));
-			mPlugin.getLogger().warning(error);
+			MMLog.warning(error);
 		} catch (Exception ex) {
 			MessagingUtils.sendStackTrace(player, ex);
 		}
@@ -388,21 +383,21 @@ public class PlayerStateManager implements Listener {
 							mPlayerChatHistories.remove(playerId);
 				        }
 					}
-				}.runTaskLater(mPlugin, 20 * PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
+				}.runTaskLater(NetworkChatPlugin.getInstance(), 20 * PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
 			} catch (Exception e) {
-				mPlugin.getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with invalid data");
+				MMLog.severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with invalid data");
 			}
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
 		switch (event.getChannel()) {
 			case NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE -> {
 				data = event.getData();
 				if (data == null) {
-					mPlugin.getLogger().severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " with null data");
+					MMLog.severe("Got " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE + " with null data");
 					return;
 				}
 				JsonObject playerEventSettingsJson = data.getAsJsonObject(REDIS_PLAYER_EVENT_SETTINGS_KEY);
@@ -413,7 +408,7 @@ public class PlayerStateManager implements Listener {
 			case PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY -> {
 				data = event.getData();
 				if (data == null) {
-					mPlugin.getLogger().severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with null data");
+					MMLog.severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with null data");
 					return;
 				}
 				handleRemotePlayerChatHistoryMessage(data);

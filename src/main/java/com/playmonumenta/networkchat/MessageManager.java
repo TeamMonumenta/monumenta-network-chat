@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import java.lang.ref.Cleaner;
@@ -12,30 +13,23 @@ import javax.annotation.Nullable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.plugin.Plugin;
 
 public class MessageManager implements Listener {
 	public static final String NETWORK_CHAT_MESSAGE = "com.playmonumenta.networkchat.Message";
 	public static final String NETWORK_CHAT_DELETE_MESSAGE = "com.playmonumenta.networkchat.Message.delete";
 	public static final String NETWORK_CHAT_DELETE_FROM_SENDER = "com.playmonumenta.networkchat.Message.deleteFromSender";
 
-	private static MessageManager INSTANCE = null;
-	private static Plugin mPlugin = null;
+	private static @Nullable MessageManager INSTANCE = null;
 	private static final Cleaner mCleaner = Cleaner.create();
 	private static final Map<UUID, WeakReference<Message>> mMessages = new HashMap<>();
 
-	private MessageManager(Plugin plugin) {
+	private MessageManager() {
 		INSTANCE = this;
-		mPlugin = plugin;
 	}
 
 	public static MessageManager getInstance() {
-		return INSTANCE;
-	}
-
-	public static MessageManager getInstance(Plugin plugin) {
 		if (INSTANCE == null) {
-			INSTANCE = new MessageManager(plugin);
+			INSTANCE = new MessageManager();
 		}
 		return INSTANCE;
 	}
@@ -62,7 +56,7 @@ public class MessageManager implements Listener {
 				                                         object,
 				                                         NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Catch exception sending " + NETWORK_CHAT_DELETE_MESSAGE + " reason: " + e.getMessage());
+			MMLog.warning("Catch exception sending " + NETWORK_CHAT_DELETE_MESSAGE + " reason: " + e.getMessage());
 		}
 	}
 
@@ -74,18 +68,18 @@ public class MessageManager implements Listener {
 				object,
 				NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			NetworkChatPlugin.getInstance().getLogger().warning("Catch exception sending " + NETWORK_CHAT_DELETE_FROM_SENDER + " reason: " + e.getMessage());
+			MMLog.warning("Catch exception sending " + NETWORK_CHAT_DELETE_FROM_SENDER + " reason: " + e.getMessage());
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
 		switch (event.getChannel()) {
 			case NETWORK_CHAT_MESSAGE -> {
 				data = event.getData();
 				if (data == null) {
-					mPlugin.getLogger().severe("Got " + NETWORK_CHAT_MESSAGE + " message with null data");
+					MMLog.severe("Got " + NETWORK_CHAT_MESSAGE + " message with null data");
 					return;
 				}
 				receiveMessageHandler(data);
@@ -93,7 +87,7 @@ public class MessageManager implements Listener {
 			case NETWORK_CHAT_DELETE_MESSAGE -> {
 				data = event.getData();
 				if (data == null) {
-					mPlugin.getLogger().severe("Got " + NETWORK_CHAT_DELETE_MESSAGE + " message with null data");
+					MMLog.severe("Got " + NETWORK_CHAT_DELETE_MESSAGE + " message with null data");
 					return;
 				}
 				deleteMessageHandler(data);
@@ -101,7 +95,7 @@ public class MessageManager implements Listener {
 			case NETWORK_CHAT_DELETE_FROM_SENDER -> {
 				data = event.getData();
 				if (data == null) {
-					mPlugin.getLogger().severe("Got " + NETWORK_CHAT_DELETE_FROM_SENDER + " message with null data");
+					MMLog.severe("Got " + NETWORK_CHAT_DELETE_FROM_SENDER + " message with null data");
 					return;
 				}
 				deleteFromSenderHandler(data);
@@ -116,8 +110,8 @@ public class MessageManager implements Listener {
 		try {
 			message = Message.fromJson(object);
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Could not read Message from json:");
-			mPlugin.getLogger().severe(e.getMessage());
+			MMLog.severe("Could not read Message from json:");
+			MMLog.severe(e.getMessage());
 			return;
 		}
 
@@ -135,8 +129,8 @@ public class MessageManager implements Listener {
 			UUID messageId = UUID.fromString(object.getAsJsonPrimitive("id").getAsString());
 			message = getMessage(messageId);
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Could not read Message deletion request from json:");
-			mPlugin.getLogger().severe(e.getMessage());
+			MMLog.severe("Could not read Message deletion request from json:");
+			MMLog.severe(e.getMessage());
 			return;
 		}
 
@@ -153,8 +147,8 @@ public class MessageManager implements Listener {
 		try {
 			senderId = UUID.fromString(object.getAsJsonPrimitive("id").getAsString());
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Could not read delete from sender request from json:");
-			mPlugin.getLogger().severe(e.getMessage());
+			MMLog.severe("Could not read delete from sender request from json:");
+			MMLog.severe(e.getMessage());
 			return;
 		}
 
@@ -190,10 +184,10 @@ public class MessageManager implements Listener {
 			return;
 		}
 		if (mMessages.containsKey(messageId)) {
-			mPlugin.getLogger().severe("Attempting to register previously registered message ID!");
+			MMLog.severe("Attempting to register previously registered message ID!");
 		}
 		mMessages.put(messageId, new WeakReference<>(message));
-		mPlugin.getLogger().finest(() -> "New message ID " + messageId
+		MMLog.finest(() -> "New message ID " + messageId
 		                                 + ", tracked message IDs: " + mMessages.size());
 	}
 
@@ -202,7 +196,7 @@ public class MessageManager implements Listener {
 		if (messageId == null) {
 			return;
 		}
-		mPlugin.getLogger().finest(() -> "unregistering message ID " + messageId
+		MMLog.finest(() -> "unregistering message ID " + messageId
 		                                 + ", tracked message IDs: " + mMessages.size());
 		mMessages.remove(messageId);
 	}

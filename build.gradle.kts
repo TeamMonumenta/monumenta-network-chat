@@ -22,6 +22,7 @@ plugins {
 
 repositories {
     mavenLocal()
+	mavenCentral()
     maven {
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
@@ -66,22 +67,16 @@ repositories {
     maven {
         url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-redis-sync/master/mvn-repo/")
     }
-
-    // TODO: This is ridiculously jank - accessing the repo from github when it's local... but can't get it to work otherwise
-	maven {
-		url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-chat/master/repo/")
-	}
-
 }
 
 dependencies {
     implementation("com.mojang:brigadier:1.0.15")
-    implementation("net.kyori:adventure-text-minimessage:4.2-ab62718")
+    implementation("net.kyori:adventure-text-minimessage:4.11.0")
     implementation("org.apache.commons:commons-text:1.3")
     compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
     compileOnly("dev.jorel.CommandAPI:commandapi-core:6.0.0")
     compileOnly("com.playmonumenta:monumenta-network-relay:1.1")
-    compileOnly("com.playmonumenta:redissync:3.0")
+    compileOnly("com.playmonumenta:redissync:3.8")
     compileOnly("io.lettuce:lettuce-core:5.3.5.RELEASE")
     compileOnly("me.clip:placeholderapi:2.10.9")
     compileOnly("com.comphenix.protocol:ProtocolLib:4.7.0")
@@ -161,7 +156,6 @@ tasks.withType<JavaCompile>().configureEach {
         check("InlineMeSuggester", CheckSeverity.OFF) // This seems way overkill
     }
 }
-
 val basicssh = remotes.create("basicssh") {
     host = "admin-eu.playmonumenta.com"
     port = 8822
@@ -241,7 +235,7 @@ tasks.create("stage-deploy") {
         ssh.runSessions {
             session(basicssh) {
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/stage/m12/server_config/plugins")
-                execute("cd /home/epic/stage/m12/server_config/plugins && rm -f MonumentaNetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaNetworkChat.jar")
+                execute("cd /home/epic/stage/m12/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
             }
         }
     }
@@ -254,7 +248,7 @@ tasks.create("build-deploy") {
         ssh.runSessions {
             session(adminssh) {
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/project_epic/server_config/plugins")
-                execute("cd /home/epic/project_epic/server_config/plugins && rm -f MonumentaNetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaNetworkChat.jar")
+                execute("cd /home/epic/project_epic/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
             }
         }
     }
@@ -268,8 +262,10 @@ tasks.create("play-deploy") {
             session(adminssh) {
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m8/server_config/plugins")
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m11/server_config/plugins")
-                execute("cd /home/epic/play/m8/server_config/plugins && rm -f MonumentaNetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaNetworkChat.jar")
-                execute("cd /home/epic/play/m8/server_config/plugins && rm -f MonumentaNetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaNetworkChat.jar")
+				put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m13/server_config/plugins")
+                execute("cd /home/epic/play/m8/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
+                execute("cd /home/epic/play/m11/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
+				execute("cd /home/epic/play/m13/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
             }
         }
     }
