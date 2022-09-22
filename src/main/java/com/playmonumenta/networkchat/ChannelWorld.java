@@ -57,7 +57,7 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 
 	public ChannelWorld(String name) {
 		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
+		mId = ChannelManager.randomChannelId();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();

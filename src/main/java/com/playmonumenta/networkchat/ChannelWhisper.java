@@ -45,7 +45,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private final Map<UUID, ChannelAccess> mPlayerAccess;
 
 	public ChannelWhisper(UUID from, UUID to) {
-		this(UUID.randomUUID(), Instant.now(), List.of(from, to));
+		this(ChannelManager.randomChannelId(), Instant.now(), List.of(from, to));
 	}
 
 	private ChannelWhisper(UUID channelId, Instant lastUpdate, List<UUID> participants) {

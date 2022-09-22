@@ -45,7 +45,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	private @Nullable String mChannelPermission = null;
 
 	public ChannelAnnouncement(String name) {
-		this(UUID.randomUUID(), Instant.now(), name);
+		this(ChannelManager.randomChannelId(), Instant.now(), name);
 	}
 
 	private ChannelAnnouncement(UUID channelId, Instant lastUpdate, String name) {

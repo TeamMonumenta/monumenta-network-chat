@@ -53,7 +53,7 @@ public class ChannelTeam extends Channel {
 
 	public ChannelTeam(String teamName) {
 		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
+		mId = ChannelManager.randomChannelId();
 		mTeamName = teamName;
 
 		mDefaultSettings = new ChannelSettings();

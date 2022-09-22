@@ -42,6 +42,14 @@ public class MessageManager implements Listener {
 		return messageWeakReference.get();
 	}
 
+	public static UUID randomMessageId() {
+		UUID result;
+		do {
+			result = UUID.randomUUID();
+		} while (mMessages.containsKey(result));
+		return result;
+	}
+
 	public void broadcastMessage(Message message) throws Exception {
 		NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_MESSAGE,
 		                                             message.toJson(),

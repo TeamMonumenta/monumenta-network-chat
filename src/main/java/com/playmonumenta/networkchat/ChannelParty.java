@@ -57,7 +57,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 	public ChannelParty(String name) {
 		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
+		mId = ChannelManager.randomChannelId();
 		mName = name;
 		mParticipants = new HashSet<>();
 

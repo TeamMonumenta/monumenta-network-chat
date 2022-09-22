@@ -104,6 +104,14 @@ public class ChannelManager implements Listener {
 		}
 	}
 
+	public static UUID randomChannelId() {
+		UUID result;
+		do {
+			result = UUID.randomUUID();
+		} while (mChannelNames.containsKey(result));
+		return result;
+	}
+
 	public static Set<String> getChannelNames() {
 		return new ConcurrentSkipListSet<>(mChannelIdsByName.keySet());
 	}

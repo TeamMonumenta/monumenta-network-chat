@@ -87,7 +87,7 @@ public class Message implements AutoCloseable {
 	                                       JsonObject extraData,
 	                                       Component message) {
 		CommandSender callee = CommandUtils.getCallee(sender);
-		UUID id = UUID.randomUUID();
+		UUID id = MessageManager.randomMessageId();
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
 		@Nullable UUID senderId = null;
@@ -134,7 +134,7 @@ public class Message implements AutoCloseable {
 	                                          @Nullable UUID senderId,
 	                                          @Nullable JsonObject extraData,
 	                                          Component message) {
-		UUID id = UUID.randomUUID();
+		UUID id = MessageManager.randomMessageId();
 		Instant instant = Instant.now();
 		if (senderId != null) {
 			if (senderId.getMostSignificantBits() == 0 && senderId.getLeastSignificantBits() == 0) {

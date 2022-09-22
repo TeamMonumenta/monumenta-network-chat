@@ -53,7 +53,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 
 	public ChannelGlobal(String name) {
 		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
+		mId = ChannelManager.randomChannelId();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();

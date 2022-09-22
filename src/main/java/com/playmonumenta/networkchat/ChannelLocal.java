@@ -54,7 +54,7 @@ public class ChannelLocal extends Channel implements ChannelPermissionNode, Chan
 
 	public ChannelLocal(String name) {
 		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
+		mId = ChannelManager.randomChannelId();
 		mName = name;
 
 		mDefaultSettings = new ChannelSettings();
