@@ -32,10 +32,18 @@ public class Message implements AutoCloseable {
 
 		@Override
 		public void run() {
-			MessageManager.unregisterMessage(mId);
+			// DO NOT UNREGISTER if the current message state does not match this state.
+			Message currentMessage = MessageManager.getMessage(mId);
+			if (currentMessage != null) {
+				if (this != currentMessage.mState) {
+					return;
+				}
+				MessageManager.unregisterMessage(mId);
+			}
 		}
 	}
 
+	private final State mState;
 	private final Cleaner.Cleanable mCleanable;
 
 	private final UUID mId;
@@ -75,8 +83,8 @@ public class Message implements AutoCloseable {
 		mMessage = message;
 
 		// Member variable used to garbage collect Message objects
-		State state = new State(mId);
-		mCleanable = MessageManager.cleaner().register(this, state);
+		mState = new State(mId);
+		mCleanable = MessageManager.cleaner().register(this, mState);
 		MessageManager.registerMessage(this);
 	}
 

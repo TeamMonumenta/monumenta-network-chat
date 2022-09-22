@@ -39,7 +39,11 @@ public class MessageManager implements Listener {
 		if (messageWeakReference == null) {
 			return null;
 		}
-		return messageWeakReference.get();
+		Message message = messageWeakReference.get();
+		if (message == null) {
+			mMessages.remove(messageId);
+		}
+		return message;
 	}
 
 	public void broadcastMessage(Message message) throws Exception {
@@ -187,8 +191,7 @@ public class MessageManager implements Listener {
 			MMLog.severe("Attempting to register previously registered message ID!");
 		}
 		mMessages.put(messageId, new WeakReference<>(message));
-		MMLog.finest(() -> "New message ID " + messageId
-		                                 + ", tracked message IDs: " + mMessages.size());
+		MMLog.finest(() -> "New message ID " + messageId + ", tracked message IDs: " + mMessages.size());
 	}
 
 	// Internal use only; unregister a weak reference to a Message when the Message is finalized
@@ -196,8 +199,7 @@ public class MessageManager implements Listener {
 		if (messageId == null) {
 			return;
 		}
-		MMLog.finest(() -> "unregistering message ID " + messageId
-		                                 + ", tracked message IDs: " + mMessages.size());
+		MMLog.finest(() -> "unregistering message ID " + messageId + ", tracked message IDs: " + mMessages.size());
 		mMessages.remove(messageId);
 	}
 }
