@@ -715,7 +715,7 @@ public class ChatCommand {
 			arguments.add(new MultiLiteralArgument("listplayers"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
-				.withPermissions("networkchat.listplayers")
+				.withPermission("networkchat.listplayers")
 				.executesNative((sender, args) -> {
 					RemotePlayerManager.showOnlinePlayers(CommandUtils.getCallee(sender));
 					return 1;
