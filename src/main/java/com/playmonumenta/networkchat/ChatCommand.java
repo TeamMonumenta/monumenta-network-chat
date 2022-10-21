@@ -717,6 +717,10 @@ public class ChatCommand {
 				.withArguments(arguments)
 				.withPermission("networkchat.listplayers")
 				.executesNative((sender, args) -> {
+					if (!CommandUtils.hasPermission(sender, "networkchat.listplayers")) {
+						CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
+
 					RemotePlayerManager.showOnlinePlayers(CommandUtils.getCallee(sender));
 					return 1;
 				})
