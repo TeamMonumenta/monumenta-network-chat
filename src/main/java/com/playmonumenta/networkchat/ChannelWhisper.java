@@ -502,6 +502,11 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 		}
 
+		WrapperCommandSyntaxException notListeningEx = isListeningCheck(sender);
+		if (notListeningEx != null) {
+			throw notListeningEx;
+		}
+
 		UUID senderId = ((Player) sender).getUniqueId();
 		UUID receiverId = getOtherParticipant(senderId);
 
