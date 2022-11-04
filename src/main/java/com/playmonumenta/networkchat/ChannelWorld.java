@@ -376,6 +376,11 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 		}
 
+		WrapperCommandSyntaxException notListeningEx = isListeningCheck(sender);
+		if (notListeningEx != null) {
+			throw notListeningEx;
+		}
+
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
 				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");

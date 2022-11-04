@@ -2,6 +2,7 @@ package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.UUID;
@@ -90,6 +91,26 @@ public abstract class Channel {
 
 	public boolean mayListen(CommandSender sender) {
 		return false;
+	}
+
+	protected WrapperCommandSyntaxException isListeningCheck(CommandSender sender) {
+		if (sender instanceof Player player) {
+			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			if (playerState == null) {
+				try {
+					CommandUtils.fail(player, MessagingUtils.noChatStateStr(player));
+				} catch (WrapperCommandSyntaxException ex) {
+					return ex;
+				}
+			} else if (!playerState.isListening(this)) {
+				try {
+					CommandUtils.fail(player, "You are not listening in that channel.");
+				} catch (WrapperCommandSyntaxException ex) {
+					return ex;
+				}
+			}
+		}
+		return null;
 	}
 
 	// Check for access, then send a message to the network.
