@@ -32,6 +32,14 @@
 	</module>
 	<module name="TreeWalker">
 		<property name="tabWidth" value="4"/>
+		<module name="CustomImportOrder">
+			<property name="sortImportsInGroupAlphabetically"
+					  value="true"/>
+			<property name="standardPackageRegExp"
+					  value="^$"/>
+			<property name="customImportOrderRules"
+					  value="THIRD_PARTY_PACKAGE###STATIC"/>
+		</module>
 		<module name="OuterTypeFilename"/>
 		<module name="OneTopLevelClass"/>
 		<module name="NoLineWrap"/>
@@ -192,15 +200,18 @@
 			<property name="message" value="Indent must use tab characters"/>
 			<property name="ignoreComments" value="true"/>
 		</module>
-		<module name="RegexpSinglelineJava">
-			<property name="format" value="[^\n\r\t -~]"/>
-			<property name="message" value="Non-ascii characters should not be used"/>
-			<property name="ignoreComments" value="true"/>
-		</module>
+		<!-- Require ignoreCancelled attribute in @EventHandlers -->
 		<module name="RegexpSinglelineJava">
 			<property name="format" value="@EventHandler(?!.*ignoreCancelled.*)"/>
 			<property name="ignoreComments" value="true"/>
 			<property name="message" value="Event handlers must specify ignoreCancelled"/>
+		</module>
+		<!-- Disallow using World.spawnParticle() directly -->
+		<module name="RegexpSinglelineJava">
+			<property name="format" value="\.spawnParticle\("/>
+			<property name="ignoreComments" value="true"/>
+			<property name="message"
+					  value="Do not use World.spawnParticle() directly - use one of the PartialParticle classes"/>
 		</module>
 		<module name="Regexp">
 			<property name="format" value="[ \t]+$"/>
@@ -218,11 +229,6 @@
 			<property name="id" value="AnnotationLocationVariables"/>
 			<property name="tokens" value="VARIABLE_DEF"/>
 			<property name="allowSamelineMultipleAnnotations" value="true"/>
-		</module>
-		<module name="AtclauseOrder">
-			<property name="tagOrder" value="@param, @return, @throws, @deprecated"/>
-			<property name="target"
-					  value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF, VARIABLE_DEF"/>
 		</module>
 		<module name="MethodName">
 			<property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>

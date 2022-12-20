@@ -55,7 +55,7 @@ repositories {
         url = uri("https://repo.maven.apache.org/maven2/")
     }
 
-    // NBT API
+    // NBT API, pulled in by CommandAPI
     maven {
         url = uri("https://repo.codemc.org/repository/maven-public/")
     }
@@ -73,10 +73,10 @@ dependencies {
     implementation("com.mojang:brigadier:1.0.15")
     implementation("net.kyori:adventure-text-minimessage:4.11.0")
     implementation("org.apache.commons:commons-text:1.3")
-    compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
-    compileOnly("dev.jorel.CommandAPI:commandapi-core:6.0.0")
+    compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
+    implementation("dev.jorel.CommandAPI:commandapi-core:8.7.0")
     compileOnly("com.playmonumenta:monumenta-network-relay:1.1")
-    compileOnly("com.playmonumenta:redissync:3.8")
+    compileOnly("com.playmonumenta:redissync:4.1")
     compileOnly("io.lettuce:lettuce-core:5.3.5.RELEASE")
     compileOnly("me.clip:placeholderapi:2.10.9")
     compileOnly("com.comphenix.protocol:ProtocolLib:4.7.0")
@@ -88,8 +88,8 @@ group = "com.playmonumenta"
 val gitVersion: groovy.lang.Closure<String> by extra
 version = gitVersion()
 description = "MonumentaNetworkChat"
-java.sourceCompatibility = JavaVersion.VERSION_16
-java.targetCompatibility = JavaVersion.VERSION_16
+java.sourceCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_17
 
 // Configure plugin.yml generation
 bukkit {
