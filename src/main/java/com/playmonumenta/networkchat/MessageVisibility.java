@@ -3,7 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import dev.jorel.commandapi.CommandAPI;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
 import java.util.Map;
@@ -154,8 +154,7 @@ public class MessageVisibility {
 			return value.ordinal();
 		}
 
-		CommandAPI.fail("No such visibility category: " + category);
-		return 0;
+		throw CommandUtils.fail(sender, "No such visibility category: " + category);
 	}
 
 	public int commandVisibility(CommandSender sender, String category, String value) throws WrapperCommandSyntaxException {
@@ -172,7 +171,6 @@ public class MessageVisibility {
 			return visibilityValue.ordinal();
 		}
 
-		CommandAPI.fail("No such visibility category: " + category);
-		return 0;
+		throw CommandUtils.fail(sender, "No such visibility category: " + category);
 	}
 }

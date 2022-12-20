@@ -163,8 +163,8 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		return result;
 	}
 
-	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
-		List<Argument> arguments;
+	public static void registerNewChannelCommands(String[] baseCommands, List<Argument<?>> prefixArguments) {
+		List<Argument<?>> arguments;
 
 		for (String baseCommand : baseCommands) {
 			arguments = new ArrayList<>(prefixArguments);
@@ -174,7 +174,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.announcement")) {
-						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
+						throw CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
@@ -184,7 +184,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					try {
 						newChannel = new ChannelAnnouncement(channelName);
 					} catch (Exception e) {
-						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -196,7 +196,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.announcement")) {
-						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
+						throw CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
@@ -207,7 +207,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 						newChannel = new ChannelAnnouncement(channelName);
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
 					} catch (Exception e) {
-						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -219,7 +219,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.announcement")) {
-						CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
+						throw CommandUtils.fail(sender, "You do not have permission to create announcement channels.");
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
@@ -231,7 +231,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 						newChannel.mAutoJoin = (boolean)args[prefixArguments.size() + 1];
 						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
 					} catch (Exception e) {
-						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
@@ -366,14 +366,14 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.announcement")) {
-			CommandUtils.fail(sender, "You do not have permission to make announcements.");
+			throw CommandUtils.fail(sender, "You do not have permission to make announcements.");
 		}
 		if (mChannelPermission != null && !CommandUtils.hasPermission(sender, mChannelPermission)) {
-			CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
+			throw CommandUtils.fail(sender, "You do not have permission to talk in " + mName + ".");
 		}
 
 		if (!mayChat(sender)) {
-			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
+			throw CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 		}
 
 		WrapperCommandSyntaxException notListeningEx = isListeningCheck(sender);
@@ -383,9 +383,9 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+				throw CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
 			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
-				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
+				throw CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
 
@@ -399,7 +399,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
-			CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
+			throw CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
 		}
 	}
 

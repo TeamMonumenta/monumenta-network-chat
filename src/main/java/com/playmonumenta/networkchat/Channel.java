@@ -35,7 +35,7 @@ public abstract class Channel {
 
 	// DEFINE ME - Register commands for new channels; continues off an existing argument list of literals.
 	// Channel ID is at index = prefixArguments.size() - 1
-	//public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments);
+	//public static void registerNewChannelCommands(String[] baseCommands, List<Argument<?>> prefixArguments);
 
 	public abstract String getClassId();
 
@@ -51,7 +51,7 @@ public abstract class Channel {
 	}
 
 	// Set this channel's name (MUST ONLY be called from ChannelManager).
-	// May call CommandAPI.fail() to cancel, ie for direct messages or insufficient permissions.
+	// May call throw CommandAPI.fail() to cancel, ie for direct messages or insufficient permissions.
 	protected abstract void setName(String name) throws WrapperCommandSyntaxException;
 
 	// Return this channel's name
@@ -97,17 +97,9 @@ public abstract class Channel {
 		if (sender instanceof Player player) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
-				try {
-					CommandUtils.fail(player, MessagingUtils.noChatStateStr(player));
-				} catch (WrapperCommandSyntaxException ex) {
-					return ex;
-				}
+				return CommandUtils.fail(player, MessagingUtils.noChatStateStr(player));
 			} else if (!playerState.isListening(this)) {
-				try {
-					CommandUtils.fail(player, "You are not listening in that channel.");
-				} catch (WrapperCommandSyntaxException ex) {
-					return ex;
-				}
+				return CommandUtils.fail(player, "You are not listening in that channel.");
 			}
 		}
 		return null;

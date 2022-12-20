@@ -3,7 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import dev.jorel.commandapi.CommandAPI;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
 import java.util.Map;
@@ -171,8 +171,7 @@ public class ChannelAccess {
 			}
 		}
 
-		CommandAPI.fail("No such access key: " + accessKey);
-		return 0;
+		throw CommandUtils.fail(sender, "No such access key: " + accessKey);
 	}
 
 	public int commandFlag(CommandSender sender, String accessKey, String value) throws WrapperCommandSyntaxException {
@@ -213,7 +212,6 @@ public class ChannelAccess {
 			}
 		}
 
-		CommandAPI.fail("No such access key: " + accessKey);
-		return 0;
+		throw CommandUtils.fail(sender, "No such access key: " + accessKey);
 	}
 }

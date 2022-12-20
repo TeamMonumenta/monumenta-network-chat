@@ -2,8 +2,8 @@ package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
-import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -147,18 +147,17 @@ public class DefaultChannels {
 			}
 		}
 
-		CommandAPI.fail("No such channel default: " + channelType);
-		return 0;
+		throw CommandUtils.fail(sender, "No such channel default: " + channelType);
 	}
 
 	public int command(CommandSender sender, String channelType, String channelName) throws WrapperCommandSyntaxException {
 		if (!CHANNEL_TYPES.contains(channelType)) {
-			CommandAPI.fail("No such channel default: " + channelType);
+			throw CommandUtils.fail(sender, "No such channel default: " + channelType);
 		}
 
 		Channel channel = ChannelManager.getChannel(channelName);
 		if (channel == null) {
-			CommandAPI.fail("No such channel: " + channelName);
+			throw CommandUtils.fail(sender, "No such channel: " + channelName);
 		}
 
 		setDefaultId(channelType, channel.getUniqueId());

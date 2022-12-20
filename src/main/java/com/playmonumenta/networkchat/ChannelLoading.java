@@ -48,7 +48,7 @@ public class ChannelLoading extends Channel {
 
 	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
-		CommandAPI.fail("This channel is still loading, please try again.");
+		throw CommandAPI.failWithString("This channel is still loading, please try again.");
 	}
 
 	// NOTE: This should not be called for this class.
@@ -64,12 +64,12 @@ public class ChannelLoading extends Channel {
 
 	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
-		CommandUtils.fail(sender, "This channel is still loading, please try again.");
+		throw CommandUtils.fail(sender, "This channel is still loading, please try again.");
 	}
 
 	@Override
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
-		CommandUtils.fail(sender, "This channel is still loading, please try again.");
+		throw CommandUtils.fail(sender, "This channel is still loading, please try again.");
 	}
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.

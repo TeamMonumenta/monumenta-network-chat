@@ -4,8 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
-import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -230,8 +230,7 @@ public class ChannelSettings {
 			}
 		}
 
-		CommandAPI.fail("No such setting: " + setting);
-		return 0;
+		throw CommandUtils.fail(sender, "No such setting: " + setting);
 	}
 
 	public int commandFlag(CommandSender sender, String setting, String value) throws WrapperCommandSyntaxException {
@@ -272,8 +271,7 @@ public class ChannelSettings {
 			}
 		}
 
-		CommandAPI.fail("No such setting: " + setting);
-		return 0;
+		throw CommandUtils.fail(sender, "No such setting: " + setting);
 	}
 
 	public void playSounds(Player player) {

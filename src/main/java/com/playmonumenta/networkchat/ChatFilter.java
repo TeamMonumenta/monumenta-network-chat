@@ -7,7 +7,6 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkchat.utils.ReplacerWithEscape;
-import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
 import java.util.Map;
@@ -105,9 +104,7 @@ public class ChatFilter {
 				pattern = Pattern.compile(mPatternString, flags);
 			} catch (PatternSyntaxException e) {
 				sender.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
-				CommandAPI.fail("Could not load chat filter " + mId);
-				// CommandAPI.fail always throws an exception, but the compiler isn't aware of this.
-				throw new RuntimeException("Could not load chat filter " + mId);
+				throw CommandUtils.fail(sender, "Could not load chat filter " + mId);
 			}
 			mPattern = pattern;
 			if (mIsBadWord) {

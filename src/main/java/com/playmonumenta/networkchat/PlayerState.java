@@ -350,8 +350,7 @@ public class PlayerState {
 
 		channel = ChannelManager.loadChannel(channelId);
 		if (!(channel instanceof ChannelWhisper channelWhisper)) {
-			CommandAPI.fail("Whisper channel is loading, please try again.");
-			return null;
+			throw CommandAPI.failWithString("Whisper channel is loading, please try again.");
 		} else {
 			return channelWhisper;
 		}

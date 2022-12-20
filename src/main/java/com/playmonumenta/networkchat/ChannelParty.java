@@ -164,8 +164,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return result;
 	}
 
-	public static void registerNewChannelCommands(String[] baseCommands, List<Argument> prefixArguments) {
-		List<Argument> arguments;
+	public static void registerNewChannelCommands(String[] baseCommands, List<Argument<?>> prefixArguments) {
+		List<Argument<?>> arguments;
 
 		for (String baseCommand : baseCommands) {
 			arguments = new ArrayList<>(prefixArguments);
@@ -175,17 +175,17 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.party")) {
-						CommandUtils.fail(sender, "You do not have permission to create party channels.");
+						throw CommandUtils.fail(sender, "You do not have permission to create party channels.");
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelParty newChannel = null;
+					ChannelParty newChannel;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
 						newChannel = new ChannelParty(channelName);
 					} catch (Exception e) {
-						CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}
 					// Add the sender to the party if they're a player
 					CommandSender callee = CommandUtils.getCallee(sender);
@@ -199,32 +199,28 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
-			));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_PARTY_CHANNEL_NAMES));
 			arguments.add(new MultiLiteralArgument("invite"));
-			arguments.add(new StringArgument("Player").replaceSuggestions(info ->
-				RemotePlayerManager.visiblePlayerNames().toArray(new String[0])
-			));
+			arguments.add(new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
 					String channelName = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 					if (!(ch instanceof ChannelParty channel)) {
-						CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
+						throw CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
 					} else {
 						if (!channel.isParticipant(sender)) {
-							CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
+							throw CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
 						}
 
 						String playerName = (String) args[3];
 						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 						if (playerId == null) {
-							CommandUtils.fail(sender, "No such player " + playerName + ".");
+							throw CommandUtils.fail(sender, "No such player " + playerName + ".");
 						}
 
 						sender.sendMessage(Component.text("Added " + playerName + " to " + channelName + ".", NamedTextColor.GRAY));
@@ -235,32 +231,28 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
-			));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_PARTY_CHANNEL_NAMES));
 			arguments.add(new MultiLiteralArgument("kick"));
-			arguments.add(new StringArgument("Player").replaceSuggestions(info ->
-				RemotePlayerManager.visiblePlayerNames().toArray(new String[0])
-			));
+			arguments.add(new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
 					String channelName = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
-						CommandUtils.fail(sender, "No such channel " + channelName + ".");
+						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 					if (!(ch instanceof ChannelParty channel)) {
-						CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
+						throw CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
 					} else {
 						if (!channel.isParticipant(sender)) {
-							CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
+							throw CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
 						}
 
 						String playerName = (String) args[3];
 						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 						if (playerId == null) {
-							CommandUtils.fail(sender, "No such player " + playerName + ".");
+							throw CommandUtils.fail(sender, "No such player " + playerName + ".");
 						}
 
 						channel.removePlayer(playerId);
@@ -271,9 +263,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(info ->
-				ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0])
-			));
+			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_PARTY_CHANNEL_NAMES));
 			arguments.add(new MultiLiteralArgument("leave"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -281,13 +271,13 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					String channelId = (String)args[1];
 					Channel ch = ChannelManager.getChannel(channelId);
 					if (ch == null) {
-						CommandUtils.fail(sender, "No such channel " + channelId + ".");
+						throw CommandUtils.fail(sender, "No such channel " + channelId + ".");
 					}
 					if (!(ch instanceof ChannelParty channel)) {
-						CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
+						throw CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
 					} else {
 						if (!channel.isParticipant(sender)) {
-							CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
+							throw CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
 						}
 						Player player = (Player) sender;
 
@@ -507,11 +497,11 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
-			CommandUtils.fail(sender, "You do not have permission to talk in party chat.");
+			throw CommandUtils.fail(sender, "You do not have permission to talk in party chat.");
 		}
 
 		if (!mayChat(sender)) {
-			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
+			throw CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 		}
 
 		WrapperCommandSyntaxException notListeningEx = isListeningCheck(sender);
@@ -521,9 +511,9 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+				throw CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
 			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
-				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
+				throw CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
 
@@ -535,7 +525,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
-			CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
+			throw CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
 		}
 	}
 

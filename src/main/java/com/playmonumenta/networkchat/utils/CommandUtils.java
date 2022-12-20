@@ -9,7 +9,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
-import org.jetbrains.annotations.Contract;
 
 public class CommandUtils {
 	public static CommandSender getCallee(CommandSender sender) {
@@ -44,19 +43,18 @@ public class CommandUtils {
 		return false;
 	}
 
-	@Contract("_, _ -> fail")
-	public static void fail(CommandSender sender, String message) throws WrapperCommandSyntaxException {
+	public static WrapperCommandSyntaxException fail(CommandSender sender, String message) {
 		if (sender instanceof ProxiedCommandSender) {
 			CommandSender caller = ((ProxiedCommandSender) sender).getCaller();
 			if (!sender.getName().equals(caller.getName())) {
 				caller.sendMessage(Component.text(message, NamedTextColor.RED));
-				CommandAPI.fail("");
+				return CommandAPI.failWithString("");
 			} else {
 				CommandSender callee = ((ProxiedCommandSender) sender).getCallee();
 				callee.sendMessage(Component.text(message, NamedTextColor.RED));
-				CommandAPI.fail(message);
+				return CommandAPI.failWithString(message);
 			}
 		}
-		CommandAPI.fail(message);
+		return CommandAPI.failWithString(message);
 	}
 }

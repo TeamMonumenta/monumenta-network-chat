@@ -4,11 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
 import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.async.RedisAsyncCommands;
@@ -37,6 +39,18 @@ public class ChannelManager implements Listener {
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
 	private static final String REDIS_FORCELOADED_CHANNEL_PATH = "networkchat:forceloaded_channels";
 	private static final String REDIS_DEFAULT_CHANNELS_KEY = "default_channels";
+	public static final ArgumentSuggestions SUGGESTIONS_AUTO_JOINABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
+		ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0]));
+	public static final ArgumentSuggestions SUGGESTIONS_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
+		ChannelManager.getChannelNames().toArray(new String[0]));
+	public static final ArgumentSuggestions SUGGESTIONS_CHATABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
+		ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0]));
+	public static final ArgumentSuggestions SUGGESTIONS_LISTENABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
+		ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0]));
+	public static final ArgumentSuggestions SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
+		ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0]));
+	public static final ArgumentSuggestions SUGGESTIONS_PARTY_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
+		ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0]));
 
 	private static @Nullable ChannelManager INSTANCE = null;
 	private static DefaultChannels mDefaultChannels = new DefaultChannels();
@@ -116,6 +130,11 @@ public class ChannelManager implements Listener {
 			}
 		}
 		return matches;
+	}
+
+	public static ArgumentSuggestions getChannelNameSuggestions(String channelType) {
+		return ArgumentSuggestions.strings(info ->
+			ChannelManager.getChannelNames(channelType).toArray(new String[0]));
 	}
 
 	public static @Nullable String getChannelName(UUID channelId) {
@@ -209,7 +228,7 @@ public class ChannelManager implements Listener {
 		String channelName = channel.getName();
 		@Nullable UUID oldChannelId = mChannelIdsByName.get(channelName);
 		if (oldChannelId != null) {
-			CommandAPI.fail("Channel " + channelName + " already exists!");
+			throw CommandUtils.fail(sender, "Channel " + channelName + " already exists!");
 		}
 		UUID channelId = channel.getUniqueId();
 		RedisAPI.getInstance().async().hset(REDIS_CHANNEL_NAME_TO_UUID_PATH, channelName, channelId.toString());
@@ -349,16 +368,16 @@ public class ChannelManager implements Listener {
 	public static void renameChannel(String oldName, String newName) throws WrapperCommandSyntaxException {
 		@Nullable UUID oldChannelId = mChannelIdsByName.get(oldName);
 		if (oldChannelId == null) {
-			CommandAPI.fail("Channel " + oldName + " does not exist!");
+			throw CommandAPI.failWithString("Channel " + oldName + " does not exist!");
 		}
 		Channel channel = mChannels.get(oldChannelId);
 		if (channel == null || channel instanceof ChannelLoading) {
 			loadChannel(oldChannelId);
-			CommandAPI.fail("Channel " + oldName + " not yet loaded, try again.");
+			throw CommandAPI.failWithString("Channel " + oldName + " not yet loaded, try again.");
 		}
 
 		if (mChannelIdsByName.containsKey(newName)) {
-			CommandAPI.fail("Channel " + newName + " already exists!");
+			throw CommandAPI.failWithString("Channel " + newName + " already exists!");
 		}
 
 		// NOTE: May call CommandAPI.fail to cancel the change before it occurs.
@@ -375,7 +394,7 @@ public class ChannelManager implements Listener {
 	public static void deleteChannel(String channelName) throws WrapperCommandSyntaxException {
 		Channel channel = getChannel(channelName);
 		if (channel == null) {
-			CommandAPI.fail("Channel " + channelName + " does not exist!");
+			throw CommandAPI.failWithString("Channel " + channelName + " does not exist!");
 		}
 
 		MMLog.info("Deleting channel " + channelName);

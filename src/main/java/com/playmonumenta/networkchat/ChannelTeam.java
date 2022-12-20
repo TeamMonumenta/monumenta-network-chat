@@ -140,7 +140,7 @@ public class ChannelTeam extends Channel {
 	public static void registerNewChannelCommands() {
 		// Setting up new team channels will be done via /teammsg, /tm, and similar,
 		// not through /chat new Blah team. The provided arguments are ignored.
-		List<Argument> arguments = new ArrayList<>();
+		List<Argument<?>> arguments = new ArrayList<>();
 
 		for (String command : TEAM_COMMANDS) {
 			CommandAPI.unregister(command);
@@ -166,12 +166,12 @@ public class ChannelTeam extends Channel {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player sendingPlayer)) {
 			sender.sendMessage(Component.translatable("permissions.requires.player"));
-			CommandUtils.fail(sender, "A player is required to run this command here");
+			throw CommandUtils.fail(sender, "A player is required to run this command here");
 		} else {
 			Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(sendingPlayer.getName());
 			if (team == null) {
 				sender.sendMessage(Component.translatable("commands.teammsg.failed.noteam"));
-				CommandUtils.fail(sender, sendingPlayer.getName() + " must be on a team to message their team.");
+				throw CommandUtils.fail(sender, sendingPlayer.getName() + " must be on a team to message their team.");
 			}
 			String teamName = team.getName();
 
@@ -180,7 +180,7 @@ public class ChannelTeam extends Channel {
 				try {
 					channel = new ChannelTeam(teamName);
 				} catch (Exception e) {
-					CommandUtils.fail(sender, "Could not create new team channel: Could not connect to RabbitMQ.");
+					throw CommandUtils.fail(sender, "Could not create new team channel: Could not connect to RabbitMQ.");
 				}
 				ChannelManager.registerNewChannel(sender, channel);
 			}
@@ -200,15 +200,15 @@ public class ChannelTeam extends Channel {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Entity sendingEntity)) {
 			sender.sendMessage(Component.translatable("permissions.requires.entity"));
-			CommandUtils.fail(sender, "An entity is required to run this command here");
+			throw CommandUtils.fail(sender, "An entity is required to run this command here");
 		} else {
 			Team team;
 			if (sendingEntity instanceof Player player) {
 				@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 				if (playerState == null) {
-					CommandUtils.fail(sender, MessagingUtils.noChatStateStr(player));
+					throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(player));
 				} else if (playerState.isPaused()) {
-					CommandUtils.fail(sender, "You cannot chat with chat paused (/chat unpause)");
+					throw CommandUtils.fail(sender, "You cannot chat with chat paused (/chat unpause)");
 				}
 				team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(sendingEntity.getName());
 			} else {
@@ -216,7 +216,7 @@ public class ChannelTeam extends Channel {
 			}
 			if (team == null) {
 				sender.sendMessage(Component.translatable("commands.teammsg.failed.noteam"));
-				CommandUtils.fail(sender, sendingEntity.getName() + " must be on a team to message their team.");
+				throw CommandUtils.fail(sender, sendingEntity.getName() + " must be on a team to message their team.");
 			}
 			String teamName = team.getName();
 
@@ -225,7 +225,7 @@ public class ChannelTeam extends Channel {
 				try {
 					channel = new ChannelTeam(teamName);
 				} catch (Exception e) {
-					CommandUtils.fail(sender, "Could not create new team channel: Could not connect to RabbitMQ.");
+					throw CommandUtils.fail(sender, "Could not create new team channel: Could not connect to RabbitMQ.");
 				}
 				ChannelManager.registerNewChannel(sender, channel);
 			}
@@ -257,7 +257,7 @@ public class ChannelTeam extends Channel {
 
 	@Override
 	protected void setName(String name) throws WrapperCommandSyntaxException {
-		CommandAPI.fail("Team channels may not be named.");
+		throw CommandAPI.failWithString("Team channels may not be named.");
 	}
 
 	@Override
@@ -273,7 +273,7 @@ public class ChannelTeam extends Channel {
 
 	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
-		CommandUtils.fail(sender, "Team channels do not support custom text colors.");
+		throw CommandUtils.fail(sender, "Team channels do not support custom text colors.");
 	}
 
 	@Override
@@ -373,11 +373,11 @@ public class ChannelTeam extends Channel {
 	@Override
 	public void sendMessage(CommandSender sender, String messageText) throws WrapperCommandSyntaxException {
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
-			CommandUtils.fail(sender, "You do not have permission to talk to a team.");
+			throw CommandUtils.fail(sender, "You do not have permission to talk to a team.");
 		}
 
 		if (!mayChat(sender)) {
-			CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
+			throw CommandUtils.fail(sender, "You do not have permission to chat in this channel.");
 		}
 
 		WrapperCommandSyntaxException notListeningEx = isListeningCheck(sender);
@@ -387,9 +387,9 @@ public class ChannelTeam extends Channel {
 
 		if (messageText.contains("@")) {
 			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-				CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+				throw CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
 			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
-				CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
+				throw CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
 			}
 		}
 
@@ -404,7 +404,7 @@ public class ChannelTeam extends Channel {
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
-			CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
+			throw CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
 		}
 	}
 

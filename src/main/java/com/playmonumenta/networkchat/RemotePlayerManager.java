@@ -8,6 +8,7 @@ import com.playmonumenta.networkrelay.DestOnlineEvent;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -84,6 +85,8 @@ public class RemotePlayerManager implements Listener {
 
 	public static final String REMOTE_PLAYER_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.remoteplayer";
 	public static final String REFRESH_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.refresh";
+	public static final ArgumentSuggestions SUGGESTIONS_VISIBLE_PLAYER_NAMES = ArgumentSuggestions.strings(info ->
+		RemotePlayerManager.visiblePlayerNames().toArray(new String[0]));
 
 	private static @Nullable RemotePlayerManager INSTANCE = null;
 	private static final Map<String, Map<String, RemotePlayerState>> mRemotePlayersByShard = new ConcurrentSkipListMap<>();

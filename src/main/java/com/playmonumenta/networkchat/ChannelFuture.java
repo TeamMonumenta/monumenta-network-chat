@@ -83,12 +83,12 @@ public class ChannelFuture extends Channel {
 
 	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
-		CommandUtils.fail(sender, "This channel's type (" + mType + ") is not supported in this plugin version.");
+		throw CommandUtils.fail(sender, "This channel's type (" + mType + ") is not supported in this plugin version.");
 	}
 
 	@Override
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
-		CommandUtils.fail(sender, "This channel's type (" + mType + ") is not supported in this plugin version.");
+		throw CommandUtils.fail(sender, "This channel's type (" + mType + ") is not supported in this plugin version.");
 	}
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
