@@ -195,7 +195,7 @@ public class ChatFilter {
 					MMLog.finer(() -> "    -> " + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(replacementResult));
 					return replacementResult;
 				})
-				.build();
+				.build(); // deprecation warning is an upstream issue, ignore until fixed upstream
 
 			MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
 			localResult.component(localResult.component().replaceText(replacementConfig));

@@ -414,9 +414,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
-		if (playerId == null) {
-			return null;
-		}
 		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 		if (playerAccess == null) {
 			playerAccess = new ChannelAccess();
@@ -591,7 +588,11 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		}
 
 		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
-		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
+		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID);
+		if (prefix == null) {
+			prefix = "";
+		}
+		prefix = prefix
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()

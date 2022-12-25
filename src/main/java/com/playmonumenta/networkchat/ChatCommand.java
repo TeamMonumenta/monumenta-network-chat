@@ -1251,7 +1251,11 @@ public class ChatCommand {
 				.executesNative((sender, args) -> {
 					String id = (String) args[2];
 					TextColor color = NetworkChatPlugin.messageColor(id);
-					String format = NetworkChatPlugin.messageFormat(id).replace("\n", "\\n");
+					String format = NetworkChatPlugin.messageFormat(id);
+					if (format == null) {
+						format = "";
+					}
+					format = format.replace("\n", "\\n");
 
 					Component senderComponent = MessagingUtils.senderComponent(sender);
 					sender.sendMessage(Component.text(id + " is " + format, color)
@@ -1623,12 +1627,11 @@ public class ChatCommand {
 			throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
 		}
 
-		if (!(channel instanceof ChannelPermissionNode)) {
+		if (!(channel instanceof ChannelPermissionNode channelPermissionNode)) {
 			throw CommandUtils.fail(sender, "This channel does not support permission");
 		}
 
-		((ChannelPermissionNode) channel).setChannelPermission(newPerms);
-
+		channelPermissionNode.setChannelPermission(newPerms);
 		return 1;
 	}
 

@@ -115,13 +115,21 @@ public class MessageManager implements Listener {
 			message = Message.fromJson(object);
 		} catch (Exception e) {
 			MMLog.severe("Could not read Message from json:");
-			MMLog.severe(e.getMessage());
+			String exceptionMessage = e.getMessage();
+			if (exceptionMessage != null) {
+				MMLog.severe(exceptionMessage);
+			} else {
+				MMLog.severe("Exception had no message set");
+			}
 			return;
 		}
 
 		Channel channel = message.getChannel();
 		if (channel == null) {
-			ChannelManager.loadChannel(message.getChannelUniqueId(), message);
+			UUID channelId = message.getChannelUniqueId();
+			if (channelId != null) {
+				ChannelManager.loadChannel(channelId, message);
+			}
 		} else {
 			channel.distributeMessage(message);
 		}
@@ -134,7 +142,12 @@ public class MessageManager implements Listener {
 			message = getMessage(messageId);
 		} catch (Exception e) {
 			MMLog.severe("Could not read Message deletion request from json:");
-			MMLog.severe(e.getMessage());
+			String exceptionMessage = e.getMessage();
+			if (exceptionMessage != null) {
+				MMLog.severe(exceptionMessage);
+			} else {
+				MMLog.severe("No message set for this exception");
+			}
 			return;
 		}
 
@@ -152,7 +165,12 @@ public class MessageManager implements Listener {
 			senderId = UUID.fromString(object.getAsJsonPrimitive("id").getAsString());
 		} catch (Exception e) {
 			MMLog.severe("Could not read delete from sender request from json:");
-			MMLog.severe(e.getMessage());
+			String exceptionMessage = e.getMessage();
+			if (exceptionMessage != null) {
+				MMLog.severe(exceptionMessage);
+			} else {
+				MMLog.severe("No message was found with this exception");
+			}
 			return;
 		}
 

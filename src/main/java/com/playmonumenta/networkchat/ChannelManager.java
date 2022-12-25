@@ -297,18 +297,17 @@ public class ChannelManager implements Listener {
 		return mDefaultChannels;
 	}
 
-	public static Channel getDefaultChannel() {
+	public static @Nullable Channel getDefaultChannel() {
 		return mDefaultChannels.getDefaultChannel("default");
 	}
 
-	public static Channel getDefaultChannel(String channelId) {
+	public static @Nullable Channel getDefaultChannel(String channelId) {
 		return mDefaultChannels.getDefaultChannel(channelId);
 	}
 
-	public static Channel getChannel(UUID channelId) {
+	public static @Nullable Channel getChannel(UUID channelId) {
 		if (channelId == null) {
-			// Null keys are invalid and throw NPE with ConcurrentSkipListMap
-			return null;
+			throw new RuntimeException("Null channel IDs are invalid.");
 		}
 		return mChannels.get(channelId);
 	}

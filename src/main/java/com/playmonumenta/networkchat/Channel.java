@@ -93,7 +93,7 @@ public abstract class Channel {
 		return false;
 	}
 
-	protected WrapperCommandSyntaxException isListeningCheck(CommandSender sender) {
+	protected @Nullable WrapperCommandSyntaxException isListeningCheck(CommandSender sender) {
 		if (sender instanceof Player player) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {

@@ -291,9 +291,6 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 
 	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
-		if (playerId == null) {
-			return null;
-		}
 		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 		if (playerAccess == null) {
 			playerAccess = new ChannelAccess();
@@ -317,12 +314,12 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 	}
 
 	@Override
-	public String getChannelPermission() {
+	public @Nullable String getChannelPermission() {
 		return mChannelPermission;
 	}
 
 	@Override
-	public void setChannelPermission(String newPerm) {
+	public void setChannelPermission(@Nullable String newPerm) {
 		mChannelPermission = newPerm;
 	}
 
@@ -435,7 +432,11 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		} else {
 			channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
 		}
-		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
+		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID);
+		if (prefix == null) {
+			prefix = "";
+		}
+		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 

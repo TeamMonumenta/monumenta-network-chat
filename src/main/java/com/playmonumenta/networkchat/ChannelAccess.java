@@ -128,7 +128,7 @@ public class ChannelAccess {
 		}
 	}
 
-	public Boolean mayChat() {
+	public @Nullable Boolean mayChat() {
 		return getFlag(FlagKey.MAY_CHAT.getKey());
 	}
 
@@ -136,7 +136,7 @@ public class ChannelAccess {
 		setFlag(FlagKey.MAY_CHAT.getKey(), value);
 	}
 
-	public Boolean mayListen() {
+	public @Nullable Boolean mayListen() {
 		return getFlag(FlagKey.MAY_LISTEN.getKey());
 	}
 

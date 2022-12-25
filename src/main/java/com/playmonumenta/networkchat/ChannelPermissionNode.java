@@ -1,7 +1,9 @@
 package com.playmonumenta.networkchat;
 
-public interface ChannelPermissionNode {
-	String getChannelPermission();
+import javax.annotation.Nullable;
 
-	void setChannelPermission(String newPerms);
+public interface ChannelPermissionNode {
+	@Nullable String getChannelPermission();
+
+	void setChannelPermission(@Nullable String newPerms);
 }

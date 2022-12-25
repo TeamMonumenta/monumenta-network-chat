@@ -314,7 +314,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		}
 	}
 
-	public static String messageFormat(String id) {
+	public static @Nullable String messageFormat(String id) {
 		return mMessageFormats.get(id);
 	}
 

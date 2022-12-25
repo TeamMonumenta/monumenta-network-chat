@@ -187,7 +187,7 @@ public class ChannelSettings {
 		}
 	}
 
-	public Boolean isListening() {
+	public @Nullable Boolean isListening() {
 		return getFlag(FlagKey.IS_LISTENING.getKey());
 	}
 
@@ -195,7 +195,7 @@ public class ChannelSettings {
 		setFlag(FlagKey.IS_LISTENING.getKey(), value);
 	}
 
-	public Boolean messagesPlaySound() {
+	public @Nullable Boolean messagesPlaySound() {
 		return getFlag(FlagKey.MESSAGES_PLAY_SOUND.getKey());
 	}
 

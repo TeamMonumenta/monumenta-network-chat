@@ -32,7 +32,7 @@ public class ChannelLoading extends Channel {
 	// toJson() shouldn't even be called for this class.
 	@Override
 	public JsonObject toJson() {
-		return null;
+		throw new RuntimeException("Cannot convert loading channel to json!");
 	}
 
 	// NOTE: If this class ID is ever read, it means the channel hasn't loaded and should be ignored.
@@ -54,12 +54,12 @@ public class ChannelLoading extends Channel {
 	// NOTE: This should not be called for this class.
 	@Override
 	public String getName() {
-		return null;
+		throw new RuntimeException("Cannot getName() for loading channels");
 	}
 
 	@Override
 	public @Nullable TextColor color() {
-		return null;
+		throw new RuntimeException("Cannot get color of loading channels");
 	}
 
 	@Override
