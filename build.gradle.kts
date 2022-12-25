@@ -74,7 +74,7 @@ dependencies {
     implementation("net.kyori:adventure-text-minimessage:4.11.0")
     implementation("org.apache.commons:commons-text:1.3")
     compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
-    implementation("dev.jorel.CommandAPI:commandapi-core:8.7.0")
+    implementation("dev.jorel.CommandAPI:commandapi-shade:8.7.0")
     compileOnly("com.playmonumenta:monumenta-network-relay:1.1")
     compileOnly("com.playmonumenta:redissync:4.1")
     compileOnly("io.lettuce:lettuce-core:5.3.5.RELEASE")
@@ -99,7 +99,6 @@ bukkit {
     apiVersion = "1.13"
     authors = listOf("NickNackGus")
     depend = listOf(
-        "CommandAPI",
         "MonumentaNetworkRelay",
         "MonumentaRedisSync",
         "PlaceholderAPI",
@@ -113,6 +112,13 @@ pmd {
     toolVersion = "6.41.0"
     ruleSets = listOf("$rootDir/pmd-ruleset.xml")
     setIgnoreFailures(true)
+}
+
+// Relocation / shading
+tasks {
+    shadowJar {
+       relocate("dev.jorel.commandapi", "com.playmonumenta.networkchat.internal.dev.jorel.commandapi")
+    }
 }
 
 publishing {
