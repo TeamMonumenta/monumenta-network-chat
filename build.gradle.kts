@@ -145,8 +145,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Xlint:deprecation")
 
     options.errorprone {
-        // TODO This must be turned back on as soon as some of the other warnings are under control
-        option("NullAway:AnnotatedPackages", "com.playmonumenta.networkchat.DISABLED")
+        option("NullAway:AnnotatedPackages", "com.playmonumenta")
 
         allErrorsAsWarnings.set(true)
 
