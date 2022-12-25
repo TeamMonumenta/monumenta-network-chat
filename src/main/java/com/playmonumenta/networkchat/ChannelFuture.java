@@ -42,7 +42,7 @@ public class ChannelFuture extends Channel {
 	// toJson() shouldn't even be called for this class.
 	@Override
 	public JsonObject toJson() {
-		return null;
+		throw new RuntimeException("Cannot convert future channels to json");
 	}
 
 	// NOTE: If this class ID is ever read, it means the channel hasn't loaded and should be ignored.

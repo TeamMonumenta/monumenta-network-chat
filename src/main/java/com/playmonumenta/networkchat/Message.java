@@ -90,10 +90,10 @@ public class Message implements AutoCloseable {
 
 	// Normally called through a channel
 	protected static @Nullable Message createMessage(Channel channel,
-	                                       MessageType messageType,
-	                                       CommandSender sender,
-	                                       JsonObject extraData,
-	                                       Component message) {
+	                                                 MessageType messageType,
+	                                                 CommandSender sender,
+	                                                 @Nullable JsonObject extraData,
+	                                                 Component message) {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
@@ -131,10 +131,10 @@ public class Message implements AutoCloseable {
 	protected static @Nullable Message createMessage(Channel channel,
 	                                       MessageType messageType,
 	                                       CommandSender sender,
-	                                       JsonObject extraData,
+	                                       @Nullable JsonObject extraData,
 	                                       String message) {
 		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).deserialize(message);
-		return Message.createMessage(channel, messageType, sender, extraData, messageComponent);
+		return createMessage(channel, messageType, sender, extraData, messageComponent);
 	}
 
 	// Raw, non-channel messages (use sparingly)
@@ -314,15 +314,18 @@ public class Message implements AutoCloseable {
 		return mInstant;
 	}
 
-	public UUID getChannelUniqueId() {
+	public @Nullable UUID getChannelUniqueId() {
 		return mChannelId;
 	}
 
-	public Channel getChannel() {
+	public @Nullable Channel getChannel() {
+		if (mChannelId == null) {
+			return null;
+		}
 		return ChannelManager.getChannel(mChannelId);
 	}
 
-	public JsonObject getExtraData() {
+	public @Nullable JsonObject getExtraData() {
 		return mExtraData;
 	}
 
@@ -330,7 +333,7 @@ public class Message implements AutoCloseable {
 		return mMessageType;
 	}
 
-	public UUID getSenderId() {
+	public @Nullable UUID getSenderId() {
 		return mSenderId;
 	}
 
@@ -349,7 +352,7 @@ public class Message implements AutoCloseable {
 		return mSenderComponent;
 	}
 
-	public NamespacedKey getSenderType() {
+	public @Nullable NamespacedKey getSenderType() {
 		return mSenderType;
 	}
 
@@ -374,7 +377,12 @@ public class Message implements AutoCloseable {
 		if (mIsDeleted) {
 			return Component.text("[DELETED]", NamedTextColor.RED, TextDecoration.BOLD);
 		}
-		@Nullable Channel channel = ChannelManager.getChannel(mChannelId);
+		@Nullable Channel channel;
+		if (mChannelId == null) {
+			channel = null;
+		} else {
+			channel = ChannelManager.getChannel(mChannelId);
+		}
 		if (channel == null) {
 			// Non-channel messages
 			if (mExtraData != null) {
@@ -396,7 +404,12 @@ public class Message implements AutoCloseable {
 		if (mIsDeleted) {
 			return;
 		}
-		@Nullable Channel channel = ChannelManager.getChannel(mChannelId);
+		@Nullable Channel channel;
+		if (mChannelId == null) {
+			channel = null;
+		} else {
+			channel = ChannelManager.getChannel(mChannelId);
+		}
 		if (channel == null) {
 			// Non-channel messages
 			if (mExtraData != null) {

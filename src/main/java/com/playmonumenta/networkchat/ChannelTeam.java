@@ -288,9 +288,6 @@ public class ChannelTeam extends Channel {
 
 	@Override
 	public ChannelAccess playerAccess(UUID playerId) {
-		if (playerId == null) {
-			return null;
-		}
 		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 		if (playerAccess == null) {
 			playerAccess = new ChannelAccess();
@@ -413,6 +410,10 @@ public class ChannelTeam extends Channel {
 		showMessage(Bukkit.getConsoleSender(), message);
 
 		JsonObject extraData = message.getExtraData();
+		if (extraData == null) {
+			MMLog.warning("Could not get Team from Message; no extraData provided");
+			return;
+		}
 		String teamName;
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
@@ -443,6 +444,10 @@ public class ChannelTeam extends Channel {
 	@Override
 	protected Component shownMessage(CommandSender recipient, Message message) {
 		JsonObject extraData = message.getExtraData();
+		if (extraData == null) {
+			MMLog.warning("Could not get Team from Message; no extraData provided");
+			return Component.text("[Could not get team from Message]", NamedTextColor.RED, TextDecoration.BOLD);
+		}
 		String teamName;
 		try {
 			teamName = extraData.getAsJsonPrimitive("team").getAsString();
@@ -477,8 +482,11 @@ public class ChannelTeam extends Channel {
 		}
 
 		TextColor channelColor = NetworkChatPlugin.messageColor(CHANNEL_CLASS_ID);
-		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID)
-			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
+		String prefix = NetworkChatPlugin.messageFormat(CHANNEL_CLASS_ID);
+		if (prefix == null) {
+			prefix = "";
+		}
+		prefix = prefix.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
 			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,

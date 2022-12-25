@@ -195,20 +195,11 @@ public class PlayerStateManager implements Listener {
 	}
 
 	public static @Nullable PlayerChatHistory getPlayerChatHistory(Player player) {
-		return mPlayerChatHistories.get(player.getUniqueId());
+		return getPlayerChatHistory(player.getUniqueId());
 	}
 
-	public static @Nullable PlayerChatHistory getPlayerChatHistory(UUID playerId) {
-		return mPlayerChatHistories.get(playerId);
-	}
-
-	public static PlayerChatHistory getOrCreatePlayerChatHistory(UUID playerId) {
-		PlayerChatHistory playerHistory = mPlayerChatHistories.get(playerId);
-		if (playerHistory == null) {
-			playerHistory = new PlayerChatHistory(playerId);
-			mPlayerChatHistories.put(playerId, playerHistory);
-		}
-		return playerHistory;
+	public static PlayerChatHistory getPlayerChatHistory(UUID playerId) {
+		return mPlayerChatHistories.computeIfAbsent(playerId, PlayerChatHistory::new);
 	}
 
 	public static boolean isAnyParticipantLocal(Set<UUID> participants) {
@@ -232,7 +223,7 @@ public class PlayerStateManager implements Listener {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
 
-		getOrCreatePlayerChatHistory(playerId);
+		getPlayerChatHistory(playerId);
 
 		// Load player chat state, if it exists.
 		JsonObject data = MonumentaRedisSyncAPI.getPlayerPluginData(playerId, IDENTIFIER);
@@ -305,7 +296,9 @@ public class PlayerStateManager implements Listener {
 			for (UUID channelId : oldState.getWatchedChannelIds()) {
 				Channel channel = ChannelManager.getChannel(channelId);
 				// This conveniently only unloads channels if they're not in use.
-				ChannelManager.unloadChannel(channel);
+				if (channel != null) {
+					ChannelManager.unloadChannel(channel);
+				}
 			}
 		}
 		// delete the data one tick later, as the save event still needs it (and is fired after the quit event)
@@ -374,7 +367,7 @@ public class PlayerStateManager implements Listener {
 			try {
 				final UUID playerId = UUID.fromString(playerIdJson.getAsString());
 
-				getOrCreatePlayerChatHistory(playerId).updateFromJson(data);
+				getPlayerChatHistory(playerId).updateFromJson(data);
 				new BukkitRunnable() {
 					@Override
 					public void run() {

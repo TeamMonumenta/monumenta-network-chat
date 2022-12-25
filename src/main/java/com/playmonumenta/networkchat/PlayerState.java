@@ -436,7 +436,7 @@ public class PlayerState {
 		mDefaultChannels.unsetChannel(channelId);
 	}
 
-	public Channel getDefaultChannel(String channelType) {
+	public @Nullable Channel getDefaultChannel(String channelType) {
 		@Nullable Channel channel = mDefaultChannels.getDefaultChannel(channelType);
 		if (channel == null) {
 			channel = ChannelManager.getDefaultChannel(channelType);
@@ -444,7 +444,7 @@ public class PlayerState {
 		return channel;
 	}
 
-	public Channel getActiveChannel() {
+	public @Nullable Channel getActiveChannel() {
 		if (mActiveChannelId != null) {
 			return ChannelManager.getChannel(mActiveChannelId);
 		}
