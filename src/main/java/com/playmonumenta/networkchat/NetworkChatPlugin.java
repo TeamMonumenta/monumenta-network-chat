@@ -51,7 +51,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		CommandAPI.onLoad(
 			new CommandAPIConfig()
 				.verboseOutput(true)
-				.dispatcherFile(new File(getDataFolder(), "networkrelay_command_registration.json"))
+				.dispatcherFile(new File(getDataFolder(), "networkchat_command_registration.json"))
 		);
 
 		if (mLogger == null) {
