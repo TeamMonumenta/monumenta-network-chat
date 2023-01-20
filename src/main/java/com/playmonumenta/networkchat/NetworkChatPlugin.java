@@ -9,10 +9,7 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIConfig;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -46,14 +43,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 	@Override
 	public void onLoad() {
-		// Load the CommandAPI. We enable verbose logging and allow the CommandAPI
-		// to generate a file command_registration.json for debugging purposes
-		CommandAPI.onLoad(
-			new CommandAPIConfig()
-				.verboseOutput(true)
-				.dispatcherFile(new File(getDataFolder(), "networkrelay_command_registration.json"))
-		);
-
 		if (mLogger == null) {
 			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
 		}
@@ -150,9 +139,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	@Override
 	public void onEnable() {
 		INSTANCE = this;
-
-		// Enable the CommandAPI
-		CommandAPI.onEnable(this);
 
 		/* Check for Placeholder API */
 		if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
