@@ -727,13 +727,33 @@ public class ChatCommand {
 						return 1;
 					})
 					.register();
+
+				arguments.clear();
+				arguments.add(new MultiLiteralArgument("message"));
+				arguments.add(new MultiLiteralArgument("clearchat"));
+				new CommandAPICommand(baseCommand)
+					.withArguments(arguments)
+					.executes((sender, args) -> {
+						if (!CommandUtils.hasPermission(sender, "networkchat.message.clearchat")) {
+							throw CommandUtils.fail(sender, "You do not have permission to run this command.");
+						}
+
+						MessageManager.clearChat();
+						return 1;
+					})
+					.register();
 			}
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("player"));
 			arguments.add(new MultiLiteralArgument("ignore"));
 			arguments.add(new MultiLiteralArgument("hide"));
-			arguments.add(new StringArgument("name").replaceSuggestions(ALL_CACHED_PLAYER_NAMES_SUGGESTIONS));
+			arguments.add(new StringArgument("name").replaceSuggestions(
+				ArgumentSuggestions.strings((suggestionInfo)
+					-> {
+					String selfStr = CommandUtils.getCallee(suggestionInfo.sender()) instanceof Player player ? player.getName() : null;
+					return MonumentaRedisSyncAPI.getAllCachedPlayerNames().stream().filter(player -> !player.equals(selfStr)).toArray(String[]::new);
+				})));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
@@ -749,6 +769,9 @@ public class ChatCommand {
 							throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						String ignoredName = (String) args[3];
+						if (ignoredName.equals(target.getName())) {
+							throw CommandUtils.fail(sender, "You cannot ignore yourself.");
+						}
 						@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
 						if (ignoredId == null) {
 							throw CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and may not be ignored. Double check capitalization and spelling.");
@@ -1750,6 +1773,7 @@ public class ChatCommand {
 	}
 
 	private static int sendMessage(CommandSender sender, String channelName, String message) throws WrapperCommandSyntaxException {
+		@Nullable PlayerState playerState = null;
 		CommandSender caller = CommandUtils.getCaller(sender);
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (NetworkChatProperties.getChatRequiresPlayer()) {
@@ -1762,7 +1786,7 @@ public class ChatCommand {
 				throw CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 			}
 
-			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
 				throw CommandUtils.fail(player, MessagingUtils.noChatStateStr(player));
 			} else if (playerState.isPaused()) {
@@ -1775,11 +1799,15 @@ public class ChatCommand {
 			throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
 		}
 
+		if (playerState != null) {
+			playerState.joinChannel(channel);
+		}
 		channel.sendMessage(sender, message);
 		return 1;
 	}
 
 	private static int sendMessageInDefault(CommandSender sender, String channelType, String message) throws WrapperCommandSyntaxException {
+		@Nullable PlayerState playerState = null;
 		CommandSender caller = CommandUtils.getCaller(sender);
 		CommandSender callee = CommandUtils.getCallee(sender);
 		Channel channel;
@@ -1793,7 +1821,7 @@ public class ChatCommand {
 				throw CommandUtils.fail(sender, "Hey! It's not nice to put words in people's mouths! Where are your manners?");
 			}
 
-			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+			playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
 				throw CommandUtils.fail(player, MessagingUtils.noChatStateStr(player));
 			} else if (playerState.isPaused()) {
@@ -1808,6 +1836,9 @@ public class ChatCommand {
 			throw CommandUtils.fail(sender, "No default for " + channelType + " channel type.");
 		}
 
+		if (playerState != null) {
+			playerState.joinChannel(channel);
+		}
 		channel.sendMessage(sender, message);
 		return 1;
 	}

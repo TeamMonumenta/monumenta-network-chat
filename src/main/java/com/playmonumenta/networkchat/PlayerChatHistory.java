@@ -6,7 +6,10 @@ import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -136,6 +139,13 @@ public class PlayerChatHistory {
 		if (!getPlayerState().isPaused()) {
 			showUnseen();
 		}
+	}
+
+	public void clearChat() {
+		mUnseenMessages.clear();
+		mSeenMessages.clear();
+		mSeenMessages.add(Message.createRawMessage(MessageType.SYSTEM, null, null, Component.text("Chat has been cleared.", NamedTextColor.RED, TextDecoration.BOLD)));
+		refreshChat();
 	}
 
 	public boolean isReplayingChat() {

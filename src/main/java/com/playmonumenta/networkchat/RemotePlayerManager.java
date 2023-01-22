@@ -44,11 +44,7 @@ public class RemotePlayerManager implements Listener {
 		    mComponent = MessagingUtils.playerComponent(player);
 		    mIsHidden = !RemotePlayerManager.isLocalPlayerVisible(player);
 		    mIsOnline = isOnline;
-			@Nullable String shard = RemotePlayerManager.getShardName();
-			if (shard == null) {
-				throw new RuntimeException("Could not get local shard name.");
-			}
-		    mShard = shard;
+		    mShard = RemotePlayerManager.getShardName();
 
 		    MMLog.fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	    }

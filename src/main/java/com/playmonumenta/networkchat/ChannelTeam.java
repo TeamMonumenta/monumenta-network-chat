@@ -197,6 +197,7 @@ public class ChannelTeam extends Channel {
 	}
 
 	private static int runCommandSay(CommandSender sender, String message) throws WrapperCommandSyntaxException {
+		@Nullable PlayerState playerState = null;
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Entity sendingEntity)) {
 			sender.sendMessage(Component.translatable("permissions.requires.entity"));
@@ -204,7 +205,7 @@ public class ChannelTeam extends Channel {
 		} else {
 			Team team;
 			if (sendingEntity instanceof Player player) {
-				@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
+				playerState = PlayerStateManager.getPlayerState(player);
 				if (playerState == null) {
 					throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(player));
 				} else if (playerState.isPaused()) {
@@ -230,6 +231,9 @@ public class ChannelTeam extends Channel {
 				ChannelManager.registerNewChannel(sender, channel);
 			}
 
+			if (playerState != null) {
+				playerState.joinChannel(channel);
+			}
 			channel.sendMessage(sendingEntity, message);
 		}
 		return 1;
@@ -321,10 +325,10 @@ public class ChannelTeam extends Channel {
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
 			if (playerAccess == null) {
-				if (mDefaultAccess.mayChat() == null || !mDefaultAccess.mayChat()) {
+				if (!Boolean.TRUE.equals(mDefaultAccess.mayChat())) {
 					return false;
 				}
-			} else if (playerAccess.mayChat() == null || !playerAccess.mayChat()) {
+			} else if (!Boolean.TRUE.equals(playerAccess.mayChat())) {
 				return false;
 			}
 
@@ -351,10 +355,10 @@ public class ChannelTeam extends Channel {
 
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
-				if (mDefaultAccess.mayListen() != null && !mDefaultAccess.mayListen()) {
+				if (Boolean.FALSE.equals(mDefaultAccess.mayListen())) {
 					return false;
 				}
-			} else if (playerAccess.mayListen() != null && !playerAccess.mayListen()) {
+			} else if (Boolean.FALSE.equals(playerAccess.mayListen())) {
 				return false;
 			}
 

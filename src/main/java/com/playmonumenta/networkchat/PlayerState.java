@@ -283,6 +283,10 @@ public class PlayerState {
 		getPlayerChatHistory().refreshChat();
 	}
 
+	public void clearChat() {
+		getPlayerChatHistory().clearChat();
+	}
+
 	// For use from PlayerChatHistory
 	protected void setPauseState(boolean isPaused) {
 		mChatPaused = isPaused;
@@ -457,25 +461,29 @@ public class PlayerState {
 			return false;
 		}
 		switch (player.getClientOption(ClientOption.CHAT_VISIBILITY)) {
-		case HIDDEN:
-			return false;
-		case SYSTEM:
-			if (!(channel instanceof ChannelAnnouncement)) {
+			case HIDDEN -> {
 				return false;
 			}
-			break;
-		default:
+			case SYSTEM -> {
+				if (!(channel instanceof ChannelAnnouncement)) {
+					return false;
+				}
+			}
+			default -> {
+			}
 		}
 
 		UUID channelId = channel.getUniqueId();
 
-		@Nullable ChannelSettings channelSettings = mChannelSettings.get(channelId);
-		if (channelSettings != null && channelSettings.isListening() != null) {
-			return channelSettings.isListening();
+		@Nullable ChannelSettings playerChannelSettings = mChannelSettings.get(channelId);
+		Boolean isListening = playerChannelSettings == null ? null : playerChannelSettings.isListening();
+		if (isListening != null) {
+			return isListening;
 		}
 
-		if (mDefaultChannelSettings.isListening() != null) {
-			return mDefaultChannelSettings.isListening();
+		isListening = mDefaultChannelSettings.isListening();
+		if (isListening != null) {
+			return isListening;
 		}
 
 		if (mUnwatchedChannelIds.containsKey(channelId)) {
@@ -514,20 +522,24 @@ public class PlayerState {
 		}
 
 		UUID channelId = channel.getUniqueId();
-		@Nullable ChannelSettings channelSettings = mChannelSettings.get(channelId);
-		if (channelSettings != null && channelSettings.messagesPlaySound() != null) {
-			shouldPlaySound = channelSettings.messagesPlaySound();
-		} else if (channel.channelSettings() != null && channel.channelSettings().messagesPlaySound() != null) {
-			shouldPlaySound = channel.channelSettings().messagesPlaySound();
-		} else if (mDefaultChannelSettings.messagesPlaySound() != null) {
-			shouldPlaySound = mDefaultChannelSettings.messagesPlaySound();
+		@Nullable ChannelSettings playerChannelSettings = mChannelSettings.get(channelId);
+		Boolean playerSettingPlaysSound = playerChannelSettings == null ? null : playerChannelSettings.messagesPlaySound();
+		@Nullable ChannelSettings defaultChannelSettings = channel.channelSettings();
+		Boolean channelSettingPlaysSound = defaultChannelSettings == null ? null : defaultChannelSettings.messagesPlaySound();
+		Boolean defaultSettingPlaysSound = mDefaultChannelSettings.messagesPlaySound();
+		if (playerSettingPlaysSound != null) {
+			shouldPlaySound = playerSettingPlaysSound;
+		} else if (channelSettingPlaysSound != null) {
+			shouldPlaySound = channelSettingPlaysSound;
+		} else if (defaultSettingPlaysSound != null) {
+			shouldPlaySound = defaultSettingPlaysSound;
 		} else if (channel instanceof ChannelWhisper) {
 			shouldPlaySound = true;
 		}
 
 		if (shouldPlaySound) {
-			if (channelSettings != null && !channelSettings.soundEmpty()) {
-				channelSettings.playSounds(player);
+			if (playerChannelSettings != null && !playerChannelSettings.soundEmpty()) {
+				playerChannelSettings.playSounds(player);
 			} else if (channel.channelSettings() != null && !channel.channelSettings().soundEmpty()) {
 				channel.channelSettings().playSounds(player);
 			} else if (!mDefaultChannelSettings.soundEmpty()) {

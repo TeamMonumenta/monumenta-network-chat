@@ -16,7 +16,7 @@ public class FileUtils {
 	 */
 	public static ArrayList<File> getFilesInDirectory(String folderPath,
 	                                                  String endsWith) throws IOException {
-		ArrayList<File> matchedFiles = new ArrayList<File>();
+		ArrayList<File> matchedFiles = new ArrayList<>();
 
 		try (Stream<Path> stream = Files.walk(Paths.get(folderPath), 100, FileVisitOption.FOLLOW_LINKS)) {
 			stream.forEach(path -> {

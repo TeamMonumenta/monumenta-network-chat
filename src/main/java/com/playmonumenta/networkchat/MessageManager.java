@@ -8,6 +8,7 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import org.bukkit.event.EventHandler;
@@ -18,6 +19,7 @@ public class MessageManager implements Listener {
 	public static final String NETWORK_CHAT_MESSAGE = "com.playmonumenta.networkchat.Message";
 	public static final String NETWORK_CHAT_DELETE_MESSAGE = "com.playmonumenta.networkchat.Message.delete";
 	public static final String NETWORK_CHAT_DELETE_FROM_SENDER = "com.playmonumenta.networkchat.Message.deleteFromSender";
+	public static final String NETWORK_CHAT_CLEAR_CHAT = "com.playmonumenta.networkchat.Message.clearChat";
 
 	private static @Nullable MessageManager INSTANCE = null;
 	private static final Cleaner mCleaner = Cleaner.create();
@@ -76,6 +78,16 @@ public class MessageManager implements Listener {
 		}
 	}
 
+	public static void clearChat() {
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_CLEAR_CHAT,
+				new JsonObject(),
+				NetworkChatPlugin.getMessageTtl());
+		} catch (Exception e) {
+			MMLog.warning("Catch exception sending " + NETWORK_CHAT_CLEAR_CHAT + " reason: " + e.getMessage());
+		}
+	}
+
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		JsonObject data;
@@ -104,6 +116,7 @@ public class MessageManager implements Listener {
 				}
 				deleteFromSenderHandler(data);
 			}
+			case NETWORK_CHAT_CLEAR_CHAT -> clearChatHandler();
 			default -> {
 			}
 		}
@@ -116,11 +129,7 @@ public class MessageManager implements Listener {
 		} catch (Exception e) {
 			MMLog.severe("Could not read Message from json:");
 			String exceptionMessage = e.getMessage();
-			if (exceptionMessage != null) {
-				MMLog.severe(exceptionMessage);
-			} else {
-				MMLog.severe("Exception had no message set");
-			}
+			MMLog.severe(Objects.requireNonNullElse(exceptionMessage, "Exception had no message set"));
 			return;
 		}
 
@@ -143,11 +152,7 @@ public class MessageManager implements Listener {
 		} catch (Exception e) {
 			MMLog.severe("Could not read Message deletion request from json:");
 			String exceptionMessage = e.getMessage();
-			if (exceptionMessage != null) {
-				MMLog.severe(exceptionMessage);
-			} else {
-				MMLog.severe("No message set for this exception");
-			}
+			MMLog.severe(Objects.requireNonNullElse(exceptionMessage, "No message set for this exception"));
 			return;
 		}
 
@@ -166,11 +171,7 @@ public class MessageManager implements Listener {
 		} catch (Exception e) {
 			MMLog.severe("Could not read delete from sender request from json:");
 			String exceptionMessage = e.getMessage();
-			if (exceptionMessage != null) {
-				MMLog.severe(exceptionMessage);
-			} else {
-				MMLog.severe("No message was found with this exception");
-			}
+			MMLog.severe(Objects.requireNonNullElse(exceptionMessage, "No message was found with this exception"));
 			return;
 		}
 
@@ -191,6 +192,12 @@ public class MessageManager implements Listener {
 			for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
 				state.refreshChat();
 			}
+		}
+	}
+
+	public void clearChatHandler() {
+		for (PlayerState state : PlayerStateManager.getPlayerStates().values()) {
+			state.clearChat();
 		}
 	}
 

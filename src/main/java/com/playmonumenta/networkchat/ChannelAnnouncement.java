@@ -61,7 +61,6 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		mPlayerAccess = new HashMap<>();
 	}
 
-
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
@@ -178,7 +177,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelAnnouncement newChannel = null;
+					ChannelAnnouncement newChannel;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -200,7 +199,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelAnnouncement newChannel = null;
+					ChannelAnnouncement newChannel;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -223,7 +222,7 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelAnnouncement newChannel = null;
+					ChannelAnnouncement newChannel;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -329,9 +328,9 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
 			if (playerAccess == null) {
-				return mDefaultAccess.mayChat() != null && mDefaultAccess.mayChat();
+				return Boolean.TRUE.equals(mDefaultAccess.mayChat());
 			} else {
-				return playerAccess.mayChat() != null && playerAccess.mayChat();
+				return Boolean.TRUE.equals(playerAccess.mayChat());
 			}
 		}
 	}
@@ -353,9 +352,9 @@ public class ChannelAnnouncement extends Channel implements ChannelPermissionNod
 
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
-				return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+				return !Boolean.FALSE.equals(mDefaultAccess.mayListen());
 			} else {
-				return playerAccess.mayListen() == null || playerAccess.mayListen();
+				return !Boolean.FALSE.equals(playerAccess.mayListen());
 			}
 		}
 	}

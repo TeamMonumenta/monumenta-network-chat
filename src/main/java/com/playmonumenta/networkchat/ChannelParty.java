@@ -460,9 +460,9 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			}
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
-				return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
+				return !Boolean.FALSE.equals(mDefaultAccess.mayChat());
 			} else {
-				return playerAccess.mayChat() == null || playerAccess.mayChat();
+				return !Boolean.FALSE.equals(playerAccess.mayChat());
 			}
 		}
 	}
@@ -484,9 +484,9 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
-				return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+				return !Boolean.FALSE.equals(mDefaultAccess.mayListen());
 			} else {
-				return playerAccess.mayListen() == null || playerAccess.mayListen();
+				return !Boolean.FALSE.equals(playerAccess.mayListen());
 			}
 		}
 	}

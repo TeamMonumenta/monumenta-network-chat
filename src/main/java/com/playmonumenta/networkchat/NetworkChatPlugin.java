@@ -65,17 +65,17 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mDefaultMessageColors.put(ChannelAnnouncement.CHANNEL_CLASS_ID, NamedTextColor.RED);
 		mDefaultMessageFormats.put(ChannelAnnouncement.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Announcement Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click>");
 		mDefaultMessageColors.put(ChannelGlobal.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
-		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><click:run_command\":<message_gui_cmd>\"><hover:show_text:\"<channel_color>Global Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
+		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><click:run_command\":<message_gui_cmd>\"><hover:show_text:\"<channel_color>Global Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelLocal.CHANNEL_CLASS_ID, NamedTextColor.YELLOW);
-		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Local Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
+		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Local Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelWorld.CHANNEL_CLASS_ID, NamedTextColor.BLUE);
-		mDefaultMessageFormats.put(ChannelWorld.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>World Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
+		mDefaultMessageFormats.put(ChannelWorld.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>World Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelParty.CHANNEL_CLASS_ID, NamedTextColor.LIGHT_PURPLE);
-		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Party Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>\u00bb");
+		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Party Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelTeam.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
 		mDefaultMessageFormats.put(ChannelTeam.CHANNEL_CLASS_ID, "<channel_color><team_displayname> \\<<sender>>");
 		mDefaultMessageColors.put(ChannelWhisper.CHANNEL_CLASS_ID, NamedTextColor.GRAY);
-		mDefaultMessageFormats.put(ChannelWhisper.CHANNEL_CLASS_ID, "<channel_color><sender> whispers to <receiver> <gray>\u00bb");
+		mDefaultMessageFormats.put(ChannelWhisper.CHANNEL_CLASS_ID, "<channel_color><sender> whispers to <receiver> <gray>»");
 
 		mMessageColors.putAll(mDefaultMessageColors);
 		mMessageFormats.putAll(mDefaultMessageFormats);
@@ -300,8 +300,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		}
 	}
 
-	public static @Nullable String messageFormat(String id) {
-		return mMessageFormats.get(id);
+	public static String messageFormat(String id) {
+		return mMessageFormats.getOrDefault(id, "Format string not found");
 	}
 
 	public static void messageFormat(String id, String value) {
