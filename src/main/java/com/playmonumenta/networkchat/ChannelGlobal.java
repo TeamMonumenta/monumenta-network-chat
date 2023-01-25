@@ -403,6 +403,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
+			MMLog.warning("Could not send message; RabbitMQ is not responding.", e);
 			throw CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
 		}
 	}
