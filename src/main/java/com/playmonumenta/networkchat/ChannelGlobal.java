@@ -177,7 +177,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel = null;
+					ChannelGlobal newChannel;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -199,7 +199,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel = null;
+					ChannelGlobal newChannel;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -222,7 +222,7 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 					}
 
 					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel = null;
+					ChannelGlobal newChannel;
 
 					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
@@ -338,9 +338,9 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
 			if (playerAccess == null) {
-				return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
+				return !Boolean.FALSE.equals(mDefaultAccess.mayChat());
 			} else {
-				return playerAccess.mayChat() == null || playerAccess.mayChat();
+				return !Boolean.FALSE.equals(playerAccess.mayChat());
 			}
 		}
 	}
@@ -362,9 +362,9 @@ public class ChannelGlobal extends Channel implements ChannelPermissionNode, Cha
 
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
-				return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+				return !Boolean.FALSE.equals(mDefaultAccess.mayListen());
 			} else {
-				return playerAccess.mayListen() == null || playerAccess.mayListen();
+				return !Boolean.FALSE.equals(playerAccess.mayListen());
 			}
 		}
 	}

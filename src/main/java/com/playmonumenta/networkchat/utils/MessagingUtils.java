@@ -39,9 +39,9 @@ public class MessagingUtils {
 	public static final GsonComponentSerializer GSON_SERIALIZER = GsonComponentSerializer.gson();
 	public static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 	public static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
-	public static final Pattern REGEX_LEGACY_PREFIX = Pattern.compile("[&\u00a7]");
-	public static final Pattern REGEX_LEGACY_RGB_1 = Pattern.compile("(?<!<)[&\u00a7]?#([0-9a-fA-F]{6})(?!>)");
-	public static final Pattern REGEX_LEGACY_RGB_2 = Pattern.compile("(?<!<)[&\u00a7]#(([&\u00a7][0-9a-fA-F]){6})(?!>)");
+	public static final Pattern REGEX_LEGACY_PREFIX = Pattern.compile("[&§]");
+	public static final Pattern REGEX_LEGACY_RGB_1 = Pattern.compile("(?<!<)[&§]?#([0-9a-fA-F]{6})(?!>)");
+	public static final Pattern REGEX_LEGACY_RGB_2 = Pattern.compile("(?<!<)[&§]#(([&§][0-9a-fA-F]){6})(?!>)");
 	public static final MiniMessage CHANNEL_HEADER_FMT_MINIMESSAGE = MiniMessage.builder()
 		.tags(
 			TagResolver.builder().resolvers(StandardTags.color(),
@@ -225,7 +225,7 @@ public class MessagingUtils {
 		}
 		Component profileMessage = state.profileMessageComponent();
 		String postPapiProcessing = PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player"))
-			.replaceAll("[\u00a7&][Rr]", colorMiniMessage)
+			.replaceAll("[§&][Rr]", colorMiniMessage)
 			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
 			.replace("<hover:show_text:\"\"></hover>", "");
 		postPapiProcessing = legacyToMiniMessage(postPapiProcessing);

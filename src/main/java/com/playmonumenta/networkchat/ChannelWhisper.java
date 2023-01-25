@@ -60,7 +60,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 
-
 	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
 		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
 		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
@@ -223,6 +222,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	private static int runCommandSay(CommandSender sender, String recipientName, String message) throws WrapperCommandSyntaxException {
+		@Nullable PlayerState senderState = null;
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -232,7 +232,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 				throw CommandUtils.fail(sender, recipientName + " is not online.");
 			}
 
-			@Nullable PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
+			senderState = PlayerStateManager.getPlayerState(sendingPlayer);
 			if (senderState == null) {
 				throw CommandUtils.fail(sendingPlayer, MessagingUtils.noChatStateStr(sendingPlayer));
 			} else if (senderState.isPaused()) {
@@ -249,6 +249,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 				senderState.setWhisperChannel(recipientUuid, channel);
 			}
 
+			if (senderState != null) {
+				senderState.joinChannel(channel);
+			}
 			channel.sendMessage(sendingPlayer, message);
 		}
 		return 1;
@@ -449,9 +452,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
 			if (playerAccess == null) {
-				return mDefaultAccess.mayChat() == null || mDefaultAccess.mayChat();
+				return !Boolean.FALSE.equals(mDefaultAccess.mayChat());
 			} else {
-				return playerAccess.mayChat() == null || playerAccess.mayChat();
+				return !Boolean.FALSE.equals(playerAccess.mayChat());
 			}
 		}
 	}
@@ -473,9 +476,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
-				return mDefaultAccess.mayListen() == null || mDefaultAccess.mayListen();
+				return !Boolean.FALSE.equals(mDefaultAccess.mayListen());
 			} else {
-				return playerAccess.mayListen() == null || playerAccess.mayListen();
+				return !Boolean.FALSE.equals(playerAccess.mayListen());
 			}
 		}
 	}
@@ -558,10 +561,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 		if (playerAccess == null) {
-			if (mDefaultAccess.mayListen() != null && !mDefaultAccess.mayListen()) {
+			if (Boolean.FALSE.equals(mDefaultAccess.mayListen())) {
 				return;
 			}
-		} else if (playerAccess.mayListen() != null && !playerAccess.mayListen()) {
+		} else if (Boolean.FALSE.equals(playerAccess.mayListen())) {
 			return;
 		}
 
