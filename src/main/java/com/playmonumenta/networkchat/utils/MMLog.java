@@ -91,6 +91,13 @@ public class MMLog {
 		}
 	}
 
+	public static void warning(String msg, Throwable t) {
+		Logger logger = CustomLogger.getInstance();
+		if (logger != null) {
+			logger.log(Level.WARNING, msg, t);
+		}
+	}
+
 	public static void severe(Supplier<String> msg) {
 		Logger logger = CustomLogger.getInstance();
 		if (logger != null) {

@@ -397,6 +397,7 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 		} else if (sender instanceof BlockCommandSender blockCommandSender) {
 			world = blockCommandSender.getBlock().getWorld();
 		} else {
+			MMLog.warning("Unable to get world for world channel message for sender " + sender);
 			throw CommandUtils.fail(sender, "Unable to get world for world channel message.");
 		}
 
@@ -412,6 +413,7 @@ public class ChannelWorld extends Channel implements ChannelPermissionNode, Chan
 		try {
 			MessageManager.getInstance().broadcastMessage(message);
 		} catch (Exception e) {
+			MMLog.warning("Could not send message; RabbitMQ is not responding.", e);
 			throw CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
 		}
 	}
