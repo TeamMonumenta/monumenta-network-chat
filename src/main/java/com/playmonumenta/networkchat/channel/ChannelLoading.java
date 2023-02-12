@@ -2,10 +2,10 @@ package com.playmonumenta.networkchat.channel;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.ChannelManager;
-import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.Message;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
@@ -47,7 +47,8 @@ public class ChannelLoading extends Channel {
 	}
 
 	@Override
-	public void markModified() {}
+	public void markModified() {
+	}
 
 	@Override
 	public Instant lastModified() {
@@ -91,7 +92,8 @@ public class ChannelLoading extends Channel {
 	}
 
 	@Override
-	public void resetPlayerAccess(UUID playerId) {}
+	public void resetPlayerAccess(UUID playerId) {
+	}
 
 	@Override
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
@@ -100,7 +102,8 @@ public class ChannelLoading extends Channel {
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
 	@Override
-	public void distributeMessage(Message message) {}
+	public void distributeMessage(Message message) {
+	}
 
 	// The channel is loading - we don't know how to display this message yet!
 	@Override
@@ -110,7 +113,8 @@ public class ChannelLoading extends Channel {
 
 	// The channel is loading - we can't determine who can see this yet!
 	@Override
-	public void showMessage(CommandSender recipient, Message message) {}
+	public void showMessage(CommandSender recipient, Message message) {
+	}
 
 	// Register a player state waiting for this channel to finish loading.
 	public void addWaitingPlayerState(PlayerState playerState) {

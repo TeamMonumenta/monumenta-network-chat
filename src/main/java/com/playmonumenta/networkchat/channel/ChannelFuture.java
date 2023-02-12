@@ -1,9 +1,9 @@
 package com.playmonumenta.networkchat.channel;
 
 import com.google.gson.JsonObject;
-import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.Message;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
@@ -38,7 +38,8 @@ public class ChannelFuture extends Channel {
 	}
 
 	@Override
-	public void markModified() {}
+	public void markModified() {
+	}
 
 	@Override
 	public Instant lastModified() {
@@ -71,7 +72,8 @@ public class ChannelFuture extends Channel {
 	}
 
 	@Override
-	public void resetPlayerAccess(UUID playerId) {}
+	public void resetPlayerAccess(UUID playerId) {
+	}
 
 	@Override
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
@@ -80,7 +82,8 @@ public class ChannelFuture extends Channel {
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
 	@Override
-	public void distributeMessage(Message message) {}
+	public void distributeMessage(Message message) {
+	}
 
 	// The channel is from a future version - we can't determine how to display this!
 	@Override
@@ -90,5 +93,6 @@ public class ChannelFuture extends Channel {
 
 	// The channel is from a future version - we can't determine who can see this!
 	@Override
-	public void showMessage(CommandSender recipient, Message message) {}
+	public void showMessage(CommandSender recipient, Message message) {
+	}
 }

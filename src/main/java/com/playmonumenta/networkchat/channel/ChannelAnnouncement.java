@@ -1,14 +1,14 @@
 package com.playmonumenta.networkchat.channel;
 
 import com.google.gson.JsonObject;
-import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
 import com.playmonumenta.networkchat.ChannelManager;
-import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
 import com.playmonumenta.networkchat.Message;
 import com.playmonumenta.networkchat.MessageManager;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
+import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
+import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
