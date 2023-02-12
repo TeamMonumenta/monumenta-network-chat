@@ -1,7 +1,13 @@
-package com.playmonumenta.networkchat;
+package com.playmonumenta.networkchat.channel;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.Message;
+import com.playmonumenta.networkchat.MessageManager;
+import com.playmonumenta.networkchat.NetworkChatPlugin;
+import com.playmonumenta.networkchat.PlayerState;
+import com.playmonumenta.networkchat.PlayerStateManager;
+import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -12,7 +18,6 @@ import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,106 +39,26 @@ public class ChannelTeam extends Channel {
 	public static final String CHANNEL_CLASS_ID = "team";
 	private static final String[] TEAM_COMMANDS = {"teammsg", "tm"};
 
-	private final UUID mId;
-	private Instant mLastUpdate;
 	private final String mTeamName;
-	private ChannelSettings mDefaultSettings;
-	private ChannelAccess mDefaultAccess;
-	private final Map<UUID, ChannelAccess> mPlayerAccess;
 
 	private ChannelTeam(UUID channelId, Instant lastUpdate, String teamName) {
-		mId = channelId;
-		mLastUpdate = lastUpdate;
+		super(channelId, lastUpdate, "Team_" + teamName);
 		mTeamName = teamName;
-
-		mDefaultSettings = new ChannelSettings();
-		mDefaultAccess = new ChannelAccess();
-		mPlayerAccess = new HashMap<>();
 	}
 
 	public ChannelTeam(String teamName) {
-		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
-		mTeamName = teamName;
-
-		mDefaultSettings = new ChannelSettings();
-		mDefaultAccess = new ChannelAccess();
-		mPlayerAccess = new HashMap<>();
+		this(UUID.randomUUID(), Instant.now(), teamName);
 	}
 
-	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
-		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
-		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
-			throw new Exception("Cannot create ChannelTeam from channel ID " + channelClassId);
-		}
-		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
-		UUID channelId = UUID.fromString(uuidString);
-		Instant lastUpdate = Instant.now();
-		JsonElement lastUpdateJson = channelJson.get("lastUpdate");
-		if (lastUpdateJson != null) {
-			lastUpdate = Instant.ofEpochMilli(lastUpdateJson.getAsLong());
-		}
-
-		String teamName = channelJson.getAsJsonPrimitive("team").getAsString();
-
-		ChannelTeam channel = new ChannelTeam(channelId, lastUpdate, teamName);
-
-		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
-		if (defaultSettingsJson != null) {
-			channel.mDefaultSettings = ChannelSettings.fromJson(defaultSettingsJson);
-		}
-
-		JsonObject defaultAccessJson = channelJson.getAsJsonObject("defaultAccess");
-		if (defaultAccessJson != null) {
-			defaultAccessJson = channelJson.getAsJsonObject("defaultPerms");
-		}
-		if (defaultAccessJson != null) {
-			channel.mDefaultAccess = ChannelAccess.fromJson(defaultAccessJson);
-		}
-
-		JsonObject allPlayerAccessJson = channelJson.getAsJsonObject("playerAccess");
-		if (allPlayerAccessJson == null) {
-			allPlayerAccessJson = channelJson.getAsJsonObject("playerPerms");
-		}
-		if (allPlayerAccessJson != null) {
-			for (Map.Entry<String, JsonElement> playerPermEntry : allPlayerAccessJson.entrySet()) {
-				UUID playerId;
-				JsonObject playerAccessJson;
-				try {
-					playerId = UUID.fromString(playerPermEntry.getKey());
-					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
-				} catch (Exception e) {
-					MMLog.warning("Catch exception during converting json to channel Team reason: " + e.getMessage());
-					continue;
-				}
-				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
-				channel.mPlayerAccess.put(playerId, playerAccess);
-			}
-		}
-
-		return channel;
+	protected ChannelTeam(JsonObject channelJson) throws Exception {
+		super(channelJson);
+		mTeamName = channelJson.getAsJsonPrimitive("team").getAsString();
 	}
 
 	@Override
 	public JsonObject toJson() {
-		JsonObject allPlayerAccessJson = new JsonObject();
-		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
-			UUID channelId = playerPermEntry.getKey();
-			ChannelAccess channelAccess = playerPermEntry.getValue();
-			if (!channelAccess.isDefault()) {
-				allPlayerAccessJson.add(channelId.toString(), channelAccess.toJson());
-			}
-		}
-
-		JsonObject result = new JsonObject();
-		result.addProperty("type", CHANNEL_CLASS_ID);
-		result.addProperty("uuid", mId.toString());
-		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
-		result.addProperty("name", getName());
+		JsonObject result = super.toJson();
 		result.addProperty("team", mTeamName);
-		result.add("defaultSettings", mDefaultSettings.toJson());
-		result.add("defaultAccess", mDefaultAccess.toJson());
-		result.add("playerAccess", allPlayerAccessJson);
 		return result;
 	}
 
@@ -245,22 +170,7 @@ public class ChannelTeam extends Channel {
 	}
 
 	@Override
-	public UUID getUniqueId() {
-		return mId;
-	}
-
-	@Override
-	public void markModified() {
-		mLastUpdate = Instant.now();
-	}
-
-	@Override
-	public Instant lastModified() {
-		return mLastUpdate;
-	}
-
-	@Override
-	protected void setName(String name) throws WrapperCommandSyntaxException {
+	public void setName(String name) throws WrapperCommandSyntaxException {
 		throw CommandAPI.failWithString("Team channels may not be named.");
 	}
 
@@ -278,34 +188,6 @@ public class ChannelTeam extends Channel {
 	@Override
 	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
 		throw CommandUtils.fail(sender, "Team channels do not support custom text colors.");
-	}
-
-	@Override
-	public ChannelSettings channelSettings() {
-		return mDefaultSettings;
-	}
-
-	@Override
-	public ChannelAccess channelAccess() {
-		return mDefaultAccess;
-	}
-
-	@Override
-	public ChannelAccess playerAccess(UUID playerId) {
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			playerAccess = new ChannelAccess();
-			mPlayerAccess.put(playerId, playerAccess);
-		}
-		return playerAccess;
-	}
-
-	@Override
-	public void resetPlayerAccess(UUID playerId) {
-		if (playerId == null) {
-			return;
-		}
-		mPlayerAccess.remove(playerId);
 	}
 
 	@Override
@@ -447,7 +329,7 @@ public class ChannelTeam extends Channel {
 	}
 
 	@Override
-	protected Component shownMessage(CommandSender recipient, Message message) {
+	public Component shownMessage(CommandSender recipient, Message message) {
 		JsonObject extraData = message.getExtraData();
 		if (extraData == null) {
 			MMLog.warning("Could not get Team from Message; no extraData provided");
@@ -504,7 +386,7 @@ public class ChannelTeam extends Channel {
 	}
 
 	@Override
-	protected void showMessage(CommandSender recipient, Message message) {
+	public void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
 		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {

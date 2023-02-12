@@ -2,6 +2,11 @@ package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.channel.Channel;
+import com.playmonumenta.networkchat.channel.ChannelAnnouncement;
+import com.playmonumenta.networkchat.channel.ChannelGlobal;
+import com.playmonumenta.networkchat.channel.ChannelLocal;
+import com.playmonumenta.networkchat.channel.ChannelParty;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;

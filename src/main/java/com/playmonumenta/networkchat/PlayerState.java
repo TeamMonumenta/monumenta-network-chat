@@ -5,6 +5,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.channel.Channel;
+import com.playmonumenta.networkchat.channel.ChannelAnnouncement;
+import com.playmonumenta.networkchat.channel.ChannelWhisper;
+import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
@@ -563,7 +567,7 @@ public class PlayerState {
 	 * @param channelId ID of the updated channel
 	 * @param channel Channel that has changed. null if deleted.
 	 */
-	protected void channelUpdated(UUID channelId, @Nullable Channel channel) {
+	public void channelUpdated(UUID channelId, @Nullable Channel channel) {
 		@Nullable String newChannelName = null;
 		if (channel != null) {
 			newChannelName = channel.getName();

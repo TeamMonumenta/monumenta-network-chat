@@ -4,6 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.channel.Channel;
+import com.playmonumenta.networkchat.channel.ChannelFuture;
+import com.playmonumenta.networkchat.channel.ChannelLoading;
+import com.playmonumenta.networkchat.channel.ChannelParty;
+import com.playmonumenta.networkchat.channel.ChannelWhisper;
+import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
+import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
@@ -34,7 +41,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 public class ChannelManager implements Listener {
-	public static final String NETWORK_CHAT_CHANNEL_UPDATE = "com.playmonumenta.networkchat.Channel.update";
+	public static final String NETWORK_CHAT_CHANNEL_UPDATE = "com.playmonumenta.networkchat.channel.Channel.update";
 	private static final String REDIS_CHANNEL_NAME_TO_UUID_PATH = "networkchat:channel_name_to_uuids";
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
 	private static final String REDIS_FORCELOADED_CHANNEL_PATH = "networkchat:forceloaded_channels";

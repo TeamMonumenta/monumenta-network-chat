@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;

@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import java.lang.ref.Cleaner;
@@ -128,7 +129,7 @@ public class Message implements AutoCloseable {
 	}
 
 	// Normally called through a channel
-	protected static @Nullable Message createMessage(Channel channel,
+	public static @Nullable Message createMessage(Channel channel,
 	                                       MessageType messageType,
 	                                       CommandSender sender,
 	                                       @Nullable JsonObject extraData,

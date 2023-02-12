@@ -1,9 +1,15 @@
-package com.playmonumenta.networkchat;
+package com.playmonumenta.networkchat.channel;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.Message;
+import com.playmonumenta.networkchat.MessageManager;
+import com.playmonumenta.networkchat.NetworkChatPlugin;
+import com.playmonumenta.networkchat.PlayerState;
+import com.playmonumenta.networkchat.PlayerStateManager;
+import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
+import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -15,11 +21,10 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
@@ -35,132 +40,25 @@ import org.bukkit.entity.Player;
 public class ChannelParty extends Channel implements ChannelInviteOnly {
 	public static final String CHANNEL_CLASS_ID = "party";
 
-	private final UUID mId;
-	private Instant mLastUpdate;
-	private String mName;
-	private @Nullable TextColor mMessageColor = null;
-	private final Set<UUID> mParticipants;
-	private ChannelSettings mDefaultSettings;
-	private ChannelAccess mDefaultAccess;
-	private final Map<UUID, ChannelAccess> mPlayerAccess;
+	protected final Set<UUID> mParticipants = new TreeSet<>();
 
 	private ChannelParty(UUID channelId, Instant lastUpdate, String name) {
-		mId = channelId;
-		mLastUpdate = lastUpdate;
-		mName = name;
-		mParticipants = new HashSet<>();
-
-		mDefaultSettings = new ChannelSettings();
-		mDefaultAccess = new ChannelAccess();
-		mPlayerAccess = new HashMap<>();
+		super(channelId, lastUpdate, name);
 	}
 
 	public ChannelParty(String name) {
-		mLastUpdate = Instant.now();
-		mId = UUID.randomUUID();
-		mName = name;
-		mParticipants = new HashSet<>();
-
-		mDefaultSettings = new ChannelSettings();
-		mDefaultAccess = new ChannelAccess();
-		mPlayerAccess = new HashMap<>();
+		this(UUID.randomUUID(), Instant.now(), name);
 	}
 
-	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
-		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
-		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
-			throw new Exception("Cannot create ChannelParty from channel ID " + channelClassId);
-		}
-		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
-		UUID channelId = UUID.fromString(uuidString);
-		Instant lastUpdate = Instant.now();
-		JsonElement lastUpdateJson = channelJson.get("lastUpdate");
-		if (lastUpdateJson != null) {
-			lastUpdate = Instant.ofEpochMilli(lastUpdateJson.getAsLong());
-		}
-		String name = channelJson.getAsJsonPrimitive("name").getAsString();
-
-		ChannelParty channel = new ChannelParty(channelId, lastUpdate, name);
-
-		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
-		if (messageColorJson != null && messageColorJson.isString()) {
-			String messageColorString = messageColorJson.getAsString();
-			try {
-				channel.mMessageColor = MessagingUtils.colorFromString(messageColorString);
-			} catch (Exception e) {
-				MMLog.warning("Caught exception getting mMessageColor from json: " + e.getMessage());
-			}
-		}
-
-		JsonArray participantsJson = channelJson.getAsJsonArray("participants");
-		for (JsonElement participantJson : participantsJson) {
-			channel.addPlayer(UUID.fromString(participantJson.getAsString()), false);
-		}
-
-		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
-		if (defaultSettingsJson != null) {
-			channel.mDefaultSettings = ChannelSettings.fromJson(defaultSettingsJson);
-		}
-
-		JsonObject defaultAccessJson = channelJson.getAsJsonObject("defaultAccess");
-		if (defaultAccessJson == null) {
-			defaultAccessJson = channelJson.getAsJsonObject("defaultPerms");
-		}
-		if (defaultAccessJson != null) {
-			channel.mDefaultAccess = ChannelAccess.fromJson(defaultAccessJson);
-		}
-
-		JsonObject allPlayerAccessJson = channelJson.getAsJsonObject("playerAccess");
-		if (allPlayerAccessJson == null) {
-			allPlayerAccessJson = channelJson.getAsJsonObject("playerPerms");
-		}
-		if (allPlayerAccessJson != null) {
-			for (Map.Entry<String, JsonElement> playerPermEntry : allPlayerAccessJson.entrySet()) {
-				UUID playerId;
-				JsonObject playerAccessJson;
-				try {
-					playerId = UUID.fromString(playerPermEntry.getKey());
-					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
-				} catch (Exception e) {
-					MMLog.warning("Catch exception during converting json to channel Party reason: " + e.getMessage());
-					continue;
-				}
-				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
-				channel.mPlayerAccess.put(playerId, playerAccess);
-			}
-		}
-
-		return channel;
+	protected ChannelParty(JsonObject channelJson) throws Exception {
+		super(channelJson);
+		participantsFromJson(mParticipants, channelJson);
 	}
 
 	@Override
 	public JsonObject toJson() {
-		JsonObject allPlayerAccessJson = new JsonObject();
-		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
-			UUID channelId = playerPermEntry.getKey();
-			ChannelAccess channelAccess = playerPermEntry.getValue();
-			if (!channelAccess.isDefault()) {
-				allPlayerAccessJson.add(channelId.toString(), channelAccess.toJson());
-			}
-		}
-
-		JsonArray participantsJson = new JsonArray();
-		for (UUID playerId : mParticipants) {
-			participantsJson.add(playerId.toString());
-		}
-
-		JsonObject result = new JsonObject();
-		result.addProperty("type", CHANNEL_CLASS_ID);
-		result.addProperty("uuid", mId.toString());
-		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
-		result.addProperty("name", mName);
-		if (mMessageColor != null) {
-			result.addProperty("messageColor", MessagingUtils.colorToString(mMessageColor));
-		}
-		result.add("participants", participantsJson);
-		result.add("defaultSettings", mDefaultSettings.toJson());
-		result.add("defaultAccess", mDefaultAccess.toJson());
-		result.add("playerAccess", allPlayerAccessJson);
+		JsonObject result = super.toJson();
+		participantsToJson(result, mParticipants);
 		return result;
 	}
 
@@ -295,44 +193,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	public UUID getUniqueId() {
-		return mId;
-	}
-
-	@Override
-	public void markModified() {
-		mLastUpdate = Instant.now();
-	}
-
-	@Override
-	public Instant lastModified() {
-		return mLastUpdate;
-	}
-
-	@Override
-	protected void setName(String name) throws WrapperCommandSyntaxException {
-		mName = name;
-	}
-
-	@Override
-	public String getName() {
-		return mName;
-	}
-
-	@Override
-	public @Nullable TextColor color() {
-		return mMessageColor;
-	}
-
-	@Override
-	public void color(CommandSender sender, @Nullable TextColor color) throws WrapperCommandSyntaxException {
-		mMessageColor = color;
-	}
-
-	public void addPlayer(UUID playerId) {
-		addPlayer(playerId, true);
-	}
-
 	public void addPlayer(UUID playerId, boolean save) {
 		mParticipants.add(playerId);
 		PlayerState state = PlayerStateManager.getPlayerState(playerId);
@@ -346,6 +206,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 	}
 
+	@Override
 	public void removePlayer(UUID playerId) {
 		mParticipants.remove(playerId);
 		if (mParticipants.isEmpty()) {
@@ -360,21 +221,6 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	public boolean isParticipant(CommandSender sender) {
-		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player player)) {
-			return false;
-		} else {
-			return isParticipant(player);
-		}
-	}
-
-	@Override
-	public boolean isParticipant(Player player) {
-		return isParticipant(player.getUniqueId());
-	}
-
-	@Override
 	public boolean isParticipant(UUID playerId) {
 		return mParticipants.contains(playerId);
 	}
@@ -385,63 +231,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	public List<String> getParticipantNames() {
-		List<String> names = new ArrayList<>();
-		for (UUID playerId : mParticipants) {
-			String name = MonumentaRedisSyncAPI.cachedUuidToName(playerId);
-			if (name != null) {
-				names.add(name);
-			}
-		}
-		return names;
-	}
-
-	@Override
-	public ChannelSettings channelSettings() {
-		return mDefaultSettings;
-	}
-
-	@Override
-	public ChannelAccess channelAccess() {
-		return mDefaultAccess;
-	}
-
-	@Override
-	public ChannelAccess playerAccess(UUID playerId) {
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			playerAccess = new ChannelAccess();
-			mPlayerAccess.put(playerId, playerAccess);
-		}
-		return playerAccess;
-	}
-
-	@Override
-	public void resetPlayerAccess(UUID playerId) {
-		if (playerId == null) {
-			return;
-		}
-		mPlayerAccess.remove(playerId);
-	}
-
-	@Override
-	public boolean shouldAutoJoin(PlayerState state) {
-		return mParticipants.contains(state.getPlayerUniqueId());
-	}
-
-	@Override
 	public boolean mayManage(CommandSender sender) {
-		if (CommandUtils.hasPermission(sender, "networkchat.moderator")) {
-			return true;
-		}
-
-		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player player)) {
-			return false;
-		} else {
-			UUID playerId = player.getUniqueId();
-			return mParticipants.contains(playerId);
-		}
+		return isParticipantOrModerator(sender);
 	}
 
 	@Override
@@ -451,13 +242,13 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 
 		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!isParticipant(callee)) {
+			return false;
+		}
 		if (!(callee instanceof Player player)) {
 			return false;
 		} else {
 			UUID playerId = player.getUniqueId();
-			if (!mParticipants.contains(playerId)) {
-				return false;
-			}
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
 				return !Boolean.FALSE.equals(mDefaultAccess.mayChat());
@@ -474,14 +265,13 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 
 		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!isParticipant(callee)) {
+			return false;
+		}
 		if (!(callee instanceof Player player)) {
 			return true;
 		} else {
 			UUID playerId = player.getUniqueId();
-			if (!mParticipants.contains(playerId)) {
-				return false;
-			}
-
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
 				return !Boolean.FALSE.equals(mDefaultAccess.mayListen());
@@ -545,7 +335,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	protected Component shownMessage(CommandSender recipient, Message message) {
+	public Component shownMessage(CommandSender recipient, Message message) {
 		TextColor channelColor;
 		if (mMessageColor != null) {
 			channelColor = mMessageColor;
@@ -568,7 +358,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	protected void showMessage(CommandSender recipient, Message message) {
+	public void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
 		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {

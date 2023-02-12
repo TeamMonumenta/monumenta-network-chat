@@ -1,6 +1,9 @@
-package com.playmonumenta.networkchat;
+package com.playmonumenta.networkchat.channel;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.channel.property.ChannelSettings;
+import com.playmonumenta.networkchat.Message;
+import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
@@ -15,27 +18,10 @@ public class ChannelFuture extends Channel {
 	public static final String CHANNEL_CLASS_ID = "future";
 
 	private final String mType;
-	private final UUID mId;
-	private Instant mLastUpdate;
-	private String mName;
 
-	private ChannelFuture(String type, UUID channelId, Instant lastUpdate, String name) {
-		mType = type;
-		mId = channelId;
-		mLastUpdate = lastUpdate;
-		mName = name;
-	}
-
-	protected static Channel fromJsonInternal(JsonObject channelJson) {
-		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
-		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
-		UUID channelId = UUID.fromString(uuidString);
-		Instant lastUpdate = Instant.now();
-		if (channelJson.get("lastUpdate") != null) {
-			lastUpdate = Instant.ofEpochMilli(channelJson.get("lastUpdate").getAsLong());
-		}
-		String name = channelJson.getAsJsonPrimitive("name").getAsString();
-		return new ChannelFuture(channelClassId, channelId, lastUpdate, name);
+	protected ChannelFuture(JsonObject channelJson) throws Exception {
+		super(channelJson, false, false);
+		mType = channelJson.getAsJsonPrimitive("type").getAsString();
 	}
 
 	// NOTE: This channel type should never be saved, as it will overwrite a real channel.
@@ -52,28 +38,11 @@ public class ChannelFuture extends Channel {
 	}
 
 	@Override
-	public UUID getUniqueId() {
-		return mId;
-	}
-
-	@Override
-	public void markModified() {
-		mLastUpdate = Instant.now();
-	}
+	public void markModified() {}
 
 	@Override
 	public Instant lastModified() {
-		return mLastUpdate;
-	}
-
-	@Override
-	protected void setName(String name) throws WrapperCommandSyntaxException {
-		mName = name;
-	}
-
-	@Override
-	public String getName() {
-		return mName;
+		return Instant.MIN;
 	}
 
 	@Override
@@ -87,23 +56,39 @@ public class ChannelFuture extends Channel {
 	}
 
 	@Override
+	public ChannelSettings channelSettings() {
+		throw new RuntimeException("Channel settings not available for future channels.");
+	}
+
+	@Override
+	public ChannelAccess channelAccess() {
+		throw new RuntimeException("Channel access not available for future channels.");
+	}
+
+	@Override
+	public ChannelAccess playerAccess(UUID playerId) {
+		throw new RuntimeException("Player access not available for future channels.");
+	}
+
+	@Override
+	public void resetPlayerAccess(UUID playerId) {}
+
+	@Override
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
 		throw CommandUtils.fail(sender, "This channel's type (" + mType + ") is not supported in this plugin version.");
 	}
 
 	// Messages will be replayed for anyone triggering the channel to load, nothing to do.
 	@Override
-	public void distributeMessage(Message message) {
-	}
+	public void distributeMessage(Message message) {}
 
 	// The channel is from a future version - we can't determine how to display this!
 	@Override
-	protected Component shownMessage(CommandSender recipient, Message message) {
+	public Component shownMessage(CommandSender recipient, Message message) {
 		return message.getMessage();
 	}
 
 	// The channel is from a future version - we can't determine who can see this!
 	@Override
-	protected void showMessage(CommandSender recipient, Message message) {
-	}
+	public void showMessage(CommandSender recipient, Message message) {}
 }
