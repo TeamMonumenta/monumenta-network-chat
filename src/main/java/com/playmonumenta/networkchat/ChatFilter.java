@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -28,10 +29,18 @@ public class ChatFilter {
 	public static class ChatFilterResult {
 		private boolean mFoundMatch = false;
 		private boolean mFoundBadWord = false;
+		private @Nullable Message mMessage;
 		private Component mOriginalComponent;
 		private Component mComponent;
 
+		public ChatFilterResult(Message message) {
+			mMessage = message;
+			mOriginalComponent = message.getMessage();
+			mComponent = mOriginalComponent;
+		}
+
 		public ChatFilterResult(Component component) {
+			mMessage = null;
 			mOriginalComponent = component;
 			mComponent = component;
 		}
@@ -39,6 +48,9 @@ public class ChatFilter {
 		public ChatFilterResult getCleanCopy() {
 			ChatFilterResult filterResult = new ChatFilterResult(mComponent);
 			filterResult.mOriginalComponent = mOriginalComponent;
+			if (mMessage != null) {
+				filterResult.mMessage = mMessage;
+			}
 			return filterResult;
 		}
 
@@ -213,7 +225,19 @@ public class ChatFilter {
 
 			if (localResult.foundMatch()) {
 				if (mCommand != null) {
-					String command = mCommand.replace("@S", sender.getName());
+					String command = mCommand;
+
+					Message message = filterResult.mMessage;
+					String channelName = "CHANNEL_NAME_NOT_FOUND";
+					if (message != null) {
+						Channel channel = message.getChannel();
+						if (channel != null) {
+							channelName = channel.getName();
+						}
+					}
+					command = command.replace("<channel_name>", channelName);
+
+					command = command.replace("@S", sender.getName());
 					if (callee instanceof Entity entity) {
 						command = command.replace("@U", entity.getUniqueId().toString().toLowerCase());
 					}

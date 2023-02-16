@@ -95,8 +95,8 @@ public class Message implements AutoCloseable {
 	                                                 CommandSender sender,
 	                                                 @Nullable JsonObject extraData,
 	                                                 Component message) {
+		Message result;
 		CommandSender callee = CommandUtils.getCallee(sender);
-		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		UUID channelId = channel.getUniqueId();
 		@Nullable UUID senderId = null;
@@ -107,7 +107,19 @@ public class Message implements AutoCloseable {
 		}
 		boolean senderIsPlayer = callee instanceof Player;
 		Component senderComponent = MessagingUtils.senderComponent(sender);
-		ChatFilter.ChatFilterResult filterResult = new ChatFilter.ChatFilterResult(message);
+		result = new Message(UUID.randomUUID(),
+			instant,
+			channelId,
+			messageType,
+			senderId,
+			sender.getName(),
+			senderType,
+			senderIsPlayer,
+			senderComponent,
+			extraData,
+			message);
+
+		ChatFilter.ChatFilterResult filterResult = new ChatFilter.ChatFilterResult(result);
 		NetworkChatPlugin.globalFilter().run(sender, filterResult);
 		message = filterResult.component();
 		if (filterResult.foundBadWord()) {
@@ -115,17 +127,19 @@ public class Message implements AutoCloseable {
 			sender.sendMessage(message);
 			return null;
 		}
-		return new Message(id,
-		                   instant,
-		                   channelId,
-		                   messageType,
-		                   senderId,
-		                   sender.getName(),
-		                   senderType,
-		                   senderIsPlayer,
-		                   senderComponent,
-		                   extraData,
-		                   message);
+
+		result = new Message(UUID.randomUUID(),
+			instant,
+			channelId,
+		    messageType,
+		    senderId,
+		    sender.getName(),
+		    senderType,
+		    senderIsPlayer,
+		    senderComponent,
+		    extraData,
+		    message);
+		return result;
 	}
 
 	// Normally called through a channel

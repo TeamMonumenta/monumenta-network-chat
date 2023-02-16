@@ -316,7 +316,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 	public UUID getOtherParticipant(UUID from) {
 		List<UUID> participantsList = new ArrayList<>(mParticipants);
-		if (participantsList.get(0).equals(from)) {
+		if (participantsList.size() == 1) {
+			return participantsList.get(0);
+		} else if (participantsList.get(0).equals(from)) {
 			return participantsList.get(1);
 		} else {
 			return participantsList.get(0);
