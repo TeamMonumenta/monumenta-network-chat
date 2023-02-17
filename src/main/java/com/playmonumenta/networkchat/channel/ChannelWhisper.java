@@ -275,7 +275,11 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 	public static String getName(Collection<UUID> participants) {
 		List<UUID> participantsList = new ArrayList<>(participants);
-		Collections.sort(participantsList);
+		if (participantsList.size() == 1) {
+			participantsList.add(participantsList.get(0));
+		} else {
+			Collections.sort(participantsList);
+		}
 		StringBuilder name = new StringBuilder("Whisper");
 		for (UUID participant : participantsList) {
 			name.append("_").append(participant.toString());
@@ -284,9 +288,13 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	public static String getAltName(List<UUID> participants) {
-		participants = new ArrayList<>(participants);
-		Collections.sort(participants);
-		Collections.reverse(participants);
+		List<UUID> participantsList = new ArrayList<>(participants);
+		if (participantsList.size() == 1) {
+			participantsList.add(participantsList.get(0));
+		} else {
+			Collections.sort(participants);
+			Collections.reverse(participants);
+		}
 		StringBuilder name = new StringBuilder("Whisper");
 		for (UUID participant : participants) {
 			name.append("_").append(participant.toString());
