@@ -1,24 +1,30 @@
-package com.playmonumenta.networkchat;
+package com.playmonumenta.networkchat.channel.property;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.MMLog;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
-// Access to listen or talk in a channel
-public class ChannelAccess {
+// Settings for a given channel, same structure for channel default and player preference
+public class ChannelSettings {
 	public enum FlagKey {
-		MAY_CHAT("may_chat"),
-		MAY_LISTEN("may_listen");
+		IS_LISTENING("is_listening"),
+		MESSAGES_PLAY_SOUND("messages_play_sound");
 
 		final String mKey;
 
@@ -63,25 +69,69 @@ public class ChannelAccess {
 		}
 	}
 
-	private final Map<FlagKey, Boolean> mFlags = new HashMap<>();
+	public static class CSound {
+		public final Sound mSound;
+		public float mVolume;
+		public float mPitch;
 
-	public static ChannelAccess fromJson(JsonObject object) {
-		ChannelAccess perms = new ChannelAccess();
+		public CSound(Sound sound, float volume, float pitch) {
+			mSound = sound;
+			mVolume = volume;
+			mPitch = pitch;
+		}
+
+		public void playSound(Player player) {
+			player.playSound(player.getLocation(), mSound, mVolume, mPitch);
+		}
+
+		public JsonObject toJson() {
+			JsonObject object = new JsonObject();
+			object.addProperty("mSound", mSound.toString());
+			object.addProperty("mVolume", mVolume);
+			object.addProperty("mPitch", mPitch);
+
+			return object;
+		}
+
+		public static CSound fromJson(JsonObject object) throws Exception {
+			Sound sound = Sound.valueOf(object.get("mSound").getAsString());
+			float volume = object.get("mVolume").getAsFloat();
+			float pitch = object.get("mPitch").getAsFloat();
+			return new CSound(sound, volume, pitch);
+		}
+	}
+
+	private final Map<FlagKey, Boolean> mFlags = new HashMap<>();
+	private final List<CSound> mSounds = new ArrayList<>();
+
+	public static ChannelSettings fromJson(JsonObject object) {
+		ChannelSettings settings = new ChannelSettings();
 		if (object != null) {
-			for (Map.Entry<String, JsonElement> permsEntry : object.entrySet()) {
-				String key = permsEntry.getKey();
-				JsonElement valueJson = permsEntry.getValue();
+			for (Map.Entry<String, JsonElement> settingsEntry : object.entrySet()) {
+				String key = settingsEntry.getKey();
+				JsonElement valueJson = settingsEntry.getValue();
 
 				FlagKey flagKey = FlagKey.of(key);
 				if (flagKey != null && valueJson.isJsonPrimitive()) {
 					JsonPrimitive valueJsonPrimitive = valueJson.getAsJsonPrimitive();
 					if (valueJsonPrimitive != null && valueJsonPrimitive.isBoolean()) {
-						perms.mFlags.put(flagKey, valueJsonPrimitive.getAsBoolean());
+						settings.mFlags.put(flagKey, valueJsonPrimitive.getAsBoolean());
+					}
+				}
+			}
+
+			JsonArray cSoundsArray = object.getAsJsonArray("SoundsList");
+			if (cSoundsArray != null && cSoundsArray.size() > 0) {
+				for (JsonElement element : cSoundsArray) {
+					try {
+						settings.mSounds.add(CSound.fromJson(element.getAsJsonObject()));
+					} catch (Exception e) {
+						MMLog.warning("Caught an exception while converting SoundsList to object. Reason: " + e.getMessage());
 					}
 				}
 			}
 		}
-		return perms;
+		return settings;
 	}
 
 	public JsonObject toJson() {
@@ -93,6 +143,15 @@ public class ChannelAccess {
 				object.addProperty(keyStr, value);
 			}
 		}
+
+		if (!mSounds.isEmpty()) {
+			JsonArray cSoundsArray = new JsonArray();
+			for (CSound sound : mSounds) {
+				cSoundsArray.add(sound.toJson());
+			}
+			object.add("SoundsList", cSoundsArray);
+		}
+
 		return object;
 	}
 
@@ -128,42 +187,42 @@ public class ChannelAccess {
 		}
 	}
 
-	public @Nullable Boolean mayChat() {
-		return getFlag(FlagKey.MAY_CHAT.getKey());
+	public @Nullable Boolean isListening() {
+		return getFlag(FlagKey.IS_LISTENING.getKey());
 	}
 
-	public void mayChat(Boolean value) {
-		setFlag(FlagKey.MAY_CHAT.getKey(), value);
+	public void isListening(Boolean value) {
+		setFlag(FlagKey.IS_LISTENING.getKey(), value);
 	}
 
-	public @Nullable Boolean mayListen() {
-		return getFlag(FlagKey.MAY_LISTEN.getKey());
+	public @Nullable Boolean messagesPlaySound() {
+		return getFlag(FlagKey.MESSAGES_PLAY_SOUND.getKey());
 	}
 
-	public void mayListen(Boolean value) {
-		setFlag(FlagKey.MAY_LISTEN.getKey(), value);
+	public void messagesPlaySound(Boolean value) {
+		setFlag(FlagKey.MESSAGES_PLAY_SOUND.getKey(), value);
 	}
 
-	public int commandFlag(CommandSender sender, String accessKey) throws WrapperCommandSyntaxException {
-		if (FlagKey.of(accessKey) != null) {
-			Boolean value = getFlag(accessKey);
+	public int commandFlag(CommandSender sender, String setting) throws WrapperCommandSyntaxException {
+		if (FlagKey.of(setting) != null) {
+			Boolean value = getFlag(setting);
 			if (value == null) {
 				sender.sendMessage(Component.empty()
-				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.DEFAULT.getValue(), NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 0;
 			} else if (value) {
 				sender.sendMessage(Component.empty()
-				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.TRUE.getValue(), NamedTextColor.GREEN, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 1;
 			} else {
 				sender.sendMessage(Component.empty()
-				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" is set to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.FALSE.getValue(), NamedTextColor.RED, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
@@ -171,34 +230,34 @@ public class ChannelAccess {
 			}
 		}
 
-		throw CommandUtils.fail(sender, "No such access key: " + accessKey);
+		throw CommandUtils.fail(sender, "No such setting: " + setting);
 	}
 
-	public int commandFlag(CommandSender sender, String accessKey, String value) throws WrapperCommandSyntaxException {
-		if (FlagKey.of(accessKey) != null) {
+	public int commandFlag(CommandSender sender, String setting, String value) throws WrapperCommandSyntaxException {
+		if (FlagKey.of(setting) != null) {
 			if (FlagValue.FALSE.getValue().equals(value)) {
-				setFlag(accessKey, false);
+				setFlag(setting, false);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
-				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.FALSE.getValue(), NamedTextColor.RED, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return -1;
 			} else if (FlagValue.TRUE.getValue().equals(value)) {
-				setFlag(accessKey, true);
+				setFlag(setting, true);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
-				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.TRUE.getValue(), NamedTextColor.GREEN, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
 				return 1;
 			} else if (FlagValue.DEFAULT.getValue().equals(value)) {
-				setFlag(accessKey, null);
+				setFlag(setting, null);
 				sender.sendMessage(Component.empty()
 				    .append(Component.text("Set ", NamedTextColor.GRAY))
-				    .append(Component.text(accessKey, NamedTextColor.AQUA, TextDecoration.BOLD))
+				    .append(Component.text(setting, NamedTextColor.AQUA, TextDecoration.BOLD))
 				    .append(Component.text(" to ", NamedTextColor.GRAY))
 				    .append(Component.text(FlagValue.DEFAULT.getValue(), NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
 				    .append(Component.text(".", NamedTextColor.GRAY)));
@@ -212,6 +271,24 @@ public class ChannelAccess {
 			}
 		}
 
-		throw CommandUtils.fail(sender, "No such access key: " + accessKey);
+		throw CommandUtils.fail(sender, "No such setting: " + setting);
+	}
+
+	public void playSounds(Player player) {
+		for (CSound sound : mSounds) {
+			sound.playSound(player);
+		}
+	}
+
+	public void addSound(Sound sound, float volume, float pitch) {
+		mSounds.add(new CSound(sound, volume, pitch));
+	}
+
+	public void clearSound() {
+		mSounds.clear();
+	}
+
+	public boolean soundEmpty() {
+		return mSounds.isEmpty();
 	}
 }

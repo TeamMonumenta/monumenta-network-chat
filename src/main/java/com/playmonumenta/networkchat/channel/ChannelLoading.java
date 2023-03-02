@@ -1,9 +1,15 @@
-package com.playmonumenta.networkchat;
+package com.playmonumenta.networkchat.channel;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.Message;
+import com.playmonumenta.networkchat.PlayerState;
+import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,14 +24,13 @@ import org.bukkit.command.CommandSender;
 public class ChannelLoading extends Channel {
 	public static final String CHANNEL_CLASS_ID = "loading";
 
-	private final UUID mId;
 	private final Set<PlayerState> mAwaitingPlayers = new HashSet<>();
 	private final List<Message> mQueuedMessages = new ArrayList<>();
 
 	/* Note: This channel type may only be created by this plugin while waiting for Redis data.
 	 * This is why it is the only channel whose constructor is protected, and has no name. */
-	protected ChannelLoading(UUID channelId) {
-		mId = channelId;
+	public ChannelLoading(UUID channelId) {
+		super(channelId, Instant.MIN, "Loading_" + channelId);
 	}
 
 	// NOTE: This channel type should never be saved, as it could overwrite a real channel.
@@ -42,12 +47,16 @@ public class ChannelLoading extends Channel {
 	}
 
 	@Override
-	public UUID getUniqueId() {
-		return mId;
+	public void markModified() {
 	}
 
 	@Override
-	protected void setName(String name) throws WrapperCommandSyntaxException {
+	public Instant lastModified() {
+		return Instant.MIN;
+	}
+
+	@Override
+	public void setName(String name) throws WrapperCommandSyntaxException {
 		throw CommandAPI.failWithString("This channel is still loading, please try again.");
 	}
 
@@ -68,6 +77,25 @@ public class ChannelLoading extends Channel {
 	}
 
 	@Override
+	public ChannelSettings channelSettings() {
+		throw new RuntimeException("Channel settings not available for loading channels.");
+	}
+
+	@Override
+	public ChannelAccess channelAccess() {
+		throw new RuntimeException("Channel access not available for loading channels.");
+	}
+
+	@Override
+	public ChannelAccess playerAccess(UUID playerId) {
+		throw new RuntimeException("Player access not available for loading channels.");
+	}
+
+	@Override
+	public void resetPlayerAccess(UUID playerId) {
+	}
+
+	@Override
 	public void sendMessage(CommandSender sender, String message) throws WrapperCommandSyntaxException {
 		throw CommandUtils.fail(sender, "This channel is still loading, please try again.");
 	}
@@ -79,13 +107,13 @@ public class ChannelLoading extends Channel {
 
 	// The channel is loading - we don't know how to display this message yet!
 	@Override
-	protected Component shownMessage(CommandSender recipient, Message message) {
+	public Component shownMessage(CommandSender recipient, Message message) {
 		return message.getMessage();
 	}
 
 	// The channel is loading - we can't determine who can see this yet!
 	@Override
-	protected void showMessage(CommandSender recipient, Message message) {
+	public void showMessage(CommandSender recipient, Message message) {
 	}
 
 	// Register a player state waiting for this channel to finish loading.
@@ -99,7 +127,7 @@ public class ChannelLoading extends Channel {
 	}
 
 	// Notify the player the channel has finish loading, or failed to load.
-	protected void finishLoading() {
+	public void finishLoading() {
 		Channel channel = ChannelManager.getChannel(mId);
 
 		// Update awaiting player states regardless of load success (will show deletion on failure)

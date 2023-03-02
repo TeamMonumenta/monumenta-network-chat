@@ -3,6 +3,13 @@ package com.playmonumenta.networkchat;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.channel.ChannelAnnouncement;
+import com.playmonumenta.networkchat.channel.ChannelGlobal;
+import com.playmonumenta.networkchat.channel.ChannelLocal;
+import com.playmonumenta.networkchat.channel.ChannelParty;
+import com.playmonumenta.networkchat.channel.ChannelTeam;
+import com.playmonumenta.networkchat.channel.ChannelWhisper;
+import com.playmonumenta.networkchat.channel.ChannelWorld;
 import com.playmonumenta.networkchat.commands.ChangeLogLevel;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -84,7 +91,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 				                        "LOG4J_EXPLOIT",
 				                        false,
-				                        "\\{jndi:(.+?)\\}",
+				                        "\\{jndi:([^}]+)\\}",
 				                        true)
 				.command("auditlogsevereplayer @S \"@S attempted a Log4J exploit\"")
 				.replacementMessage("<red>Log4J exploit attempt: $1</red>");
@@ -96,10 +103,22 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 			                            "N_WORD",
 			                            false,
-			                            "n[i1]gg+(a|[e3]r)",
+			                            "(^|[^a-z0-9])(n[i1]gg+(?:a|[e3]r))([^a-z0-9]|$)",
 			                            true)
-				.command("auditlogsevereplayer @S \"@S said the N word: @OE\"")
-				.replacementMessage("<red>$0</red>");
+				.command("auditlogsevereplayer @S \"@S said the N word in <channel_name>: @OE\"")
+				.replacementMessage("$1<red>$2</red>$3");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+		}
+
+		try {
+			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
+					"F_HOMOPHOBIC",
+					false,
+					"(^|[^a-z0-9])(f[a4]g(?:g(?:[o0]t)?)?)([^a-z0-9]|$)",
+					true)
+				.command("auditlogsevereplayer @S \"@S said the homophobic F slur in <channel_name>: @OE\"")
+				.replacementMessage("$1<red>$2</red>$3");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
@@ -119,7 +138,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 			                            "Spoiler",
 			                            false,
-			                            "\\|\\|(.+?)\\|\\|",
+			                            "\\|\\|([^|]*[^|\\s\\\\][^|\\\\]*)\\|\\|",
 			                            false)
 				.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
 		} catch (WrapperCommandSyntaxException e) {

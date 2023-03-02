@@ -1,5 +1,17 @@
 package com.playmonumenta.networkchat;
 
+import com.playmonumenta.networkchat.channel.Channel;
+import com.playmonumenta.networkchat.channel.ChannelAnnouncement;
+import com.playmonumenta.networkchat.channel.ChannelGlobal;
+import com.playmonumenta.networkchat.channel.ChannelLocal;
+import com.playmonumenta.networkchat.channel.ChannelParty;
+import com.playmonumenta.networkchat.channel.ChannelTeam;
+import com.playmonumenta.networkchat.channel.ChannelWhisper;
+import com.playmonumenta.networkchat.channel.ChannelWorld;
+import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
+import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
+import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.networkchat.utils.MMLog;

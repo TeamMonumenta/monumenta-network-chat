@@ -1,12 +1,18 @@
-package com.playmonumenta.networkchat;
+package com.playmonumenta.networkchat.channel;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.Message;
+import com.playmonumenta.networkchat.MessageManager;
+import com.playmonumenta.networkchat.NetworkChatPlugin;
+import com.playmonumenta.networkchat.PlayerState;
+import com.playmonumenta.networkchat.PlayerStateManager;
+import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
+import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
@@ -15,10 +21,11 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.audience.MessageType;
@@ -37,111 +44,27 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	private static final String[] WHISPER_COMMANDS = {"msg", "tell", "w"};
 	private static final String REPLY_COMMAND = "r";
 
-	private final UUID mId;
-	private Instant mLastUpdate;
-	private final List<UUID> mParticipants;
-	private ChannelSettings mDefaultSettings;
-	private ChannelAccess mDefaultAccess;
-	private final Map<UUID, ChannelAccess> mPlayerAccess;
+	protected final Set<UUID> mParticipants = new TreeSet<>();
 
 	public ChannelWhisper(UUID from, UUID to) {
 		this(UUID.randomUUID(), Instant.now(), List.of(from, to));
 	}
 
 	private ChannelWhisper(UUID channelId, Instant lastUpdate, List<UUID> participants) {
-		mId = channelId;
-		mLastUpdate = lastUpdate;
-		mParticipants = new ArrayList<>(participants);
-
-		mDefaultSettings = new ChannelSettings();
+		super(channelId, lastUpdate, getName(participants));
+		mParticipants.addAll(participants);
 		mDefaultSettings.addSound(Sound.ENTITY_PLAYER_LEVELUP, 1, 0.5f);
-		mDefaultAccess = new ChannelAccess();
-		mPlayerAccess = new HashMap<>();
 	}
 
-
-	protected static Channel fromJsonInternal(JsonObject channelJson) throws Exception {
-		String channelClassId = channelJson.getAsJsonPrimitive("type").getAsString();
-		if (channelClassId == null || !channelClassId.equals(CHANNEL_CLASS_ID)) {
-			throw new Exception("Cannot create ChannelWhisper from channel ID " + channelClassId);
-		}
-		String uuidString = channelJson.getAsJsonPrimitive("uuid").getAsString();
-		UUID channelId = UUID.fromString(uuidString);
-		Instant lastUpdate = Instant.now();
-		JsonElement lastUpdateJson = channelJson.get("lastUpdate");
-		if (lastUpdateJson != null) {
-			lastUpdate = Instant.ofEpochMilli(lastUpdateJson.getAsLong());
-		}
-
-		JsonArray participantsJson = channelJson.getAsJsonArray("participants");
-		List<UUID> participants = new ArrayList<>();
-		for (JsonElement participantJson : participantsJson) {
-			participants.add(UUID.fromString(participantJson.getAsString()));
-		}
-
-		ChannelWhisper channel = new ChannelWhisper(channelId, lastUpdate, participants);
-
-		JsonObject defaultSettingsJson = channelJson.getAsJsonObject("defaultSettings");
-		if (defaultSettingsJson != null) {
-			channel.mDefaultSettings = ChannelSettings.fromJson(defaultSettingsJson);
-		}
-
-		JsonObject defaultAccessJson = channelJson.getAsJsonObject("defaultAccess");
-		if (defaultAccessJson == null) {
-			defaultAccessJson = channelJson.getAsJsonObject("defaultPerms");
-		}
-		if (defaultAccessJson != null) {
-			channel.mDefaultAccess = ChannelAccess.fromJson(defaultAccessJson);
-		}
-
-		JsonObject allPlayerAccessJson = channelJson.getAsJsonObject("playerAccess");
-		if (allPlayerAccessJson != null) {
-			allPlayerAccessJson = channelJson.getAsJsonObject("playerPerms");
-		}
-		if (allPlayerAccessJson != null) {
-			for (Map.Entry<String, JsonElement> playerPermEntry : allPlayerAccessJson.entrySet()) {
-				UUID playerId;
-				JsonObject playerAccessJson;
-				try {
-					playerId = UUID.fromString(playerPermEntry.getKey());
-					playerAccessJson = playerPermEntry.getValue().getAsJsonObject();
-				} catch (Exception e) {
-					// TODO Log this
-					continue;
-				}
-				ChannelAccess playerAccess = ChannelAccess.fromJson(playerAccessJson);
-				channel.mPlayerAccess.put(playerId, playerAccess);
-			}
-		}
-
-		return channel;
+	protected ChannelWhisper(JsonObject channelJson) throws Exception {
+		super(channelJson);
+		participantsFromJson(mParticipants, channelJson);
 	}
 
 	@Override
 	public JsonObject toJson() {
-		JsonObject allPlayerAccessJson = new JsonObject();
-		for (Map.Entry<UUID, ChannelAccess> playerPermEntry : mPlayerAccess.entrySet()) {
-			UUID channelId = playerPermEntry.getKey();
-			ChannelAccess channelAccess = playerPermEntry.getValue();
-			if (!channelAccess.isDefault()) {
-				allPlayerAccessJson.add(channelId.toString(), channelAccess.toJson());
-			}
-		}
-
-		JsonArray participantsJson = new JsonArray();
-		for (UUID playerUuid : mParticipants) {
-			participantsJson.add(playerUuid.toString());
-		}
-
-		JsonObject result = new JsonObject();
-		result.addProperty("type", CHANNEL_CLASS_ID);
-		result.addProperty("uuid", mId.toString());
-		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
-		result.addProperty("name", getName());
-		result.add("participants", participantsJson);
-		result.add("defaultSettings", mDefaultSettings.toJson());
-		result.add("defaultAccess", mDefaultAccess.toJson());
-		result.add("playerAccess", allPlayerAccessJson);
+		JsonObject result = super.toJson();
+		participantsToJson(result, mParticipants);
 		return result;
 	}
 
@@ -222,7 +145,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	private static int runCommandSay(CommandSender sender, String recipientName, String message) throws WrapperCommandSyntaxException {
-		@Nullable PlayerState senderState = null;
+		@Nullable PlayerState senderState;
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -249,9 +172,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 				senderState.setWhisperChannel(recipientUuid, channel);
 			}
 
-			if (senderState != null) {
-				senderState.joinChannel(channel);
-			}
+			senderState.joinChannel(channel);
 			channel.sendMessage(sendingPlayer, message);
 		}
 		return 1;
@@ -305,22 +226,45 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	public UUID getUniqueId() {
-		return mId;
+	public void addPlayer(UUID playerId, boolean save) {
+		mParticipants.add(playerId);
+		PlayerState state = PlayerStateManager.getPlayerState(playerId);
+		if (state != null) {
+			if (!state.isWatchingChannelId(mId)) {
+				state.joinChannel(this);
+			}
+		}
+		if (save) {
+			ChannelManager.saveChannel(this);
+		}
 	}
 
 	@Override
-	public void markModified() {
-		mLastUpdate = Instant.now();
+	public void removePlayer(UUID playerId) {
+		mParticipants.remove(playerId);
+		if (mParticipants.isEmpty()) {
+			try {
+				ChannelManager.deleteChannel(getName());
+			} catch (Exception e) {
+				MMLog.info("Failed to delete empty channel " + getName());
+			}
+		} else {
+			ChannelManager.saveChannel(this);
+		}
 	}
 
 	@Override
-	public Instant lastModified() {
-		return mLastUpdate;
+	public boolean isParticipant(UUID playerId) {
+		return mParticipants.contains(playerId);
 	}
 
 	@Override
-	protected void setName(String name) throws WrapperCommandSyntaxException {
+	public List<UUID> getParticipantIds() {
+		return new ArrayList<>(mParticipants);
+	}
+
+	@Override
+	public void setName(String name) throws WrapperCommandSyntaxException {
 		throw CommandAPI.failWithString("Whisper channels may not be named.");
 	}
 
@@ -329,20 +273,28 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		return getName(mParticipants);
 	}
 
-	public static String getName(List<UUID> participants) {
-		participants = new ArrayList<>(participants);
-		Collections.sort(participants);
+	public static String getName(Collection<UUID> participants) {
+		List<UUID> participantsList = new ArrayList<>(participants);
+		if (participantsList.size() == 1) {
+			participantsList.add(participantsList.get(0));
+		} else {
+			Collections.sort(participantsList);
+		}
 		StringBuilder name = new StringBuilder("Whisper");
-		for (UUID participant : participants) {
+		for (UUID participant : participantsList) {
 			name.append("_").append(participant.toString());
 		}
 		return name.toString();
 	}
 
 	public static String getAltName(List<UUID> participants) {
-		participants = new ArrayList<>(participants);
-		Collections.sort(participants);
-		Collections.reverse(participants);
+		List<UUID> participantsList = new ArrayList<>(participants);
+		if (participantsList.size() == 1) {
+			participantsList.add(participantsList.get(0));
+		} else {
+			Collections.sort(participants);
+			Collections.reverse(participants);
+		}
 		StringBuilder name = new StringBuilder("Whisper");
 		for (UUID participant : participants) {
 			name.append("_").append(participant.toString());
@@ -370,72 +322,25 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		}
 	}
 
-	@Override
-	public boolean isParticipant(Player player) {
-		return isParticipant(player.getUniqueId());
-	}
-
-	@Override
-	public boolean isParticipant(UUID playerId) {
-		return mParticipants.contains(playerId);
-	}
-
-	@Override
-	public List<UUID> getParticipantIds() {
-		return new ArrayList<>(mParticipants);
-	}
-
-	@Override
-	public List<String> getParticipantNames() {
-		List<String> names = new ArrayList<>();
-		for (UUID playerId : mParticipants) {
-			String name = MonumentaRedisSyncAPI.cachedUuidToName(playerId);
-			if (name != null) {
-				names.add(name);
-			}
-		}
-		return names;
-	}
-
 	public UUID getOtherParticipant(UUID from) {
-		if (mParticipants.get(0).equals(from)) {
-			return mParticipants.get(1);
+		List<UUID> participantsList = new ArrayList<>(mParticipants);
+		if (participantsList.size() == 1) {
+			return participantsList.get(0);
+		} else if (participantsList.get(0).equals(from)) {
+			return participantsList.get(1);
 		} else {
-			return mParticipants.get(0);
+			return participantsList.get(0);
 		}
-	}
-
-	@Override
-	public ChannelSettings channelSettings() {
-		return mDefaultSettings;
-	}
-
-	@Override
-	public ChannelAccess channelAccess() {
-		return mDefaultAccess;
-	}
-
-	@Override
-	public ChannelAccess playerAccess(UUID playerId) {
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			playerAccess = new ChannelAccess();
-			mPlayerAccess.put(playerId, playerAccess);
-		}
-		return playerAccess;
-	}
-
-	@Override
-	public void resetPlayerAccess(UUID playerId) {
-		if (playerId == null) {
-			return;
-		}
-		mPlayerAccess.remove(playerId);
 	}
 
 	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		return false;
+	}
+
+	@Override
+	public boolean mayManage(CommandSender sender) {
+		return isParticipantOrModerator(sender);
 	}
 
 	@Override
@@ -445,9 +350,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		}
 
 		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player player)) {
+		if (!isParticipant(callee)) {
 			return false;
-		} else if (!mParticipants.contains(player.getUniqueId())) {
+		}
+		if (!(callee instanceof Player player)) {
 			return false;
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
@@ -466,14 +372,13 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		}
 
 		CommandSender callee = CommandUtils.getCallee(sender);
+		if (!isParticipant(callee)) {
+			return false;
+		}
 		if (!(callee instanceof Player player)) {
 			return false;
 		} else {
 			UUID playerId = player.getUniqueId();
-			if (!mParticipants.contains(playerId)) {
-				return false;
-			}
-
 			ChannelAccess playerAccess = mPlayerAccess.get(playerId);
 			if (playerAccess == null) {
 				return !Boolean.FALSE.equals(mDefaultAccess.mayListen());
@@ -576,7 +481,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	protected Component shownMessage(CommandSender recipient, Message message) {
+	public Component shownMessage(CommandSender recipient, Message message) {
 		JsonObject extraData = message.getExtraData();
 		if (extraData == null) {
 			MMLog.warning("No receiver specified for whisper message");
@@ -607,7 +512,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	protected void showMessage(CommandSender recipient, Message message) {
+	public void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
 		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
 		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
