@@ -11,6 +11,7 @@ import com.playmonumenta.networkchat.channel.ChannelTeam;
 import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.channel.ChannelWorld;
 import com.playmonumenta.networkchat.commands.ChangeLogLevel;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
