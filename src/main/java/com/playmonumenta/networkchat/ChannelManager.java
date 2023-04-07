@@ -327,8 +327,8 @@ public class ChannelManager implements Listener {
 		return mChannels.get(channelId);
 	}
 
-	// Reserved for channel types with hard-coded names, ie whisper channels
-	private static void forceRenameChannel(Channel channel) {
+	// For channel types with hard-coded names, ie whisper channels
+	public static void forceRenameChannel(Channel channel) {
 		UUID channelId = channel.getUniqueId();
 		String newName = channel.getName();
 		String oldName = mChannelNames.get(channelId);

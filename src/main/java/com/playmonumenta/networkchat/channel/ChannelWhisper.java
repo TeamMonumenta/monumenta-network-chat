@@ -312,16 +312,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		throw CommandUtils.fail(sender, "Whisper channels do not support custom text colors.");
 	}
 
-	@Override
-	public boolean isParticipant(CommandSender sender) {
-		CommandSender callee = CommandUtils.getCallee(sender);
-		if (!(callee instanceof Player player)) {
-			return false;
-		} else {
-			return isParticipant(player);
-		}
-	}
-
 	public UUID getOtherParticipant(UUID from) {
 		List<UUID> participantsList = new ArrayList<>(mParticipants);
 		if (participantsList.size() == 1) {
