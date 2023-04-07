@@ -1,7 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat;
 
-import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;

@@ -1,8 +1,8 @@
 package com.playmonumenta.networkchat.commands.chat.channel;
 
 import com.playmonumenta.networkchat.ChannelManager;
-import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.NetworkChatProperties;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;

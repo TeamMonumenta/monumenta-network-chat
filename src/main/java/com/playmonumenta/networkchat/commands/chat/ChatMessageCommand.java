@@ -1,8 +1,8 @@
 package com.playmonumenta.networkchat.commands.chat;
 
-import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.MessageManager;
 import com.playmonumenta.networkchat.NetworkChatProperties;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;

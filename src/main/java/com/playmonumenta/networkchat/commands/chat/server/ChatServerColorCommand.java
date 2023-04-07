@@ -1,6 +1,5 @@
 package com.playmonumenta.networkchat.commands.chat.server;
 
-import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.channel.ChannelAnnouncement;
@@ -10,6 +9,7 @@ import com.playmonumenta.networkchat.channel.ChannelParty;
 import com.playmonumenta.networkchat.channel.ChannelTeam;
 import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.channel.ChannelWorld;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;

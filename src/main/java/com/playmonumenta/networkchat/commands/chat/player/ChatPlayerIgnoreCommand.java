@@ -1,8 +1,8 @@
 package com.playmonumenta.networkchat.commands.chat.player;
 
-import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
