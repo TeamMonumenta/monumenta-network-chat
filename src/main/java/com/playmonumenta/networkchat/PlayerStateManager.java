@@ -257,12 +257,14 @@ public class PlayerStateManager implements Listener {
 			} else if (!(channel instanceof ChannelWhisper)) {
 				ChannelInviteOnly channelInvOnly = (ChannelInviteOnly) channel;
 				if (!channelInvOnly.isParticipant(player)) {
+					playerState.handlePlayerUuidChanges(channel.getUniqueId(), channel);
 					continue;
 				}
 				if (playerState.hasNotSeenChannelId(channel.getUniqueId())) {
 					playerState.joinChannel(channel);
 				}
 			}
+			playerState.handlePlayerUuidChanges(channel.getUniqueId(), channel);
 		}
 
 		for (UUID channelId : playerState.getWatchedChannelIds()) {

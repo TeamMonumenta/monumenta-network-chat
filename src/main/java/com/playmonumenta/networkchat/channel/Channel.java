@@ -212,12 +212,7 @@ public abstract class Channel {
 	}
 
 	public ChannelAccess playerAccess(UUID playerId) {
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			playerAccess = new ChannelAccess();
-			mPlayerAccess.put(playerId, playerAccess);
-		}
-		return playerAccess;
+		return mPlayerAccess.computeIfAbsent(playerId, unused -> new ChannelAccess());
 	}
 
 	public void resetPlayerAccess(UUID playerId) {

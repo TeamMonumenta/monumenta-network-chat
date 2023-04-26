@@ -7,7 +7,9 @@ import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -177,7 +179,8 @@ public class MessageManager implements Listener {
 		}
 
 		boolean changeFound = false;
-		for (WeakReference<Message> messageWeakReference : mMessages.values()) {
+		List<WeakReference<Message>> messagesCopy = new ArrayList<>(mMessages.values());
+		for (WeakReference<Message> messageWeakReference : messagesCopy) {
 			@Nullable Message message = messageWeakReference.get();
 			if (message == null || message.isDeleted()) {
 				continue;
