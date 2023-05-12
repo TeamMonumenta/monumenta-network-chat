@@ -6,6 +6,7 @@ import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.commands.ChatCommand;
+import com.playmonumenta.networkchat.custominventory.Gui;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -19,10 +20,23 @@ import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
-public class ChatGuiCommand {
+public class ChatGuiCommand extends Gui {
+	final String mBaseCommand;
+	final Message mMessage;
+
+	public ChatGuiCommand(Player player, String baseCommand, Message message) {
+		super(player, 9, message.shownMessage(player));
+		mBaseCommand = baseCommand;
+		mMessage = message;
+	}
+
 	public static void register() {
 		List<Argument<?>> arguments = new ArrayList<>();
 
@@ -65,61 +79,114 @@ public class ChatGuiCommand {
 			if (message == null) {
 				throw CommandUtils.fail(sender, "That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
 			}
-			Component gui = Component.empty();
+			new ChatGuiCommand(target, baseCommand, message).open();
+		}
+	}
 
-			Channel channel = message.getChannel();
-			if (channel != null) {
-				gui = gui.append(Component.text(" "))
-					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-						.hoverEvent(Component.text("Leave channel", NamedTextColor.LIGHT_PURPLE))
-						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " leave " + channel.getName())));
-				gui = gui.append(Component.text(" "))
-					.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-						.hoverEvent(Component.text("My channel settings", NamedTextColor.LIGHT_PURPLE))
-						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " player settings channel " + channel.getName() + " ")));
-				if (CommandUtils.hasPermission(target, "networkchat.rename")) {
-					gui = gui.append(Component.text(" "))
-						.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-							.hoverEvent(Component.text("Rename channel", NamedTextColor.LIGHT_PURPLE))
-							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " channel rename " + channel.getName() + " ")));
-				}
-				if (CommandUtils.hasPermission(target, "networkchat.delete.channel")) {
-					gui = gui.append(Component.text(" "))
-						.append(Component.text("[]", NamedTextColor.RED)
-							.hoverEvent(Component.text("Delete channel", NamedTextColor.RED))
-							.clickEvent(ClickEvent.runCommand("/" + baseCommand + " channel delete " + channel.getName())));
-				}
+	@Override
+	protected void setup() {
+		if (mMessage.isDeleted()) {
+			mPlayer.sendMessage(Component.text("That message has been deleted", NamedTextColor.RED));
+			close();
+			return;
+		}
+		ItemStack item;
+		ItemMeta meta;
 
-				if (message.senderIsPlayer()) {
-					String fromName = message.getSenderName();
+		Channel channel = mMessage.getChannel();
+		if (channel != null) {
+			item = new ItemStack(Material.OAK_DOOR);
+			meta = item.getItemMeta();
+			meta.displayName(Component.text("Leave channel", NamedTextColor.LIGHT_PURPLE)
+				.decoration(TextDecoration.ITALIC, false));
+			item.setItemMeta(meta);
+			setItem(0, item)
+				.onLeftClick(() -> {
+					mPlayer.performCommand(mBaseCommand + " leave " + channel.getName());
+					close();
+				});
 
-					if (channel.mayManage(target)) {
-						gui = gui.append(Component.text(" "))
-							.append(Component.text("[]", NamedTextColor.LIGHT_PURPLE)
-								.hoverEvent(Component.text("Sender channel access", NamedTextColor.LIGHT_PURPLE))
-								.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " channel access " + channel.getName() + " player " + fromName + " ")));
-					}
-				}
+			item = new ItemStack(Material.REDSTONE);
+			meta = item.getItemMeta();
+			meta.displayName(Component.text("My channel settings", NamedTextColor.LIGHT_PURPLE)
+				.decoration(TextDecoration.ITALIC, false));
+			item.setItemMeta(meta);
+			setItem(1, item)
+				.onLeftClick(() -> {
+					mPlayer.sendMessage(
+						Component.text("[Edit your channel settings for " + channel.getName() + "]",
+							NamedTextColor.LIGHT_PURPLE)
+							.clickEvent(ClickEvent.suggestCommand("/" + mBaseCommand
+								+ " player settings channel " + channel.getName() + " ")));
+					close();
+				});
+
+			if (CommandUtils.hasPermission(mPlayer, "networkchat.rename")) {
+				item = new ItemStack(Material.ANVIL);
+				meta = item.getItemMeta();
+				meta.displayName(Component.text("Rename channel", NamedTextColor.LIGHT_PURPLE)
+					.decoration(TextDecoration.ITALIC, false));
+				item.setItemMeta(meta);
+				setItem(2, item)
+					.onLeftClick(() -> {
+						mPlayer.sendMessage(
+							Component.text("[Rename channel " + channel.getName() + "]",
+									NamedTextColor.LIGHT_PURPLE)
+								.clickEvent(ClickEvent.suggestCommand("/" + mBaseCommand
+									+ " channel rename " + channel.getName() + " ")));
+						close();
+					});
 			}
 
-			if (CommandUtils.hasPermission(target, "networkchat.delete.message")) {
-				gui = gui.append(Component.text(" "))
-					.append(Component.text("[]", NamedTextColor.RED)
-						.hoverEvent(Component.text("Delete message", NamedTextColor.RED))
-						.clickEvent(ClickEvent.runCommand("/" + baseCommand + " message delete " + messageIdStr)));
-			}
+			if (mMessage.senderIsPlayer() && channel.mayManage(mPlayer)) {
+				String fromName = mMessage.getSenderName();
 
-			if (message.senderIsPlayer()) {
-				if (CommandUtils.hasPermission(target, "networkchat.message.deletefromsender")) {
-					String fromName = message.getSenderName();
-					gui = gui.append(Component.text(" "))
-						.append(Component.text("[]", NamedTextColor.RED)
-							.hoverEvent(Component.text("Delete messages from sender", NamedTextColor.RED))
-							.clickEvent(ClickEvent.runCommand("/" + baseCommand + " message deletefromsender " + fromName)));
-				}
+				item = new ItemStack(Material.IRON_DOOR);
+				meta = item.getItemMeta();
+				meta.displayName(Component.text("Sender channel access", NamedTextColor.LIGHT_PURPLE)
+					.decoration(TextDecoration.ITALIC, false));
+				item.setItemMeta(meta);
+				setItem(3, item)
+					.onLeftClick(() -> {
+						mPlayer.sendMessage(
+							Component.text("[Edit " + fromName + "'s access to channel " + channel.getName() + "]",
+									NamedTextColor.LIGHT_PURPLE)
+								.clickEvent(ClickEvent.suggestCommand("/" + mBaseCommand
+									+ " channel access " + channel.getName() + " player " + fromName + " ")));
+						close();
+					});
 			}
+		}
 
-			target.sendMessage(gui);
+		if (CommandUtils.hasPermission(mPlayer, "networkchat.delete.message")) {
+			item = new ItemStack(Material.FLINT_AND_STEEL);
+			meta = item.getItemMeta();
+			meta.displayName(Component.text("Delete message", NamedTextColor.RED)
+				.decoration(TextDecoration.ITALIC, false));
+			item.setItemMeta(meta);
+			setItem(7, item)
+				.onLeftClick(() -> {
+					mPlayer.performCommand(mBaseCommand
+						+ " message delete " + mMessage.getUniqueId().toString());
+					close();
+				});
+		}
+
+		if (mMessage.senderIsPlayer()) {
+			if (CommandUtils.hasPermission(mPlayer, "networkchat.message.deletefromsender")) {
+				String fromName = mMessage.getSenderName();
+				item = new ItemStack(Material.LAVA_BUCKET);
+				meta = item.getItemMeta();
+				meta.displayName(Component.text("Delete messages from " + fromName, NamedTextColor.RED)
+					.decoration(TextDecoration.ITALIC, false));
+				item.setItemMeta(meta);
+				setItem(8, item)
+					.onLeftClick(() -> {
+						mPlayer.performCommand(mBaseCommand
+							+ " message deletefromsender " + fromName);
+						close();
+					});
+			}
 		}
 	}
 }
