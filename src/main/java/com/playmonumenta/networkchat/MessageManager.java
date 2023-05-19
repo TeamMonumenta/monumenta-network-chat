@@ -2,9 +2,12 @@ package com.playmonumenta.networkchat;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.channel.Channel;
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -14,6 +17,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nullable;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -51,10 +56,22 @@ public class MessageManager implements Listener {
 		return message;
 	}
 
-	public void broadcastMessage(Message message) throws Exception {
-		NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_MESSAGE,
-		                                             message.toJson(),
-		                                             NetworkChatPlugin.getMessageTtl());
+	public void broadcastMessage(Message message) throws WrapperCommandSyntaxException {
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_MESSAGE,
+				message.toJson(),
+				NetworkChatPlugin.getMessageTtl());
+		} catch (Exception e) {
+			MMLog.warning("Could not send message; A RabbitMQ error has occurred.", e);
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			UUID senderId = message.getSenderId();
+			if (senderId != null) {
+				CommandSender sender = Bukkit.getEntity(senderId);
+				if (sender != null) {
+					throw CommandUtils.fail(sender, "Could not send message; A RabbitMQ error has occurred.");
+				}
+			}
+		}
 	}
 
 	public static void deleteMessage(UUID messageId) {

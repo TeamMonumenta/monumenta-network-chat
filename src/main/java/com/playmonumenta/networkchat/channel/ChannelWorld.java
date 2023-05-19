@@ -280,12 +280,7 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 			return;
 		}
 
-		try {
-			MessageManager.getInstance().broadcastMessage(message);
-		} catch (Exception e) {
-			MMLog.warning("Could not send message; RabbitMQ is not responding.", e);
-			throw CommandUtils.fail(sender, "Could not send message; RabbitMQ is not responding.");
-		}
+		MessageManager.getInstance().broadcastMessage(message);
 	}
 
 	@Override
