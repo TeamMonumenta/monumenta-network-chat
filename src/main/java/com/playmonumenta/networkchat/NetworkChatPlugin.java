@@ -128,7 +128,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 			                            "URL",
 			                            false,
-			                            "https?://[!#-&(-;=?-\\[\\]-z|~]+",
+			                            "(?<=^|[^\\\\])https?://[!#-&(-;=?-\\[\\]-z|~]+",
 			                            false)
 				.replacementMessage("<blue><u><click:open_url:\"$0\">$0</click></u></blue>");
 		} catch (WrapperCommandSyntaxException e) {
@@ -139,9 +139,20 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 			                            "Spoiler",
 			                            false,
-			                            "\\|\\|([^|]*[^|\\s\\\\][^|\\\\]*)\\|\\|",
+			                            "(?<=^|[^\\\\])\\|\\|([^|]*[^|\\s\\\\][^|\\\\]*)\\|\\|",
 			                            false)
 				.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+		}
+
+		try {
+			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
+					"CodeBlock",
+					false,
+					"(?<=^|[^\\\\])`([^`]*[^`\\s\\\\][^`\\\\]*)`",
+					false)
+				.replacementMessage("<font:uniform><hover:show_text:\"Click to copy\nShift+click to insert\n$\\1\"><click:copy_to_clipboard:\"$\\1\"><insert:\"$\\1\">$1</insert></click></hover></font>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}

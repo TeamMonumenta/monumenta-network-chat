@@ -109,7 +109,7 @@ public class ChatFilter {
 			mIsBadWord = isBadWord;
 			Pattern pattern;
 			try {
-				int flags = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+				int flags = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE | Pattern.MULTILINE;
 				if (mIsLiteral) {
 					flags |= Pattern.LITERAL;
 				}
