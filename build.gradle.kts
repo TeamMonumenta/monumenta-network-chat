@@ -9,6 +9,7 @@ import net.ltgt.gradle.errorprone.CheckSeverity
 
 plugins {
     java
+	application
     `maven-publish`
     id("com.palantir.git-version") version "0.12.2"
     id("com.github.johnrengelman.shadow") version "7.1.2"
@@ -90,6 +91,10 @@ version = gitVersion()
 description = "MonumentaNetworkChat"
 java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
+
+application {
+	mainClass.set("com.playmonumenta.networkchat.StandaloneServer")
+}
 
 // Configure plugin.yml generation
 bukkit {
