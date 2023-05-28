@@ -62,15 +62,17 @@ public class MessageManager implements Listener {
 				message.toJson(),
 				NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
-			MMLog.warning("Could not send message; A RabbitMQ error has occurred.", e);
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-			UUID senderId = message.getSenderId();
-			if (senderId != null) {
-				CommandSender sender = Bukkit.getEntity(senderId);
-				if (sender != null) {
-					throw CommandUtils.fail(sender, "Could not send message; A RabbitMQ error has occurred.");
+			Bukkit.getScheduler().runTask(NetworkChatPlugin.getInstance(), () -> {
+				MMLog.warning("Could not send message; A RabbitMQ error has occurred.", e);
+				MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+				UUID senderId = message.getSenderId();
+				if (senderId != null) {
+					CommandSender sender = Bukkit.getEntity(senderId);
+					if (sender != null) {
+						throw CommandUtils.fail(sender, "Could not send message; A RabbitMQ error has occurred.");
+					}
 				}
-			}
+			});
 		}
 	}
 
