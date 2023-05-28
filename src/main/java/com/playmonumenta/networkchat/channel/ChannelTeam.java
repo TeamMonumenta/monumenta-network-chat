@@ -284,7 +284,7 @@ public class ChannelTeam extends Channel {
 			return;
 		}
 
-		MessageManager.getInstance().broadcastMessage(message);
+		MessageManager.getInstance().broadcastMessage(sender, message);
 	}
 
 	@Override

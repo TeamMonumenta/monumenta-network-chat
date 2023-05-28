@@ -309,7 +309,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			return;
 		}
 
-		MessageManager.getInstance().broadcastMessage(message);
+		MessageManager.getInstance().broadcastMessage(sender, message);
 	}
 
 	@Override

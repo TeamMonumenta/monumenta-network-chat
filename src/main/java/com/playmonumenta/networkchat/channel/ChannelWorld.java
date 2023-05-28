@@ -280,7 +280,7 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 			return;
 		}
 
-		MessageManager.getInstance().broadcastMessage(message);
+		MessageManager.getInstance().broadcastMessage(sender, message);
 	}
 
 	@Override
