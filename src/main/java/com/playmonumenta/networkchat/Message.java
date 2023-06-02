@@ -6,6 +6,7 @@ import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.lang.ref.Cleaner;
 import java.time.Instant;
 import java.util.UUID;
@@ -94,7 +95,7 @@ public class Message implements AutoCloseable {
 	                                                 MessageType messageType,
 	                                                 CommandSender sender,
 	                                                 @Nullable JsonObject extraData,
-	                                                 Component message) {
+	                                                 Component message) throws WrapperCommandSyntaxException {
 		Message result;
 		CommandSender callee = CommandUtils.getCallee(sender);
 		Instant instant = Instant.now();
@@ -128,6 +129,15 @@ public class Message implements AutoCloseable {
 			return null;
 		}
 
+		String plainMessage = MessagingUtils.plainText(message);
+		if (plainMessage.contains("@")) {
+			if (plainMessage.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
+				throw CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
+			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(plainMessage)) {
+				throw CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
+			}
+		}
+
 		result = new Message(UUID.randomUUID(),
 			instant,
 			channelId,
@@ -147,7 +157,7 @@ public class Message implements AutoCloseable {
 	                                       MessageType messageType,
 	                                       CommandSender sender,
 	                                       @Nullable JsonObject extraData,
-	                                       String message) {
+	                                       String message) throws WrapperCommandSyntaxException {
 		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).deserialize(message);
 		return createMessage(channel, messageType, sender, extraData, messageComponent);
 	}

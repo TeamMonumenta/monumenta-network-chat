@@ -248,14 +248,6 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 			throw notListeningEx;
 		}
 
-		if (messageText.contains("@")) {
-			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-				throw CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
-				throw CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
-			}
-		}
-
 		messageText = PlaceholderAPI.setPlaceholders(null, messageText);
 
 		@Nullable Message message = Message.createMessage(this, MessageType.SYSTEM, sender, null, messageText);

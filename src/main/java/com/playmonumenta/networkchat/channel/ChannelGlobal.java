@@ -243,14 +243,6 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 			throw notListeningEx;
 		}
 
-		if (messageText.contains("@")) {
-			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-				throw CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
-				throw CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
-			}
-		}
-
 		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
 		if (message == null) {
 			return;
