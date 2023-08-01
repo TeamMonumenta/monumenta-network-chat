@@ -52,6 +52,7 @@ public class MessagingUtils {
 	public static final MiniMessage SENDER_FMT_MINIMESSAGE = MiniMessage.builder()
 		.tags(
 			TagResolver.builder().resolvers(StandardTags.color(),
+				StandardTags.reset(),
 				StandardTags.decorations(),
 				StandardTags.hoverEvent(),
 				StandardTags.clickEvent(),
@@ -225,7 +226,7 @@ public class MessagingUtils {
 		}
 		Component profileMessage = state.profileMessageComponent();
 		String postPapiProcessing = PlaceholderAPI.setPlaceholders(player, NetworkChatPlugin.messageFormat("player"))
-			.replaceAll("[§&][Rr]", colorMiniMessage)
+			.replaceAll("[§&][Rr]", "§r" + colorMiniMessage)
 			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
 			.replace("<hover:show_text:\"\"></hover>", "");
 		postPapiProcessing = legacyToMiniMessage(postPapiProcessing);

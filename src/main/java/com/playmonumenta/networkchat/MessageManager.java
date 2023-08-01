@@ -56,7 +56,7 @@ public class MessageManager implements Listener {
 		return message;
 	}
 
-	public void broadcastMessage(Message message) throws WrapperCommandSyntaxException {
+	public void broadcastMessage(CommandSender sender, Message message) throws WrapperCommandSyntaxException {
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(NETWORK_CHAT_MESSAGE,
 				message.toJson(),
@@ -64,13 +64,7 @@ public class MessageManager implements Listener {
 		} catch (Exception e) {
 			MMLog.warning("Could not send message; A RabbitMQ error has occurred.", e);
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-			UUID senderId = message.getSenderId();
-			if (senderId != null) {
-				CommandSender sender = Bukkit.getEntity(senderId);
-				if (sender != null) {
-					throw CommandUtils.fail(sender, "Could not send message; A RabbitMQ error has occurred.");
-				}
-			}
+			throw CommandUtils.fail(sender, "Could not send message; A RabbitMQ error has occurred.");
 		}
 	}
 

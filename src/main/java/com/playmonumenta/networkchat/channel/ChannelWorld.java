@@ -251,14 +251,6 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 			throw notListeningEx;
 		}
 
-		if (messageText.contains("@")) {
-			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-				throw CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
-				throw CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
-			}
-		}
-
 		World world;
 		if (sender instanceof NativeProxyCommandSender nativeSender) {
 			world = nativeSender.getWorld();
@@ -280,7 +272,7 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 			return;
 		}
 
-		MessageManager.getInstance().broadcastMessage(message);
+		MessageManager.getInstance().broadcastMessage(sender, message);
 	}
 
 	@Override

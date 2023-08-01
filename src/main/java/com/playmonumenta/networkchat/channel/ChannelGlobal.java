@@ -11,7 +11,6 @@ import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.utils.CommandUtils;
-import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
@@ -244,20 +243,12 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 			throw notListeningEx;
 		}
 
-		if (messageText.contains("@")) {
-			if (messageText.contains("@everyone") && !CommandUtils.hasPermission(sender, "networkchat.ping.everyone")) {
-				throw CommandUtils.fail(sender, "You do not have permission to ping everyone in this channel.");
-			} else if (!CommandUtils.hasPermission(sender, "networkchat.ping.player") && MessagingUtils.containsPlayerMention(messageText)) {
-				throw CommandUtils.fail(sender, "You do not have permission to ping a player in this channel.");
-			}
-		}
-
 		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
 		if (message == null) {
 			return;
 		}
 
-		MessageManager.getInstance().broadcastMessage(message);
+		MessageManager.getInstance().broadcastMessage(sender, message);
 	}
 
 	@Override
