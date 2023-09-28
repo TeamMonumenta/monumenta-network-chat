@@ -209,18 +209,34 @@ public class ChatFilter {
 				})
 				.build(); // deprecation warning is an upstream issue, ignore until fixed upstream
 
-			MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
-			localResult.component(localResult.component().replaceText(replacementConfig));
-			MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
+			try {
+				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
+				localResult.component(localResult.component().replaceText(replacementConfig));
+				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
 
-			String plainText = MessagingUtils.plainText(localResult.component());
-			String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
-			if (!plainText.equals(plainReplacement)) {
-				localResult.foundMatch(true);
-				if (mIsBadWord) {
-					localResult.foundBadWord(true);
+				String plainText = MessagingUtils.plainText(localResult.component());
+				String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
+				if (!plainText.equals(plainReplacement)) {
+					localResult.foundMatch(true);
+					if (mIsBadWord) {
+						localResult.foundBadWord(true);
+					}
+					localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
 				}
-				localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
+			} catch (Exception ex) {
+				sender.sendMessage(
+					Component.text("An error occurred processing your message."
+							+ "Please report this bug along with the shard and time it occurred.", NamedTextColor.RED));
+				CommandSender consoleSender = Bukkit.getConsoleSender();
+				MMLog.warning("An exception occurred processing chat filter "
+					+ mId + " on the following message:");
+				consoleSender.sendMessage(filterResult.originalComponent());
+				MessagingUtils.sendStackTrace(consoleSender, ex);
+
+				// Prevent message from showing as a precaution
+				localResult.foundMatch(true);
+				localResult.foundBadWord(true);
+				return;
 			}
 
 			if (localResult.foundMatch()) {
