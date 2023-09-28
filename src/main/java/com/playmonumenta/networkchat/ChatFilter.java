@@ -236,6 +236,7 @@ public class ChatFilter {
 				// Prevent message from showing as a precaution
 				localResult.foundMatch(true);
 				localResult.foundBadWord(true);
+				filterResult.copyResults(localResult);
 				return;
 			}
 
