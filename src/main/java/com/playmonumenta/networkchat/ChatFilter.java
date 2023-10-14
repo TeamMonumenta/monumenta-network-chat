@@ -29,6 +29,7 @@ public class ChatFilter {
 	public static class ChatFilterResult {
 		private boolean mFoundMatch = false;
 		private boolean mFoundBadWord = false;
+		private boolean mFoundException = false;
 		private @Nullable Message mMessage;
 		private Component mOriginalComponent;
 		private Component mComponent;
@@ -57,6 +58,7 @@ public class ChatFilter {
 		public void copyResults(ChatFilterResult other) {
 			mFoundMatch |= other.mFoundMatch;
 			mFoundBadWord |= other.mFoundBadWord;
+			mFoundException |= other.mFoundException;
 			mComponent = other.mComponent;
 		}
 
@@ -74,6 +76,14 @@ public class ChatFilter {
 
 		public void foundBadWord(boolean value) {
 			mFoundBadWord = value;
+		}
+
+		public boolean foundException() {
+			return mFoundException;
+		}
+
+		public void foundException(boolean value) {
+			mFoundException = value;
 		}
 
 		public Component originalComponent() {
@@ -224,18 +234,19 @@ public class ChatFilter {
 					localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
 				}
 			} catch (Exception ex) {
-				sender.sendMessage(
-					Component.text("An error occurred processing your message."
-							+ "Please report this bug along with the shard and time it occurred.", NamedTextColor.RED));
+				if (!filterResult.foundException()) {
+					localResult.component(Component.empty()
+						.append(Component.text("Error occurred processing the following: ", NamedTextColor.RED))
+						.append(filterResult.component()));
+				}
 				CommandSender consoleSender = Bukkit.getConsoleSender();
 				MMLog.warning("An exception occurred processing chat filter "
 					+ mId + " on the following message:");
 				consoleSender.sendMessage(filterResult.originalComponent());
 				MessagingUtils.sendStackTrace(consoleSender, ex);
 
-				// Prevent message from showing as a precaution
-				localResult.foundMatch(true);
-				localResult.foundBadWord(true);
+				// Prevent message from transmitting as a precaution
+				localResult.foundException(true);
 				filterResult.copyResults(localResult);
 				return;
 			}
@@ -354,6 +365,6 @@ public class ChatFilter {
 	public boolean hasBadWord(CommandSender sender, Component component) {
 		ChatFilterResult filterResult = new ChatFilterResult(component);
 		run(sender, filterResult);
-		return filterResult.foundBadWord();
+		return filterResult.foundException() || filterResult.foundBadWord();
 	}
 }
