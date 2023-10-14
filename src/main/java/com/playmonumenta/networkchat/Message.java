@@ -123,6 +123,12 @@ public class Message implements AutoCloseable {
 		ChatFilter.ChatFilterResult filterResult = new ChatFilter.ChatFilterResult(result);
 		NetworkChatPlugin.globalFilter().run(sender, filterResult);
 		message = filterResult.component();
+		if (filterResult.foundException()) {
+			sender.sendMessage(Component.text("An error occurred processing your message. "
+				+ "Please report this bug along with the shard and time it occurred.", NamedTextColor.RED));
+			sender.sendMessage(message);
+			return null;
+		}
 		if (filterResult.foundBadWord()) {
 			sender.sendMessage(Component.text("You cannot say that on this server:", NamedTextColor.RED));
 			sender.sendMessage(message);

@@ -29,6 +29,7 @@ public class ChatFilter {
 	public static class ChatFilterResult {
 		private boolean mFoundMatch = false;
 		private boolean mFoundBadWord = false;
+		private boolean mFoundException = false;
 		private @Nullable Message mMessage;
 		private Component mOriginalComponent;
 		private Component mComponent;
@@ -57,6 +58,7 @@ public class ChatFilter {
 		public void copyResults(ChatFilterResult other) {
 			mFoundMatch |= other.mFoundMatch;
 			mFoundBadWord |= other.mFoundBadWord;
+			mFoundException |= other.mFoundException;
 			mComponent = other.mComponent;
 		}
 
@@ -74,6 +76,14 @@ public class ChatFilter {
 
 		public void foundBadWord(boolean value) {
 			mFoundBadWord = value;
+		}
+
+		public boolean foundException() {
+			return mFoundException;
+		}
+
+		public void foundException(boolean value) {
+			mFoundException = value;
 		}
 
 		public Component originalComponent() {
@@ -209,18 +219,36 @@ public class ChatFilter {
 				})
 				.build(); // deprecation warning is an upstream issue, ignore until fixed upstream
 
-			MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
-			localResult.component(localResult.component().replaceText(replacementConfig));
-			MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
+			try {
+				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
+				localResult.component(localResult.component().replaceText(replacementConfig));
+				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
 
-			String plainText = MessagingUtils.plainText(localResult.component());
-			String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
-			if (!plainText.equals(plainReplacement)) {
-				localResult.foundMatch(true);
-				if (mIsBadWord) {
-					localResult.foundBadWord(true);
+				String plainText = MessagingUtils.plainText(localResult.component());
+				String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
+				if (!plainText.equals(plainReplacement)) {
+					localResult.foundMatch(true);
+					if (mIsBadWord) {
+						localResult.foundBadWord(true);
+					}
+					localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
 				}
-				localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
+			} catch (Exception ex) {
+				if (!filterResult.foundException()) {
+					localResult.component(Component.empty()
+						.append(Component.text("Error occurred processing the following: ", NamedTextColor.RED))
+						.append(filterResult.component()));
+				}
+				CommandSender consoleSender = Bukkit.getConsoleSender();
+				MMLog.warning("An exception occurred processing chat filter "
+					+ mId + " on the following message:");
+				consoleSender.sendMessage(filterResult.originalComponent());
+				MessagingUtils.sendStackTrace(consoleSender, ex);
+
+				// Prevent message from transmitting as a precaution
+				localResult.foundException(true);
+				filterResult.copyResults(localResult);
+				return;
 			}
 
 			if (localResult.foundMatch()) {
@@ -337,6 +365,6 @@ public class ChatFilter {
 	public boolean hasBadWord(CommandSender sender, Component component) {
 		ChatFilterResult filterResult = new ChatFilterResult(component);
 		run(sender, filterResult);
-		return filterResult.foundBadWord();
+		return filterResult.foundException() || filterResult.foundBadWord();
 	}
 }
