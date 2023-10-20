@@ -70,16 +70,16 @@ repositories {
 }
 
 dependencies {
-    implementation("com.mojang:brigadier:1.0.15")
+    implementation("com.mojang:brigadier:1.0.18")
     implementation("net.kyori:adventure-text-minimessage:4.11.0")
     implementation("org.apache.commons:commons-text:1.3")
-    compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
     compileOnly("dev.jorel.CommandAPI:commandapi-core:8.7.0")
     compileOnly("com.playmonumenta:monumenta-network-relay:1.1")
     compileOnly("com.playmonumenta:redissync:4.1")
     compileOnly("io.lettuce:lettuce-core:5.3.5.RELEASE")
     compileOnly("me.clip:placeholderapi:2.10.9")
-    compileOnly("com.comphenix.protocol:ProtocolLib:4.7.0")
+    compileOnly("com.comphenix.protocol:ProtocolLib:5.0.0")
     errorprone("com.google.errorprone:error_prone_core:2.10.0")
     errorprone("com.uber.nullaway:nullaway:0.9.5")
 }
