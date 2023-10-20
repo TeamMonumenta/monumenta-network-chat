@@ -354,7 +354,7 @@ public class PlayerStateManager implements Listener {
 		try {
 			channel.sendMessage(player, messageStr);
 		} catch (WrapperCommandSyntaxException ex) {
-			String error = MessagingUtils.getCommandExceptionMessage(ex);
+			String error = ex.getMessage();
 			player.sendMessage(Component.text(error, NamedTextColor.RED));
 			MMLog.info("Player " + player.getName() + " tried talking in channel " + channel.getName() + ", but got this error: " + error);
 		} catch (Exception ex) {

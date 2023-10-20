@@ -70,7 +70,6 @@ repositories {
 }
 
 dependencies {
-    implementation("com.mojang:brigadier:1.0.18")
     implementation("net.kyori:adventure-text-minimessage:4.11.0")
     implementation("org.apache.commons:commons-text:1.3")
     compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
