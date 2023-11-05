@@ -25,9 +25,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
+import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -161,11 +163,12 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 					"Roll",
 					false,
-					"(?<=^|[^\\\\])\\|\\|([^|]*[^|\\s\\\\][^|\\\\]*)\\|\\|",
+					"\"(?<=^|[^\\\\\\\\])<roll( \\\\d+)>\"\n",
 					false)
-				.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
+				.replacementMessage("<b><hover:show_text:" + test("\"$\\1\"") + ">ROLL</hover></b>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			Bukkit.getConsoleSender().sendMessage(e.getMessage());
 		}
 
 		ChangeLogLevel.register();
@@ -178,6 +181,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		ChatCommand.register(this, zip);
 	}
 
+	private String test(String string) {
+		return (string + "oof");
+	}
 	@Override
 	public void onEnable() {
 		INSTANCE = this;
