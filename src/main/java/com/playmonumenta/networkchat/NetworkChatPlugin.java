@@ -165,10 +165,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 					false,
 					"(?<=^|[^\\\\])<(roll( )?(\\d+)?)>",
 					false)
-				.replacementMessage("<b><hover:show_text:" + test("$\\1") + ">ROLL</hover></b>");
+				.replacementMessage("<b><hover:show_text:" + "%monumenta_chat_roll_$3%" + ">ROLL</hover></b>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-			Bukkit.getConsoleSender().sendMessage(e.getMessage());
 		}
 
 		ChangeLogLevel.register();
@@ -181,11 +180,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		ChatCommand.register(this, zip);
 	}
 
-	private String test(String range) {
-		int max = Integer.parseInt(range);
-		int randomNumber = (int) (Math.random() * max) + 1;
-		return (randomNumber + " out of " + range);
-	}
 	@Override
 	public void onEnable() {
 		INSTANCE = this;

@@ -282,6 +282,8 @@ public class ChatFilter {
 			}
 			filterResult.copyResults(localResult);
 
+			// add papi setPlaceholders() here?
+
 			MMLog.finer(() -> "- " + mId + ":");
 			MMLog.finer(() -> MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(filterResult.component()));
 		}
