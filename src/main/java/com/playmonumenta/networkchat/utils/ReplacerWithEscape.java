@@ -4,8 +4,10 @@ import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.apache.commons.text.StringEscapeUtils;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 /*
  * Matcher replacer function with escape support via "$\\#".
@@ -17,11 +19,13 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 	private static final Pattern RE_REPLACEMENT_NUMERIC_GROUP = Pattern.compile("^\\$(\\\\?)([0-9]+)");
 
 	private final CommandSender mSender;
+	private final boolean mHasPlaceholder;
 	private final String mReplacement;
 
-	public ReplacerWithEscape(CommandSender sender, String replacement) {
+	public ReplacerWithEscape(CommandSender sender, String replacement, boolean hasPlaceholder) {
 		mSender = sender;
 		mReplacement = replacement;
+		mHasPlaceholder = hasPlaceholder;
 	}
 
 	private static void debugMessage(String prefix, String msg) {
@@ -83,6 +87,9 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 				} catch (NumberFormatException e) {
 					MessagingUtils.sendStackTrace(mSender, e);
 					result = matcher.group();
+				}
+				if (mHasPlaceholder) {
+					result = PlaceholderAPI.setPlaceholders((mSender instanceof Player player) ? player : null, result);
 				}
 				if (doEscape) {
 					result = result.replace("\\", "\\\\").replace("\"", "\\\\\"");

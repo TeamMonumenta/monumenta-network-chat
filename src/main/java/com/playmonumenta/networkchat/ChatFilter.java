@@ -3,6 +3,7 @@ package com.playmonumenta.networkchat;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
@@ -15,7 +16,6 @@ import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import javax.annotation.Nullable;
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
@@ -24,7 +24,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 
 // A collection of regex to filter chat
 public class ChatFilter {
@@ -107,6 +106,7 @@ public class ChatFilter {
 		private final String mPatternString;
 		private final Pattern mPattern;
 		private final boolean mIsBadWord;
+		private boolean mHasPlaceholder;
 		private String mReplacementMiniMessage;
 		private @Nullable String mCommand = null;
 
@@ -131,6 +131,7 @@ public class ChatFilter {
 				throw CommandUtils.fail(sender, "Could not load chat filter " + mId);
 			}
 			mPattern = pattern;
+			mHasPlaceholder = false;
 			if (mIsBadWord) {
 				mReplacementMiniMessage = "<red>" + mId + "</red>";
 			} else {
@@ -143,6 +144,8 @@ public class ChatFilter {
 			boolean isLiteral = object.get("mIsLiteral").getAsBoolean();
 			String regex = object.get("mPatternString").getAsString();
 			boolean isBadWord = object.get("mIsBadWord").getAsBoolean();
+			boolean hasPlaceholder = object.get("mHasPlaceholder") instanceof JsonPrimitive primitive
+				&& primitive.getAsBoolean();
 			String replacementMiniMessage = object.get("mReplacementMiniMessage").getAsString();
 			@Nullable String command = null;
 			if (object.has("mCommand")) {
@@ -150,6 +153,7 @@ public class ChatFilter {
 			}
 
 			ChatFilterPattern pattern = new ChatFilterPattern(sender, id, isLiteral, regex, isBadWord);
+			pattern.mHasPlaceholder = hasPlaceholder;
 			pattern.mReplacementMiniMessage = replacementMiniMessage;
 			pattern.mCommand = command;
 			return pattern;
@@ -161,6 +165,7 @@ public class ChatFilter {
 			object.addProperty("mIsLiteral", mIsLiteral);
 			object.addProperty("mPatternString", mPatternString);
 			object.addProperty("mIsBadWord", mIsBadWord);
+			object.addProperty("mHasPlaceholder", mHasPlaceholder);
 			object.addProperty("mReplacementMiniMessage", mReplacementMiniMessage);
 			if (mCommand != null) {
 				object.addProperty("mCommand", mCommand);
@@ -178,6 +183,15 @@ public class ChatFilter {
 
 		public boolean isBadWord() {
 			return mIsBadWord;
+		}
+
+		public boolean hasPlaceholder() {
+			return mHasPlaceholder;
+		}
+
+		public ChatFilterPattern hasPlaceholder(boolean value) {
+			mHasPlaceholder = value;
+			return this;
 		}
 
 		public String replacementMessage() {
@@ -200,7 +214,7 @@ public class ChatFilter {
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
 			CommandSender callee = CommandUtils.getCallee(sender);
-			ReplacerWithEscape replacer = new ReplacerWithEscape(sender, mReplacementMiniMessage);
+			ReplacerWithEscape replacer = new ReplacerWithEscape(sender, mReplacementMiniMessage, mHasPlaceholder);
 			final ChatFilterResult localResult = filterResult.getCleanCopy();
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
 				.match(mPattern)
@@ -223,13 +237,8 @@ public class ChatFilter {
 
 			try {
 				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
-				Component component = localResult.component().replaceText(replacementConfig);
-				String minimessage = MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(component);
-				MMLog.finer(() -> "  ..." + minimessage);
-				String minimessageWithPlaceholdersSet = PlaceholderAPI.setPlaceholders(
-					(sender instanceof Player player) ? player : null, minimessage);
-				MMLog.finer(() -> "  ..." + minimessageWithPlaceholdersSet);
-				localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(minimessageWithPlaceholdersSet));
+				localResult.component(localResult.component().replaceText(replacementConfig));
+				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
 
 				String plainText = MessagingUtils.plainText(localResult.component());
 				String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);

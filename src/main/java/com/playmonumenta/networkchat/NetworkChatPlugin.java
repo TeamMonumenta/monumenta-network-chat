@@ -163,7 +163,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 					false,
 					"(?<=^|[^\\\\])<(roll( )?(\\d+)?)>",
 					false)
-				.replacementMessage("<b><hover:show_text:" + "%monumenta_chat_roll_$3%" + ">ROLL</hover></b>");
+				.replacementMessage("<b><hover:show_text:%monumenta_chat_roll_$3%>ROLL</hover></b>")
+				.hasPlaceholder(true);
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
