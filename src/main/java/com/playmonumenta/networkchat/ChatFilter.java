@@ -15,6 +15,7 @@ import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import javax.annotation.Nullable;
+import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
@@ -23,6 +24,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 
 // A collection of regex to filter chat
 public class ChatFilter {
@@ -221,8 +223,13 @@ public class ChatFilter {
 
 			try {
 				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
-				localResult.component(localResult.component().replaceText(replacementConfig));
-				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
+				Component component = localResult.component().replaceText(replacementConfig);
+				String minimessage = MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(component);
+				MMLog.finer(() -> "  ..." + minimessage);
+				String minimessageWithPlaceholdersSet = PlaceholderAPI.setPlaceholders(
+					(sender instanceof Player player) ? player : null, minimessage);
+				MMLog.finer(() -> "  ..." + minimessageWithPlaceholdersSet);
+				localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(minimessageWithPlaceholdersSet));
 
 				String plainText = MessagingUtils.plainText(localResult.component());
 				String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
@@ -281,8 +288,6 @@ public class ChatFilter {
 				}
 			}
 			filterResult.copyResults(localResult);
-
-			// add papi setPlaceholders() here?
 
 			MMLog.finer(() -> "- " + mId + ":");
 			MMLog.finer(() -> MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(filterResult.component()));
