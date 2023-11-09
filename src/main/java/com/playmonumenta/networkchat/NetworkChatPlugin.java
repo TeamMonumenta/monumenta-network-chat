@@ -169,6 +169,18 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
+		try {
+			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
+					"Item",
+					false,
+					"(?<=^|[^\\\\])<item>",
+					false)
+				.replacementMessage("<b><hover:show_text:%monumenta_chat_item%>ITEM</hover></b>")
+				.hasPlaceholder(true);
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+		}
+
 		ChangeLogLevel.register();
 		@Nullable ZipFile zip = null;
 		try {

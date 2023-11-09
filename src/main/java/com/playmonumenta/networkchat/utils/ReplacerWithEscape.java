@@ -88,9 +88,6 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 					MessagingUtils.sendStackTrace(mSender, e);
 					result = matcher.group();
 				}
-				if (mHasPlaceholder) {
-					result = PlaceholderAPI.setPlaceholders((mSender instanceof Player player) ? player : null, result);
-				}
 				if (doEscape) {
 					result = result.replace("\\", "\\\\").replace("\"", "\\\\\"");
 				}
@@ -117,6 +114,11 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 
 		String result = builder.toString();
 		debugMessage("result: ", result);
+
+		if (mHasPlaceholder) {
+			result = PlaceholderAPI.setPlaceholders((mSender instanceof Player player) ? player : null, result);
+		}
+
 		return result;
 	}
 }
