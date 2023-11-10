@@ -1,10 +1,9 @@
 package com.playmonumenta.networkchat.inlinereplacements;
 
+import com.playmonumenta.networkchat.utils.CommandUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-
-import com.playmonumenta.networkchat.utils.CommandUtils;
 import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;

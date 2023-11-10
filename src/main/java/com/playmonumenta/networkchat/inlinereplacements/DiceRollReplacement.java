@@ -6,8 +6,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;
 import org.intellij.lang.annotations.RegExp;
 
-import java.util.Objects;
-
 public class DiceRollReplacement extends InlineReplacement {
 
 	@RegExp
