@@ -1,12 +1,11 @@
 package com.playmonumenta.networkchat.inlinereplacements;
 
-import com.playmonumenta.networkchat.utils.MMLog;
+import java.util.ArrayList;
+import java.util.List;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class ReplacementsManager {
 	public List<InlineReplacement> mReplacements = new ArrayList<>();
