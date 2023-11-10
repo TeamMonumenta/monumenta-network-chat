@@ -29,7 +29,7 @@ public class DiceRollReplacement extends InlineReplacement {
 				MMLog.info("DRR: matched string '" + matchResult.content() + "' with regex:" + mRegex);
 				String regexResult = matchResult.content();
 				Pair<Integer, Integer> diceData = Pair.of(1, 100);
-				boolean isDiceFormat = true;
+				boolean isDiceFormat = false;
 				if (regexResult.matches(mMaxDataGivenRegex)) {
 					MMLog.info("DRR: matched max number regex with:" + regexResult);
 					try {
@@ -37,7 +37,6 @@ public class DiceRollReplacement extends InlineReplacement {
 							.split(" ")[1];
 						MMLog.info("DRR: maxInfo:" + maxInfo);
 						diceData = Pair.of(1, Integer.parseInt(maxInfo));
-						isDiceFormat = false;
 					} catch (Exception e) {
 						return input;
 					}
@@ -52,6 +51,7 @@ public class DiceRollReplacement extends InlineReplacement {
 						} else {
 							diceData = Pair.of(1, Integer.parseInt(getDiceInfo[1]));
 						}
+						isDiceFormat = true;
 					} catch (Exception e) {
 						return input;
 					}
