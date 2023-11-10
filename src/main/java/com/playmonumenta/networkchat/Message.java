@@ -145,7 +145,6 @@ public class Message implements AutoCloseable {
 			}
 		}
 
-		MMLog.warning("run replacements on message" + MessagingUtils.plainText(message));
 		Component updatedMessage = NetworkChatPlugin.getReplacementsManagerInstance().run(sender, message);
 
 		result = new Message(UUID.randomUUID(),

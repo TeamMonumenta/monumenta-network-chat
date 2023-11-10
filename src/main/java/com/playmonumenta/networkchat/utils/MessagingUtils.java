@@ -108,9 +108,6 @@ public class MessagingUtils {
 			if (CommandUtils.hasPermission(player, "networkchat.transform.rainbow")) {
 				tags.resolver(StandardTags.rainbow());
 			}
-			if (CommandUtils.hasPermission(player, "networkchat.transform.itemhover")) {
-				tags.resolver(StandardTags.reset());
-			}
 		} else {
 			tags.resolvers(StandardTags.color(),
 				StandardTags.decorations(),

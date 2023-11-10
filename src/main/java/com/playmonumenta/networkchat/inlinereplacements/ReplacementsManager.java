@@ -17,11 +17,8 @@ public class ReplacementsManager {
 	}
 
 	public Component run(CommandSender sender, Component input) {
-		MMLog.warning("RM: run()");
 		for (InlineReplacement replacement : mReplacements) {
-			MMLog.warning("RM: run() - replacement regex: " + replacement.mRegex);
 			if (replacement.check(sender, MessagingUtils.plainText(input))) {
-				MMLog.warning("RM: run() - replacement found");
 				return replacement.replace(sender, input);
 			}
 		}
