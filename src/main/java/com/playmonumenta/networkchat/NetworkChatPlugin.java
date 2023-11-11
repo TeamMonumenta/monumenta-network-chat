@@ -157,43 +157,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
 		}
 
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-					"Roll",
-					false,
-					"(?<=^|[^\\\\])<(roll( )?(\\d+)?)>",
-					false)
-				.replacementMessage("<b><hover:show_text:%monumenta_chat_roll_$3%>ROLL</hover></b>")
-				.hasPlaceholder(true);
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-					"Item",
-					false,
-					"(?<=^|[^\\\\])<item>",
-					false)
-				.replacementMessage("<b><hover:show_text:%monumenta_chat_item%>ITEM</hover></b>")
-				.hasPlaceholder(true);
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-					"ItemX",
-					false,
-					"(?<=^|[^\\\\])<itemX(\\d+)>",
-					false)
-				.replacementMessage("<b><hover:show_text:%monumenta_chat_item%>ITEM$1</hover></b>")
-				.hasPlaceholder(true);
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-
 		ChangeLogLevel.register();
 		@Nullable ZipFile zip = null;
 		try {
