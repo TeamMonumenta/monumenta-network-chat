@@ -84,6 +84,10 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 						debugMessage("    X ", "Out of bounds (" + groupIndex + " not in 0.." + matchResult.groupCount() + "), using literal instead");
 						result = matcher.group();
 					}
+					if (result == null) {
+						debugMessage("    X ", "Incorrect numeric group match, got null!");
+						result = "";
+					}
 				} catch (NumberFormatException e) {
 					MessagingUtils.sendStackTrace(mSender, e);
 					result = matcher.group();
@@ -91,14 +95,10 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 				if (doEscape) {
 					result = result.replace("\\", "\\\\").replace("\"", "\\\\\"");
 				}
-				if (result.isBlank()) {
-					debugMessage("    X ", "Incorrect numeric group match, got empty!");
-				} else {
-					debugMessage("- ", result);
-					builder.append(result);
-					remainingReplacement = remainingReplacement.substring(part.length());
-					continue;
-				}
+				debugMessage("- ", result);
+				builder.append(result);
+				remainingReplacement = remainingReplacement.substring(part.length());
+				continue;
 			}
 
 			String part = remainingReplacement.substring(0, 1);
@@ -118,6 +118,8 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 		if (mHasPlaceholder) {
 			result = PlaceholderAPI.setPlaceholders((mSender instanceof Player player) ? player : null, result);
 		}
+
+		result = Matcher.quoteReplacement(result);
 
 		return result;
 	}
