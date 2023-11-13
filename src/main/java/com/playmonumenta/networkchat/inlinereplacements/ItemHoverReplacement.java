@@ -31,7 +31,7 @@ public class ItemHoverReplacement extends InlineReplacement {
 
 	public ItemHoverReplacement() {
 		super("Item Hover",
-			"<(mainhand|offhand)>",
+			"(?<=^|[^\\\\])<(mainhand|offhand)>",
 			"itemhover");
 		mReplacements.add(Pair.of(mMainhandRegex, sender -> {
 			if (sender instanceof Player player

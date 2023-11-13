@@ -16,7 +16,7 @@ public class DiceRollReplacement extends InlineReplacement {
 
 	public DiceRollReplacement() {
 		super("Dice Roll",
-			"<roll(( [1-9]?[0-9]*d[1-9][0-9]*)|( [1-9][0-9]*))?>",
+			"(?<=^|[^\\\\])<roll(( [1-9]?[0-9]*d[1-9][0-9]*)|( [1-9][0-9]*))?>",
 			"roll");
 	}
 
