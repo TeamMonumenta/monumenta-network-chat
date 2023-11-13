@@ -14,7 +14,6 @@ public class ReplacementsManager {
 	public ReplacementsManager() {
 		mReplacements.add(new ItemHoverReplacement());
 		mReplacements.add(new DiceRollReplacement());
-		// TODO Auto-generated constructor stub
 	}
 
 	public Component run(CommandSender sender, Component input) {
