@@ -1,5 +1,7 @@
 package com.playmonumenta.networkchat.inlinereplacements;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Material;
@@ -7,12 +9,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.intellij.lang.annotations.RegExp;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class ItemHoverReplacement extends InlineReplacement {
 
-	private static List<Material> BANNED_MATERIALS = new ArrayList<>(
+	private static final List<Material> BANNED_MATERIALS = new ArrayList<>(
 		List.of(Material.SHULKER_BOX, Material.BLACK_SHULKER_BOX,
 			Material.BLUE_SHULKER_BOX, Material.BROWN_SHULKER_BOX,
 			Material.CYAN_SHULKER_BOX, Material.GRAY_SHULKER_BOX,

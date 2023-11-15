@@ -49,7 +49,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
 	private static ChatFilter mGlobalChatFilter = new ChatFilter();
-	private static ReplacementsManager mReplacementsManager = new ReplacementsManager();
+	private static final ReplacementsManager mReplacementsManager = new ReplacementsManager();
 
 	@Override
 	public void onLoad() {

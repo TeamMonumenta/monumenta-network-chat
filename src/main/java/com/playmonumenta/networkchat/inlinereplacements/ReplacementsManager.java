@@ -1,9 +1,9 @@
 package com.playmonumenta.networkchat.inlinereplacements;
 
-import java.util.ArrayList;
-import java.util.List;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 

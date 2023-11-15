@@ -33,10 +33,9 @@ public class InlineReplacement {
 	public Component replace(CommandSender sender, Component input) {
 		Component output = input;
 		for (Pair<String, Function<CommandSender, Component>> replacement : mReplacements) {
-			output = output.replaceText(matcher -> {
-				matcher.match(replacement.getLeft())
-					.replacement(matchResult -> replacement.getRight().apply(sender));
-			});
+			output = output.replaceText(matcher
+				-> matcher.match(replacement.getLeft())
+				.replacement(matchResult -> replacement.getRight().apply(sender)));
 		}
 		return output;
 	}
