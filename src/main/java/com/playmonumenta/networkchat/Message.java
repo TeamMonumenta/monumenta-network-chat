@@ -144,6 +144,8 @@ public class Message implements AutoCloseable {
 			}
 		}
 
+		Component updatedMessage = NetworkChatPlugin.getReplacementsManagerInstance().run(callee, message);
+
 		result = new Message(UUID.randomUUID(),
 			instant,
 			channelId,
@@ -154,7 +156,7 @@ public class Message implements AutoCloseable {
 		    senderIsPlayer,
 		    senderComponent,
 		    extraData,
-		    message);
+			updatedMessage);
 		return result;
 	}
 

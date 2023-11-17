@@ -12,6 +12,7 @@ import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.channel.ChannelWorld;
 import com.playmonumenta.networkchat.commands.ChangeLogLevel;
 import com.playmonumenta.networkchat.commands.ChatCommand;
+import com.playmonumenta.networkchat.inlinereplacements.ReplacementsManager;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
@@ -48,6 +49,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
 	private static ChatFilter mGlobalChatFilter = new ChatFilter();
+	private static final ReplacementsManager mReplacementsManager = new ReplacementsManager();
 
 	@Override
 	public void onLoad() {
@@ -393,5 +395,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			default -> {
 			}
 		}
+	}
+
+	public static ReplacementsManager getReplacementsManagerInstance() {
+		return mReplacementsManager;
 	}
 }
