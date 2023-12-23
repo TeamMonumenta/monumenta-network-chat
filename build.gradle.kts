@@ -158,16 +158,18 @@ val basicssh = remotes.create("basicssh") {
     host = "admin-eu.playmonumenta.com"
     port = 8822
     user = "epic"
-    agent = true
     knownHosts = allowAnyHosts
+    agent = System.getenv("IDENTITY_FILE") == null
+    identity = if (System.getenv("IDENTITY_FILE") == null) null else file(System.getenv("IDENTITY_FILE"))
 }
 
 val adminssh = remotes.create("adminssh") {
     host = "admin-eu.playmonumenta.com"
     port = 9922
     user = "epic"
-    agent = true
     knownHosts = allowAnyHosts
+    agent = System.getenv("IDENTITY_FILE") == null
+    identity = if (System.getenv("IDENTITY_FILE") == null) null else file(System.getenv("IDENTITY_FILE"))
 }
 
 tasks.create("dev1-deploy") {
