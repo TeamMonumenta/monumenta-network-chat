@@ -36,7 +36,7 @@ public class DiceRollReplacement extends InlineReplacement {
 						String maxInfo = regexResult.replaceAll("[<>]", "")
 							.split(" ")[1];
 						MMLog.info("DRR: maxInfo:" + maxInfo);
-						diceData = Pair.of(1, Integer.parseInt(maxInfo));
+						diceData = Pair.of(1, Math.min(Integer.parseInt(maxInfo), 100));
 					} catch (Exception e) {
 						return input;
 					}
@@ -46,10 +46,10 @@ public class DiceRollReplacement extends InlineReplacement {
 						String[] getDiceInfo = regexResult.replaceAll("[<>]", "")
 							.split(" ")[1].split("d");
 						if (!getDiceInfo[0].isEmpty()) {
-							diceData = Pair.of(Integer.parseInt(getDiceInfo[0]),
-								Integer.parseInt(getDiceInfo[1]));
+							diceData = Pair.of(Math.min(Integer.parseInt(getDiceInfo[0]), 8),
+								Math.min(Integer.parseInt(getDiceInfo[1]), 20));
 						} else {
-							diceData = Pair.of(1, Integer.parseInt(getDiceInfo[1]));
+							diceData = Pair.of(1, Math.min(Integer.parseInt(getDiceInfo[1]), 100));
 						}
 						isDiceFormat = true;
 					} catch (Exception e) {
