@@ -117,7 +117,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
-			UUID recipientUuid = RemotePlayerManager.getPlayerId(recipientName);
+			UUID recipientUuid = RemotePlayerManager.getPlayerUuid(recipientName);
 			if (recipientUuid == null) {
 				throw CommandUtils.fail(sender, recipientName + " is not online.");
 			}
@@ -150,7 +150,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
-			UUID recipientUuid = RemotePlayerManager.getPlayerId(recipientName);
+			UUID recipientUuid = RemotePlayerManager.getPlayerUuid(recipientName);
 			if (recipientUuid == null) {
 				throw CommandUtils.fail(sender, recipientName + " is not online.");
 			}
