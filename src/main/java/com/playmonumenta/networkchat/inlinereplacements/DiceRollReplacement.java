@@ -25,6 +25,7 @@ public class DiceRollReplacement extends InlineReplacement {
 		MMLog.info("DRR: replacing string " + input);
 		Component output = input;
 		output = output.replaceText(matcher -> matcher.match(mRegex)
+			.once()
 			.replacement(matchResult -> {
 				MMLog.info("DRR: matched string '" + matchResult.content() + "' with regex:" + mRegex);
 				String regexResult = matchResult.content();
