@@ -106,7 +106,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 			                            "N_WORD",
 			                            false,
-			                            "(^|[^a-z0-9])(n[i1]gg+(?:a|[e3]r))([^a-z0-9]|$)",
+			                            "(^|[^a-z0-9])(n[i1]gg+(?:a|[e3]r)[s$5]*)([^a-z0-9]|$)",
 			                            true)
 				.command("auditlogsevereplayer @S \"@S said the N word in <channel_name>: @OE\"")
 				.replacementMessage("$1<red>$2</red>$3");
@@ -118,7 +118,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
 					"F_HOMOPHOBIC",
 					false,
-					"(^|[^a-z0-9])(f[a4]g(?:g(?:[o0]t)?)?)([^a-z0-9]|$)",
+					"(^|[^a-z0-9])(f[a4]g(?:g(?:[o0]t)?)?[s$5]*)([^a-z0-9]|$)",
 					true)
 				.command("auditlogsevereplayer @S \"@S said the homophobic F slur in <channel_name>: @OE\"")
 				.replacementMessage("$1<red>$2</red>$3");
