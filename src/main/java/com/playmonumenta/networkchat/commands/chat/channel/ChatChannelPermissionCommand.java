@@ -108,6 +108,7 @@ public class ChatChannelPermissionCommand {
 		}
 
 		channelPermissionNode.setChannelPermission(newPerms);
+		ChannelManager.saveChannel(channel);
 		return 1;
 	}
 }
