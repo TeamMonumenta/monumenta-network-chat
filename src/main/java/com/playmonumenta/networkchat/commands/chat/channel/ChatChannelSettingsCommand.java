@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat.channel;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.channel.property.ChannelSettings;
@@ -11,7 +12,6 @@ import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.FloatArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.SoundArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Sound;
@@ -24,7 +24,7 @@ public class ChatChannelSettingsCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_LISTENABLE_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -44,7 +44,7 @@ public class ChatChannelSettingsCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("settings"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_LISTENABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 				arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 				new CommandAPICommand(baseCommand)
@@ -72,7 +72,7 @@ public class ChatChannelSettingsCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("settings"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_LISTENABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 				arguments.add(new MultiLiteralArgument("sound"));
 				arguments.add(new MultiLiteralArgument("add"));
 				arguments.add(new SoundArgument("Notification sound"));
@@ -150,7 +150,7 @@ public class ChatChannelSettingsCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("settings"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_LISTENABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 				arguments.add(new MultiLiteralArgument("sound"));
 				arguments.add(new MultiLiteralArgument("clear"));
 				new CommandAPICommand(baseCommand)

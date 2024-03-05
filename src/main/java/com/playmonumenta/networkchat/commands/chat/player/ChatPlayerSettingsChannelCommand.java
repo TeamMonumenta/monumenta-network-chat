@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat.player;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.channel.Channel;
@@ -11,7 +12,6 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.command.CommandSender;
@@ -26,7 +26,7 @@ public class ChatPlayerSettingsChannelCommand {
 			arguments.add(new MultiLiteralArgument("player"));
 			arguments.add(new MultiLiteralArgument("settings"));
 			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_LISTENABLE_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -56,7 +56,7 @@ public class ChatPlayerSettingsChannelCommand {
 			arguments.add(new MultiLiteralArgument("player"));
 			arguments.add(new MultiLiteralArgument("settings"));
 			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_LISTENABLE_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)

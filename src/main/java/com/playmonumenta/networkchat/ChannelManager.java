@@ -17,7 +17,9 @@ import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
 import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
+import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.async.RedisAsyncCommands;
@@ -32,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -46,18 +49,6 @@ public class ChannelManager implements Listener {
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
 	private static final String REDIS_FORCELOADED_CHANNEL_PATH = "networkchat:forceloaded_channels";
 	private static final String REDIS_DEFAULT_CHANNELS_KEY = "default_channels";
-	public static final ArgumentSuggestions SUGGESTIONS_AUTO_JOINABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getChannelNames().toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_CHATABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_LISTENABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_PARTY_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0]));
 
 	private static @Nullable ChannelManager INSTANCE = null;
 	private static DefaultChannels mDefaultChannels = new DefaultChannels();
@@ -139,9 +130,33 @@ public class ChannelManager implements Listener {
 		return matches;
 	}
 
+	public static Set<String> getChannelNames(Predicate<Channel> channelPredicate) {
+		Set<String> matches = new ConcurrentSkipListSet<>();
+		for (Channel channel : getLoadedChannels()) {
+			if (channelPredicate.test(channel)) {
+				matches.add(channel.getName());
+			}
+		}
+		return matches;
+	}
+
 	public static ArgumentSuggestions getChannelNameSuggestions(String channelType) {
-		return ArgumentSuggestions.strings(info ->
-			ChannelManager.getChannelNames(channelType).toArray(new String[0]));
+		return getChannelNameSuggestions(ChannelPredicate.channelType(channelType));
+	}
+
+	public static ArgumentSuggestions getChannelNameSuggestions(ChannelPredicate channelPredicate) {
+		return ArgumentSuggestions.strings(info -> {
+			Predicate<Channel> predicate = channelPredicate.toPredicate(info.sender());
+			return CommandUtils.quoteIfNeeded(ChannelManager.getChannelNames(predicate)).toArray(new String[0]);
+		});
+	}
+
+	public static Argument<String> getChannelNameArgument(ChannelPredicate channelPredicate) {
+		return getChannelNameArgument("Channel Name", channelPredicate);
+	}
+
+	public static Argument<String> getChannelNameArgument(String argName, ChannelPredicate channelPredicate) {
+		return new TextArgument(argName).replaceSuggestions(getChannelNameSuggestions(channelPredicate));
 	}
 
 	public static @Nullable String getChannelName(UUID channelId) {

@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat.channel;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
@@ -10,7 +11,6 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +25,8 @@ public class ChatChannelPermissionCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("permission"));
-			arguments.add(new StringArgument("Channel Name")
-				.replaceSuggestions(ChannelManager.SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+				.and(ChannelPredicate.INSTANCE_OF_PERMISSION_NODE)));
 			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -39,8 +39,8 @@ public class ChatChannelPermissionCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("permission"));
-				arguments.add(new StringArgument("Channel Name")
-					.replaceSuggestions(ChannelManager.SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+					.and(ChannelPredicate.INSTANCE_OF_PERMISSION_NODE)));
 				arguments.add(new MultiLiteralArgument("set"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
@@ -54,8 +54,8 @@ public class ChatChannelPermissionCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("permission"));
-				arguments.add(new StringArgument("Channel Name")
-					.replaceSuggestions(ChannelManager.SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+					.and(ChannelPredicate.INSTANCE_OF_PERMISSION_NODE)));
 				arguments.add(new MultiLiteralArgument("set"));
 				arguments.add(new GreedyStringArgument("New channel perms"));
 				new CommandAPICommand(baseCommand)

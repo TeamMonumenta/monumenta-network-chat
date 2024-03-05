@@ -2,6 +2,7 @@ package com.playmonumenta.networkchat.channel;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.Message;
 import com.playmonumenta.networkchat.MessageManager;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
@@ -97,7 +98,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_PARTY_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+				.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID))));
 			arguments.add(new MultiLiteralArgument("invite"));
 			arguments.add(new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
 			new CommandAPICommand(baseCommand)
@@ -129,7 +131,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_PARTY_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+				.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID))));
 			arguments.add(new MultiLiteralArgument("kick"));
 			arguments.add(new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
 			new CommandAPICommand(baseCommand)
@@ -161,7 +164,8 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_PARTY_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
+				.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID))));
 			arguments.add(new MultiLiteralArgument("leave"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)

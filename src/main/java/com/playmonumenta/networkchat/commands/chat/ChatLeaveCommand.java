@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.channel.Channel;
@@ -10,7 +11,6 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ public class ChatLeaveCommand {
 	public static void register() {
 		List<Argument<?>> arguments = new ArrayList<>();
 		arguments.add(new MultiLiteralArgument("leave"));
-		arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_LISTENABLE_CHANNEL_NAMES));
+		arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
 			new CommandAPICommand(baseCommand)
@@ -35,7 +35,7 @@ public class ChatLeaveCommand {
 		}
 
 		arguments.clear();
-		arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_LISTENABLE_CHANNEL_NAMES));
+		arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
 		new CommandAPICommand("leave")
 			.withArguments(arguments)
 			.executesNative((sender, args) -> {

@@ -1,13 +1,13 @@
 package com.playmonumenta.networkchat.commands.chat.channel;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +21,8 @@ public class ChatChannelRenameCommand {
 			List<Argument<?>> arguments = new ArrayList<>();
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("rename"));
-			arguments.add(new StringArgument("old channel name").replaceSuggestions(ChannelManager.SUGGESTIONS_CHANNEL_NAMES));
-			arguments.add(new StringArgument("new channel name"));
+			arguments.add(ChannelManager.getChannelNameArgument("Old Channel Name", ChannelPredicate.MAY_MANAGE));
+			arguments.add(ChannelManager.getChannelNameArgument("New Channel Name", ChannelPredicate.MAY_MANAGE));
 
 			for (String baseCommand : ChatCommand.COMMANDS) {
 				new CommandAPICommand(baseCommand)
