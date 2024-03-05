@@ -74,7 +74,7 @@ public class PlayerStateManager implements Listener {
 						sender = uuids.get(0);
 					}
 					List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
-					if (messageParts.size() == 0) {
+					if (messageParts.isEmpty()) {
 						return;
 					}
 
