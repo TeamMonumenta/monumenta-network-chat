@@ -490,7 +490,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix,
 				Placeholder.component("sender", message.getSenderComponent()),
 				Placeholder.component("receiver", receiverComp)))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));

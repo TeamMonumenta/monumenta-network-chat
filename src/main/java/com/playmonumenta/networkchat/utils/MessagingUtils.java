@@ -5,6 +5,7 @@ import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.networkchat.tagresolvers.OptSpace;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -47,22 +48,31 @@ public class MessagingUtils {
 			).build()
 		)
 		.build();
-	public static final MiniMessage SENDER_FMT_MINIMESSAGE = MiniMessage.builder()
-		.tags(
-			TagResolver.builder().resolvers(StandardTags.color(),
-				StandardTags.reset(),
-				StandardTags.decorations(),
-				StandardTags.hoverEvent(),
-				StandardTags.clickEvent(),
-				StandardTags.keybind(),
-				StandardTags.translatable(),
-				StandardTags.insertion(),
-				StandardTags.font(),
-				StandardTags.gradient(),
-				StandardTags.rainbow()
-			).build()
-		)
-		.build();
+	public static @Nullable MiniMessage SENDER_FMT_MINIMESSAGE = null;
+
+	public static MiniMessage getSenderFmtMinimessage() {
+		if (SENDER_FMT_MINIMESSAGE == null) {
+			SENDER_FMT_MINIMESSAGE = MiniMessage.builder()
+				.tags(
+					TagResolver.builder().resolvers(StandardTags.color(),
+						StandardTags.reset(),
+						StandardTags.decorations(),
+						StandardTags.hoverEvent(),
+						StandardTags.clickEvent(),
+						StandardTags.keybind(),
+						StandardTags.translatable(),
+						StandardTags.insertion(),
+						StandardTags.font(),
+						StandardTags.gradient(),
+						StandardTags.rainbow(),
+						OptSpace.optPrependSpace(),
+						OptSpace.optAppendSpace()
+					).build()
+				)
+				.build();
+		}
+		return SENDER_FMT_MINIMESSAGE;
+	}
 
 	public static String legacyToMiniMessage(String legacy) {
 		String result = legacy;
@@ -131,7 +141,7 @@ public class MessagingUtils {
 		if (callee instanceof Entity entity) {
 			return entityComponent(entity);
 		}
-		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
+		return getSenderFmtMinimessage().deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("sender")),
 			Placeholder.unparsed("sender_name", sender.getName()));
 	}
 
@@ -173,7 +183,7 @@ public class MessagingUtils {
 			}
 		}
 
-		return SENDER_FMT_MINIMESSAGE.deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("entity")),
+		return getSenderFmtMinimessage().deserialize(PlaceholderAPI.setPlaceholders(null, NetworkChatPlugin.messageFormat("entity")),
 			Placeholder.parsed("entity_type", type.toString()),
 			Placeholder.parsed("entity_uuid", id.toString()),
 			Placeholder.component("entity_name", entityName),
@@ -228,7 +238,7 @@ public class MessagingUtils {
 			// https://github.com/KyoriPowered/adventure-text-minimessage/issues/166
 			.replace("<hover:show_text:\"\"></hover>", "");
 		postPapiProcessing = legacyToMiniMessage(postPapiProcessing);
-		return SENDER_FMT_MINIMESSAGE.deserialize(postPapiProcessing,
+		return getSenderFmtMinimessage().deserialize(postPapiProcessing,
 			Placeholder.component("team_prefix", teamPrefix),
 			Placeholder.component("team_displayname", teamDisplayName),
 			Placeholder.component("team_suffix", teamSuffix),

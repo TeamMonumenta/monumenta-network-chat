@@ -7,6 +7,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.channel.ChannelAnnouncement;
+import com.playmonumenta.networkchat.channel.ChannelFuture;
+import com.playmonumenta.networkchat.channel.ChannelLoading;
 import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
@@ -696,6 +698,10 @@ public class PlayerState {
 				mPreviousPlayerIds.clear();
 				mPreviousPlayerIds.add(mPlayerId);
 			}
+			return;
+		}
+
+		if (channel instanceof ChannelLoading || channel instanceof ChannelFuture) {
 			return;
 		}
 
