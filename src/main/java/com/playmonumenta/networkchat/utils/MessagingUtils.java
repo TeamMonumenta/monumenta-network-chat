@@ -5,6 +5,7 @@ import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.networkchat.tagresolvers.OptSpace;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -59,7 +60,9 @@ public class MessagingUtils {
 				StandardTags.insertion(),
 				StandardTags.font(),
 				StandardTags.gradient(),
-				StandardTags.rainbow()
+				StandardTags.rainbow(),
+				OptSpace.optPrependSpace(),
+				OptSpace.optAppendSpace()
 			).build()
 		)
 		.build();
