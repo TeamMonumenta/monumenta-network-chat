@@ -1,14 +1,11 @@
 package com.playmonumenta.networkchat.tagresolvers;
 
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.Context;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.ArgumentQueue;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.Bukkit;
 
 public class OptSpace {
 	public static TagResolver optAppendSpace() {
