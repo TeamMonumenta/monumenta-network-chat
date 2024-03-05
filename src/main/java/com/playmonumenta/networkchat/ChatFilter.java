@@ -213,16 +213,16 @@ public class ChatFilter {
 					content = mPattern.matcher(content).replaceAll(replacer);
 					String finalContent1 = content;
 					MMLog.finer(() -> "    -- " + finalContent1);
-					Component replacementResult = MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(content);
-					MMLog.finer(() -> "    -> " + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(replacementResult));
+					Component replacementResult = MessagingUtils.getSenderFmtMinimessage().deserialize(content);
+					MMLog.finer(() -> "    -> " + MessagingUtils.getSenderFmtMinimessage().serialize(replacementResult));
 					return replacementResult;
 				})
 				.build(); // deprecation warning is an upstream issue, ignore until fixed upstream
 
 			try {
-				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
+				MMLog.finer(() -> "  ..." + MessagingUtils.getSenderFmtMinimessage().serialize(localResult.component()));
 				localResult.component(localResult.component().replaceText(replacementConfig));
-				MMLog.finer(() -> "  ..." + MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(localResult.component()));
+				MMLog.finer(() -> "  ..." + MessagingUtils.getSenderFmtMinimessage().serialize(localResult.component()));
 
 				String plainText = MessagingUtils.plainText(localResult.component());
 				String plainReplacement = mPattern.matcher(plainText).replaceAll(replacer);
@@ -231,7 +231,7 @@ public class ChatFilter {
 					if (mIsBadWord) {
 						localResult.foundBadWord(true);
 					}
-					localResult.component(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(plainReplacement));
+					localResult.component(MessagingUtils.getSenderFmtMinimessage().deserialize(plainReplacement));
 				}
 			} catch (Exception ex) {
 				if (!filterResult.foundException()) {
@@ -283,7 +283,7 @@ public class ChatFilter {
 			filterResult.copyResults(localResult);
 
 			MMLog.finer(() -> "- " + mId + ":");
-			MMLog.finer(() -> MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(filterResult.component()));
+			MMLog.finer(() -> MessagingUtils.getSenderFmtMinimessage().serialize(filterResult.component()));
 		}
 	}
 
@@ -344,7 +344,7 @@ public class ChatFilter {
 
 	public void run(CommandSender sender, ChatFilterResult filterResult) {
 		MMLog.finer("Start:");
-		MMLog.finer(() -> MessagingUtils.SENDER_FMT_MINIMESSAGE.serialize(filterResult.component()));
+		MMLog.finer(() -> MessagingUtils.getSenderFmtMinimessage().serialize(filterResult.component()));
 		for (ChatFilterPattern filterPattern : mFilters.values()) {
 			filterPattern.run(sender, filterResult);
 		}

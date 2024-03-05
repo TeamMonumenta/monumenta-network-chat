@@ -363,7 +363,7 @@ public class ChannelTeam extends Channel {
 		prefix = prefix.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix,
 				Placeholder.component("sender", message.getSenderComponent()),
 				Placeholder.parsed("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
 				Placeholder.component("team_prefix", teamPrefix),

@@ -292,7 +292,7 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix, Placeholder.unparsed("channel_name", mName)))
+			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix, Placeholder.unparsed("channel_name", mName)))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
 	}
 

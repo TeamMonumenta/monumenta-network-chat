@@ -342,7 +342,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix,
 				Placeholder.unparsed("channel_name", mName),
 				Placeholder.component("sender", message.getSenderComponent())))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
