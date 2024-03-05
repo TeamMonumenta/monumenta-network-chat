@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat.channel;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.channel.Channel;
@@ -11,7 +12,6 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -26,7 +26,7 @@ public class ChatChannelColorCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("color"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_CHATABLE_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
 			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -48,7 +48,7 @@ public class ChatChannelColorCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("color"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_CHATABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 				arguments.add(new MultiLiteralArgument("clear"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)
@@ -81,7 +81,7 @@ public class ChatChannelColorCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("color"));
-				arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_CHATABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 				arguments.add(new MultiLiteralArgument("set"));
 				arguments.add(new GreedyStringArgument("color").replaceSuggestions(ChatCommand.COLOR_SUGGESTIONS));
 				new CommandAPICommand(baseCommand)

@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat.server;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.DefaultChannels;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.channel.ChannelWorld;
@@ -9,7 +10,6 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,12 +40,13 @@ public class ChatServerSetDefaultChannelCommand {
 					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
 					arguments.add(new MultiLiteralArgument(channelType));
 					if (channelType.equals("default")) {
-						arguments.add(new StringArgument("channel name").replaceSuggestions(ChannelManager.SUGGESTIONS_CHANNEL_NAMES));
+						arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
 					} else if (channelType.equals(DefaultChannels.WORLD_CHANNEL)) {
-						arguments.add(new StringArgument("channel name")
-							.replaceSuggestions(ChannelManager.getChannelNameSuggestions(ChannelWorld.CHANNEL_CLASS_ID)));
+						arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
+							.and(ChannelPredicate.channelType(ChannelWorld.CHANNEL_CLASS_ID))));
 					} else {
-						arguments.add(new StringArgument("channel name").replaceSuggestions(ChannelManager.getChannelNameSuggestions(channelType)));
+						arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
+							.and(ChannelPredicate.channelType(channelType))));
 					}
 					new CommandAPICommand(baseCommand)
 						.withArguments(arguments)

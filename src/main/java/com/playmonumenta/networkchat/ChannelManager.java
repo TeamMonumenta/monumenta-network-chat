@@ -49,18 +49,6 @@ public class ChannelManager implements Listener {
 	private static final String REDIS_CHANNELS_PATH = "networkchat:channels";
 	private static final String REDIS_FORCELOADED_CHANNEL_PATH = "networkchat:forceloaded_channels";
 	private static final String REDIS_DEFAULT_CHANNELS_KEY = "default_channels";
-	public static final ArgumentSuggestions SUGGESTIONS_AUTO_JOINABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getAutoJoinableChannelNames(info.sender()).toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getChannelNames().toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_CHATABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getChatableChannelNames(info.sender()).toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_LISTENABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getListenableChannelNames(info.sender()).toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getManageableChannelNames(info.sender()).toArray(new String[0]));
-	public static final ArgumentSuggestions SUGGESTIONS_PARTY_CHANNEL_NAMES = ArgumentSuggestions.strings(info ->
-		ChannelManager.getPartyChannelNames(info.sender()).toArray(new String[0]));
 
 	private static @Nullable ChannelManager INSTANCE = null;
 	private static DefaultChannels mDefaultChannels = new DefaultChannels();
@@ -163,11 +151,11 @@ public class ChannelManager implements Listener {
 		});
 	}
 
-	public Argument<String> getChannelNameArgument(ChannelPredicate channelPredicate) {
+	public static Argument<String> getChannelNameArgument(ChannelPredicate channelPredicate) {
 		return getChannelNameArgument("Channel Name", channelPredicate);
 	}
 
-	public Argument<String> getChannelNameArgument(String argName, ChannelPredicate channelPredicate) {
+	public static Argument<String> getChannelNameArgument(String argName, ChannelPredicate channelPredicate) {
 		return new TextArgument(argName).replaceSuggestions(getChannelNameSuggestions(channelPredicate));
 	}
 

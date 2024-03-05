@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat.channel;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
@@ -9,7 +10,6 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +21,8 @@ public class ChatChannelAutojoinCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("autojoin"));
-			arguments.add(new StringArgument("channel name").replaceSuggestions(ChannelManager.SUGGESTIONS_AUTO_JOINABLE_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+				.and(ChannelPredicate.INSTANCE_OF_AUTOJOIN)));
 			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
@@ -51,7 +52,8 @@ public class ChatChannelAutojoinCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("autojoin"));
-				arguments.add(new StringArgument("channel name").replaceSuggestions(ChannelManager.SUGGESTIONS_AUTO_JOINABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+					.and(ChannelPredicate.INSTANCE_OF_AUTOJOIN)));
 				arguments.add(new MultiLiteralArgument("enable", "disable"));
 				new CommandAPICommand(baseCommand)
 					.withArguments(arguments)

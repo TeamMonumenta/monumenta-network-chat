@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat.channel;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
@@ -23,8 +24,7 @@ public class ChatChannelAccessCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("access"));
-			arguments.add(new StringArgument("Channel Name")
-				.replaceSuggestions(ChannelManager.SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 			arguments.add(new MultiLiteralArgument("default"));
 			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
@@ -45,8 +45,7 @@ public class ChatChannelAccessCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("access"));
-				arguments.add(new StringArgument("Channel Name")
-					.replaceSuggestions(ChannelManager.SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 				arguments.add(new MultiLiteralArgument("default"));
 				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
 				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagValues()));
@@ -73,8 +72,7 @@ public class ChatChannelAccessCommand {
 			arguments.clear();
 			arguments.add(new MultiLiteralArgument("channel"));
 			arguments.add(new MultiLiteralArgument("access"));
-			arguments.add(new StringArgument("Channel Name")
-				.replaceSuggestions(ChannelManager.SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES));
+			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 			arguments.add(new MultiLiteralArgument("player"));
 			arguments.add(new StringArgument("name").replaceSuggestions(ChatCommand.ALL_CACHED_PLAYER_NAMES_SUGGESTIONS));
 			arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
@@ -104,8 +102,7 @@ public class ChatChannelAccessCommand {
 				arguments.clear();
 				arguments.add(new MultiLiteralArgument("channel"));
 				arguments.add(new MultiLiteralArgument("access"));
-				arguments.add(new StringArgument("Channel Name")
-					.replaceSuggestions(ChannelManager.SUGGESTIONS_MANAGEABLE_CHANNEL_NAMES));
+				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
 				arguments.add(new MultiLiteralArgument("player"));
 				arguments.add(new StringArgument("name").replaceSuggestions(ChatCommand.ALL_CACHED_PLAYER_NAMES_SUGGESTIONS));
 				arguments.add(new MultiLiteralArgument(ChannelAccess.getFlagKeys()));
