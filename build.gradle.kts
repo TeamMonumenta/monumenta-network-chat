@@ -234,8 +234,8 @@ tasks.create("stage-deploy") {
     doLast {
         ssh.runSessions {
             session(basicssh) {
-                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/stage/m12/server_config/plugins")
-                execute("cd /home/epic/stage/m12/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
+                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/stage/m13/server_config/plugins")
+                execute("cd /home/epic/stage/m13/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
             }
         }
     }
