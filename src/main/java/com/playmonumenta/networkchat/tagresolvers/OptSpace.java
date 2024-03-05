@@ -12,26 +12,18 @@ import org.bukkit.Bukkit;
 
 public class OptSpace {
 	public static TagResolver optAppendSpace() {
-		return TagResolver.resolver("OptAppendSpace", (ArgumentQueue args, Context context) -> {
-			Audience audience = Bukkit.getServer();
-			audience.sendMessage(Component.text("[OptAppendSpace] Start", NamedTextColor.GOLD));
+		return TagResolver.resolver("opt_append_space", (ArgumentQueue args, Context context) -> {
 			String contents = args.popOr("Expected minimessage value").value();
 			Component component = context.deserialize(contents);
-			audience.sendMessage(Component.empty()
-				.append(Component.text("[OptAppendSpace] Inner arg: \"", NamedTextColor.GOLD))
-				.append(component)
-				.append(Component.text("\"", NamedTextColor.GOLD)));
 			if (MessagingUtils.plainText(component).isEmpty()) {
-				audience.sendMessage(Component.text("[OptAppendSpace] Result: empty", NamedTextColor.GOLD));
 				return Tag.selfClosingInserting(Component.empty());
 			}
-			audience.sendMessage(Component.text("[OptAppendSpace] Result: append space", NamedTextColor.GOLD));
 			return Tag.selfClosingInserting(component.append(Component.space()));
 		});
 	}
 
 	public static TagResolver optPrependSpace() {
-		return TagResolver.resolver("OptPrependSpace", (ArgumentQueue args, Context context) -> {
+		return TagResolver.resolver("opt_prepend_space", (ArgumentQueue args, Context context) -> {
 			String contents = args.popOr("Expected minimessage value").value();
 			Component component = context.deserialize(contents);
 			if (MessagingUtils.plainText(component).isEmpty()) {
