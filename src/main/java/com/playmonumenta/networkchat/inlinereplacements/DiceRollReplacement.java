@@ -31,17 +31,7 @@ public class DiceRollReplacement extends InlineReplacement {
 				String regexResult = matchResult.content();
 				Pair<Integer, Integer> diceData = Pair.of(1, 100);
 				boolean isDiceFormat = false;
-				if (regexResult.matches(mMaxDataGivenRegex)) {
-					MMLog.info("DRR: matched max number regex with:" + regexResult);
-					try {
-						String maxInfo = regexResult.replaceAll("[<>]", "")
-							.split(" ")[1];
-						MMLog.info("DRR: maxInfo:" + maxInfo);
-						diceData = Pair.of(1, Math.min(Integer.parseInt(maxInfo), 100));
-					} catch (Exception e) {
-						return input;
-					}
-				} else if (regexResult.matches(mDiceDataGivenRegex)) {
+				if (regexResult.matches(mDiceDataGivenRegex)) {
 					MMLog.info("DRR: matched dice regex with:" + matchResult.content());
 					try {
 						String[] getDiceInfo = regexResult.replaceAll("[<>]", "")
@@ -56,7 +46,18 @@ public class DiceRollReplacement extends InlineReplacement {
 					} catch (Exception e) {
 						return input;
 					}
+				} else if (regexResult.matches(mMaxDataGivenRegex)) {
+					MMLog.info("DRR: matched max number regex with:" + regexResult);
+					try {
+						String maxInfo = regexResult.replaceAll("[<>]", "")
+							.split(" ")[1];
+						MMLog.info("DRR: maxInfo:" + maxInfo);
+						diceData = Pair.of(1, Math.min(Integer.parseInt(maxInfo), 100));
+					} catch (Exception e) {
+						return input;
+					}
 				}
+
 				int rollValue = 0;
 				if (isDiceFormat) {
 					for (int i = 0; i < diceData.getLeft(); i++) {
