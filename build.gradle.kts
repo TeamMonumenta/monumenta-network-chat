@@ -1,9 +1,5 @@
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.hidetake.groovy.ssh.core.Remote
-import org.hidetake.groovy.ssh.core.RunHandler
-import org.hidetake.groovy.ssh.core.Service
-import org.hidetake.groovy.ssh.session.SessionHandler
 import net.ltgt.gradle.errorprone.errorprone
 import net.ltgt.gradle.errorprone.CheckSeverity
 
@@ -13,9 +9,9 @@ plugins {
     id("com.palantir.git-version") version "0.12.2"
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("net.minecrell.plugin-yml.bukkit") version "0.5.1" // Generates plugin.yml
-    id("org.hidetake.ssh") version "2.10.1"
     id("net.ltgt.errorprone") version "2.0.2"
     id("net.ltgt.nullaway") version "1.3.0"
+	id("com.playmonumenta.deployment") version "1.0"
     checkstyle
     pmd
 }
@@ -154,141 +150,5 @@ tasks.withType<JavaCompile>().configureEach {
         check("InlineMeSuggester", CheckSeverity.OFF) // This seems way overkill
     }
 }
-val basicssh = remotes.create("basicssh") {
-    host = "admin-eu.playmonumenta.com"
-    port = 8822
-    user = "epic"
-    knownHosts = allowAnyHosts
-    agent = System.getenv("IDENTITY_FILE") == null
-    identity = if (System.getenv("IDENTITY_FILE") == null) null else file(System.getenv("IDENTITY_FILE"))
-}
 
-val adminssh = remotes.create("adminssh") {
-    host = "admin-eu.playmonumenta.com"
-    port = 9922
-    user = "epic"
-    knownHosts = allowAnyHosts
-    agent = System.getenv("IDENTITY_FILE") == null
-    identity = if (System.getenv("IDENTITY_FILE") == null) null else file(System.getenv("IDENTITY_FILE"))
-}
-
-tasks.create("dev1-deploy") {
-    val shadowJar by tasks.named<ShadowJar>("shadowJar")
-    dependsOn(shadowJar)
-    doLast {
-        ssh.runSessions {
-            session(basicssh) {
-                val dstFile = shadowJar.archiveFileName.get().replace("monumenta-network-chat", "network-chat")
-                execute("cd /home/epic/dev1_shard_plugins && rm -f NetworkChat*.jar && rm -f network-chat*.jar")
-                put(shadowJar.archiveFile.get().getAsFile(), File("/home/epic/dev1_shard_plugins", dstFile))
-            }
-        }
-    }
-}
-
-tasks.create("dev2-deploy") {
-    val shadowJar by tasks.named<ShadowJar>("shadowJar")
-    dependsOn(shadowJar)
-    doLast {
-        ssh.runSessions {
-            session(basicssh) {
-                val dstFile = shadowJar.archiveFileName.get().replace("monumenta-network-chat", "network-chat")
-                execute("cd /home/epic/dev2_shard_plugins && rm -f NetworkChat*.jar && rm -f network-chat*.jar")
-                put(shadowJar.archiveFile.get().getAsFile(), File("/home/epic/dev2_shard_plugins", dstFile))
-            }
-        }
-    }
-}
-
-tasks.create("dev3-deploy") {
-    val shadowJar by tasks.named<ShadowJar>("shadowJar")
-    dependsOn(shadowJar)
-    doLast {
-        ssh.runSessions {
-            session(basicssh) {
-                val dstFile = shadowJar.archiveFileName.get().replace("monumenta-network-chat", "network-chat")
-                execute("cd /home/epic/dev3_shard_plugins && rm -f NetworkChat*.jar && rm -f network-chat*.jar")
-                put(shadowJar.archiveFile.get().getAsFile(), File("/home/epic/dev3_shard_plugins", dstFile))
-            }
-        }
-    }
-}
-
-tasks.create("dev4-deploy") {
-    val shadowJar by tasks.named<ShadowJar>("shadowJar")
-    dependsOn(shadowJar)
-    doLast {
-        ssh.runSessions {
-            session(basicssh) {
-                val dstFile = shadowJar.archiveFileName.get().replace("monumenta-network-chat", "network-chat")
-                execute("cd /home/epic/dev4_shard_plugins && rm -f NetworkChat*.jar && rm -f network-chat*.jar")
-                put(shadowJar.archiveFile.get().getAsFile(), File("/home/epic/dev4_shard_plugins", dstFile))
-            }
-        }
-    }
-}
-
-tasks.create("stage-deploy") {
-    val shadowJar by tasks.named<ShadowJar>("shadowJar")
-    dependsOn(shadowJar)
-    doLast {
-        ssh.runSessions {
-            session(basicssh) {
-                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/stage/m13/server_config/plugins")
-                execute("cd /home/epic/stage/m13/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
-            }
-        }
-    }
-}
-
-tasks.create("volt-deploy") {
-    val shadowJar by tasks.named<ShadowJar>("shadowJar")
-    dependsOn(shadowJar)
-    doLast {
-        ssh.runSessions {
-            session(basicssh) {
-                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/volt/m12/server_config/plugins")
-                execute("cd /home/epic/volt/m12/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
-            }
-        }
-    }
-}
-
-tasks.create("build-deploy") {
-    val shadowJar by tasks.named<ShadowJar>("shadowJar")
-    dependsOn(shadowJar)
-    doLast {
-        ssh.runSessions {
-            session(adminssh) {
-                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/project_epic/server_config/plugins")
-                execute("cd /home/epic/project_epic/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
-            }
-        }
-    }
-}
-
-tasks.create("play-deploy") {
-    val shadowJar by tasks.named<ShadowJar>("shadowJar")
-    dependsOn(shadowJar)
-    doLast {
-        ssh.runSessions {
-            session(adminssh) {
-                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m12/server_config/plugins")
-				put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m13/server_config/plugins")
-				put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m17/server_config/plugins")
-				execute("cd /home/epic/play/m12/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
-				execute("cd /home/epic/play/m13/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
-				execute("cd /home/epic/play/m17/server_config/plugins && rm -f NetworkChat.jar && ln -s " + shadowJar.archiveFileName.get() + " NetworkChat.jar")
-            }
-        }
-    }
-}
-
-fun Service.runSessions(action: RunHandler.() -> Unit) =
-    run(delegateClosureOf(action))
-
-fun RunHandler.session(vararg remotes: Remote, action: SessionHandler.() -> Unit) =
-    session(*remotes, delegateClosureOf(action))
-
-fun SessionHandler.put(from: Any, into: Any) =
-    put(hashMapOf("from" to from, "into" to into))
+ssh.easySetup(tasks.named<ShadowJar>("shadowJar").get(), "NetworkChat")
