@@ -197,6 +197,10 @@ public class ChannelTeam extends Channel {
 
 	@Override
 	public boolean mayChat(CommandSender sender) {
+		if (!mayListen(sender)) {
+			return false;
+		}
+
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			return false;
 		}

@@ -181,6 +181,10 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 
 	@Override
 	public boolean mayChat(CommandSender sender) {
+		if (!mayListen(sender)) {
+			return false;
+		}
+
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.global")) {
 			return false;
 		}

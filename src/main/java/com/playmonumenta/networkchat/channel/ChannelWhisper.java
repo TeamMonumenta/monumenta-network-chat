@@ -335,6 +335,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 	@Override
 	public boolean mayChat(CommandSender sender) {
+		if (!mayListen(sender)) {
+			return false;
+		}
+
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.whisper")) {
 			return false;
 		}
@@ -448,14 +452,14 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			MMLog.finer("Receiver not on this shard.");
 			return;
 		}
+		Player player = state.getPlayer();
+		if (player == null) {
+			MMLog.warning("Receiver not on this shard, but their player state is!");
+			return;
+		}
 		state.setWhisperChannel(otherId, this);
 
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			if (Boolean.FALSE.equals(mDefaultAccess.mayListen())) {
-				return;
-			}
-		} else if (Boolean.FALSE.equals(playerAccess.mayListen())) {
+		if (!mayListen(player)) {
 			return;
 		}
 
