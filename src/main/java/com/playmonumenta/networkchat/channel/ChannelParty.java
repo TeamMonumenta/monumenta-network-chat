@@ -241,6 +241,10 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 	@Override
 	public boolean mayChat(CommandSender sender) {
+		if (!mayListen(sender)) {
+			return false;
+		}
+
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.party")) {
 			return false;
 		}

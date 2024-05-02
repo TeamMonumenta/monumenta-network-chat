@@ -186,6 +186,10 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 
 	@Override
 	public boolean mayChat(CommandSender sender) {
+		if (!mayListen(sender)) {
+			return false;
+		}
+
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.announcement")) {
 			return false;
 		}
