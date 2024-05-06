@@ -14,7 +14,6 @@ import com.playmonumenta.networkchat.commands.chat.ChatPlayerCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatSayCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatServerCommand;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
