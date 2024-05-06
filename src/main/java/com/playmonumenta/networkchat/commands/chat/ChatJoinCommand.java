@@ -10,6 +10,7 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
@@ -21,25 +22,23 @@ import org.bukkit.entity.Player;
 
 public class ChatJoinCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
-		arguments.add(new MultiLiteralArgument("join"));
-		arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
+		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN);
+
+		CommandAPICommand joinCommand = new CommandAPICommand("join")
+			.withArguments(channelArg)
+			.executesNative((sender, args) -> {
+				return joinChannel(sender, args.getByArgument(channelArg));
+			});
+		joinCommand.register();
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					return joinChannel(sender, (String) args[1]);
-				})
-				.register();
+			new CommandAPICommand(baseCommand).withSubcommand(joinCommand).register();
 		}
 
-		arguments.clear();
-		arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
 		new CommandAPICommand("join")
-			.withArguments(arguments)
+			.withArguments(channelArg)
 			.executesNative((sender, args) -> {
-				return joinChannel(sender, (String) args[0]);
+				return joinChannel(sender, args.getByArgument(channelArg));
 			})
 			.register();
 	}

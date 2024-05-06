@@ -10,17 +10,16 @@ import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -76,73 +75,35 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 		mAutoJoin = autoJoin;
 	}
 
-	public static void registerNewChannelCommands(String[] baseCommands, List<Argument<?>> prefixArguments) {
-		List<Argument<?>> arguments;
+	public static void registerNewChannelCommands(LiteralArgument newArg, Argument<String> channelArg) {
+		BooleanArgument autoJoinArg = new BooleanArgument("Auto Join");
+		GreedyStringArgument permissionArg = new GreedyStringArgument("Channel Permission");
 
-		for (String baseCommand : baseCommands) {
-			arguments = new ArrayList<>(prefixArguments);
-			// last element of prefixArguments is channel ID
-			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
+		for (String baseCommand : ChatCommand.COMMANDS) {
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(newArg)
+				.withArguments(channelArg)
+				.withArguments(new LiteralArgument(CHANNEL_CLASS_ID))
+				.withOptionalArguments(autoJoinArg)
+				.withOptionalArguments(permissionArg)
 				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
 						throw CommandUtils.fail(sender, "You do not have permission to create global channels.");
 					}
 
-					String channelName = (String)args[prefixArguments.size() - 1];
+					String channelName = args.getByArgument(channelArg);
 					ChannelGlobal newChannel;
 
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
 						newChannel = new ChannelGlobal(channelName);
-					} catch (Exception e) {
-						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
-					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
-				})
-				.register();
-
-			arguments.add(new BooleanArgument("Auto Join"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
-						throw CommandUtils.fail(sender, "You do not have permission to create global channels.");
-					}
-
-					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel;
-
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
-					try {
-						newChannel = new ChannelGlobal(channelName);
-						newChannel.setAutoJoin((boolean)args[prefixArguments.size() + 1]);
-					} catch (Exception e) {
-						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
-					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
-				})
-				.register();
-
-			arguments.add(new GreedyStringArgument("Channel Permission"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
-						throw CommandUtils.fail(sender, "You do not have permission to create global channels.");
-					}
-
-					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel;
-
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
-					try {
-						newChannel = new ChannelGlobal(channelName);
-						newChannel.setAutoJoin((boolean)args[prefixArguments.size() + 1]);
-						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
+						Boolean autoJoin = args.getByArgument(autoJoinArg);
+						if (autoJoin != null) {
+							newChannel.setAutoJoin(autoJoin);
+						}
+						String permission = args.getByArgument(permissionArg);
+						if (permission != null && !permission.isEmpty()) {
+							newChannel.setChannelPermission(permission);
+						}
 					} catch (Exception e) {
 						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 					}

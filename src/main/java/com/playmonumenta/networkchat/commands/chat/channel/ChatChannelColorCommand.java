@@ -11,27 +11,25 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import java.util.ArrayList;
-import java.util.List;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 
 public class ChatChannelColorCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		Argument<String> channelListenArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN);
+		Argument<String> channelManageArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE);
+		Argument<String> colorArg = new GreedyStringArgument("color").replaceSuggestions(ChatCommand.COLOR_SUGGESTIONS);
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new MultiLiteralArgument("color"));
-			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
-			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("channel"))
+				.withArguments(new LiteralArgument("color"))
+				.withArguments(channelListenArg)
+				.withArguments(new LiteralArgument("get"))
 				.executesNative((sender, args) -> {
-					String channelName = (String) args[2];
+					String channelName = args.getByArgument(channelListenArg);
 					Channel channel = ChannelManager.getChannel(channelName);
 
 					if (channel == null) {
@@ -45,19 +43,17 @@ public class ChatChannelColorCommand {
 				.register();
 
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("color"));
-				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
-				arguments.add(new MultiLiteralArgument("clear"));
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("channel"))
+					.withArguments(new LiteralArgument("color"))
+					.withArguments(channelManageArg)
+					.withArguments(new LiteralArgument("clear"))
 					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.channel.color")) {
 							throw CommandUtils.fail(sender, "You do not have permission to change channel colors.");
 						}
 
-						String channelName = (String) args[2];
+						String channelName = args.getByArgument(channelManageArg);
 						Channel channel = ChannelManager.getChannel(channelName);
 
 						if (channel == null) {
@@ -75,23 +71,19 @@ public class ChatChannelColorCommand {
 						return 1;
 					})
 					.register();
-			}
 
-			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("color"));
-				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE));
-				arguments.add(new MultiLiteralArgument("set"));
-				arguments.add(new GreedyStringArgument("color").replaceSuggestions(ChatCommand.COLOR_SUGGESTIONS));
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("channel"))
+					.withArguments(new LiteralArgument("color"))
+					.withArguments(channelManageArg)
+					.withArguments(new LiteralArgument("set"))
+					.withArguments(colorArg)
 					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.channel.color")) {
 							throw CommandUtils.fail(sender, "You do not have permission to change channel colors.");
 						}
 
-						String channelName = (String) args[2];
+						String channelName = args.getByArgument(channelManageArg);
 						Channel channel = ChannelManager.getChannel(channelName);
 
 						if (channel == null) {
@@ -102,7 +94,7 @@ public class ChatChannelColorCommand {
 							throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
 						}
 
-						String colorString = (String) args[4];
+						String colorString = args.getByArgument(colorArg);
 						@Nullable TextColor color = MessagingUtils.colorFromString(colorString);
 						if (color == null) {
 							throw CommandUtils.fail(sender, "No such color " + colorString);

@@ -8,6 +8,7 @@ import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import java.io.BufferedReader;
 import java.io.File;
@@ -103,9 +104,9 @@ public class ChatHelpCommand {
 
 	private static void registerHelpCommandNode(final @Nullable ZipFile zip, final List<String> argStrings, final HelpTreeNode node) {
 		List<Argument<?>> arguments = new ArrayList<>();
-		arguments.add(new MultiLiteralArgument("help"));
+		arguments.add(new LiteralArgument("help"));
 		for (String arg : argStrings) {
-			arguments.add(new MultiLiteralArgument(arg));
+			arguments.add(new LiteralArgument(arg));
 		}
 		for (final String baseCommand : ChatCommand.COMMANDS) {
 			new CommandAPICommand(baseCommand)

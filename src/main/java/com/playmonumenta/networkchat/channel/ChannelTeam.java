@@ -13,12 +13,9 @@ import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -65,7 +62,7 @@ public class ChannelTeam extends Channel {
 	public static void registerNewChannelCommands() {
 		// Setting up new team channels will be done via /teammsg, /tm, and similar,
 		// not through /chat new Blah team. The provided arguments are ignored.
-		List<Argument<?>> arguments = new ArrayList<>();
+		GreedyStringArgument messageArg = new GreedyStringArgument("message");
 
 		for (String command : TEAM_COMMANDS) {
 			CommandAPI.unregister(command);
@@ -76,12 +73,10 @@ public class ChannelTeam extends Channel {
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
-				.withArguments(arguments)
+				.withArguments(messageArg)
 				.executesNative((sender, args) -> {
-					return runCommandSay(sender, (String) args[0]);
+					return runCommandSay(sender, args.getByArgument(messageArg));
 				})
 				.register();
 		}

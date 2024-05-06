@@ -10,6 +10,7 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
@@ -19,49 +20,30 @@ import org.bukkit.command.CommandSender;
 
 public class ChatChannelPermissionCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+			.and(ChannelPredicate.INSTANCE_OF_PERMISSION_NODE));
+		GreedyStringArgument permsArg = new GreedyStringArgument("New channel perms");
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new MultiLiteralArgument("permission"));
-			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
-				.and(ChannelPredicate.INSTANCE_OF_PERMISSION_NODE)));
-			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("channel"))
+				.withArguments(new LiteralArgument("permission"))
+				.withArguments(channelArg)
+				.withArguments(new LiteralArgument("get"))
 				.executesNative((sender, args) -> {
-					return getChannelPermission(sender, (String) args[2]);
+					return getChannelPermission(sender, args.getByArgument(channelArg));
 				})
 				.register();
 
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("permission"));
-				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
-					.and(ChannelPredicate.INSTANCE_OF_PERMISSION_NODE)));
-				arguments.add(new MultiLiteralArgument("set"));
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("channel"))
+					.withArguments(new LiteralArgument("permission"))
+					.withArguments(channelArg)
+					.withArguments(new LiteralArgument("set"))
+					.withOptionalArguments(permsArg)
 					.executesNative((sender, args) -> {
-						return changeChannelPerms(sender, (String) args[2], null);
-					})
-					.register();
-			}
-
-			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("permission"));
-				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
-					.and(ChannelPredicate.INSTANCE_OF_PERMISSION_NODE)));
-				arguments.add(new MultiLiteralArgument("set"));
-				arguments.add(new GreedyStringArgument("New channel perms"));
-				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
-					.executesNative((sender, args) -> {
-						return changeChannelPerms(sender, (String) args[2], (String) args[4]);
+						return changeChannelPerms(sender, args.getByArgument(channelArg), args.getByArgument(permsArg));
 					})
 					.register();
 			}

@@ -10,6 +10,7 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
@@ -21,27 +22,18 @@ import org.bukkit.entity.Player;
 
 public class ChatLeaveCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
-		arguments.add(new MultiLiteralArgument("leave"));
-		arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
+		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN);
+
+		CommandAPICommand leaveCommand = new CommandAPICommand("leave")
+			.withArguments(channelArg)
+			.executesNative((sender, args) -> {
+				return leaveChannel(sender, args.getByArgument(channelArg));
+			});
+		leaveCommand.register();
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					return leaveChannel(sender, (String) args[1]);
-				})
-				.register();
+			new CommandAPICommand(baseCommand).withSubcommand(leaveCommand).register();
 		}
-
-		arguments.clear();
-		arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
-		new CommandAPICommand("leave")
-			.withArguments(arguments)
-			.executesNative((sender, args) -> {
-				return leaveChannel(sender, (String) args[0]);
-			})
-			.register();
 	}
 
 	private static int leaveChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {

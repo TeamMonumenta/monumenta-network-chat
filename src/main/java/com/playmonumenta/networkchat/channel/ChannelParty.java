@@ -11,13 +11,14 @@ import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
@@ -63,24 +64,26 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		return result;
 	}
 
-	public static void registerNewChannelCommands(String[] baseCommands, List<Argument<?>> prefixArguments) {
-		List<Argument<?>> arguments;
+	public static void registerNewChannelCommands(LiteralArgument newArg, Argument<String> channelArg) {
+		Argument<String> channelManageArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+			.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID)));
+		Argument<String> channelListenArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
+			.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID)));
+		Argument<String> playerArg = new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES);
 
-		for (String baseCommand : baseCommands) {
-			arguments = new ArrayList<>(prefixArguments);
-			// last element of prefixArguments is channel ID
-			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
+		for (String baseCommand : ChatCommand.COMMANDS) {
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(newArg)
+				.withArguments(channelArg)
+				.withArguments(new LiteralArgument(CHANNEL_CLASS_ID))
 				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.new.party")) {
 						throw CommandUtils.fail(sender, "You do not have permission to create party channels.");
 					}
 
-					String channelName = (String)args[prefixArguments.size() - 1];
+					String channelName = args.getByArgument(channelArg);
 					ChannelParty newChannel;
 
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
 					try {
 						newChannel = new ChannelParty(channelName);
 					} catch (Exception e) {
@@ -88,24 +91,21 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 					}
 					// Add the sender to the party if they're a player
 					CommandSender callee = CommandUtils.getCallee(sender);
-					if (callee instanceof Player) {
-						newChannel.addPlayer(((Player) callee).getUniqueId(), false);
+					if (callee instanceof Player player) {
+						newChannel.addPlayer(player.getUniqueId(), false);
 					}
 					// Throws an exception if the channel already exists, failing the command.
 					ChannelManager.registerNewChannel(sender, newChannel);
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
-				.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID))));
-			arguments.add(new MultiLiteralArgument("invite"));
-			arguments.add(new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument(CHANNEL_CLASS_ID))
+				.withArguments(channelManageArg)
+				.withArguments(new LiteralArgument("invite"))
+				.withArguments(playerArg)
 				.executesNative((sender, args) -> {
-					String channelName = (String)args[1];
+					String channelName = args.getByArgument(channelManageArg);
 					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
 						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
@@ -117,7 +117,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 							throw CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
 						}
 
-						String playerName = (String) args[3];
+						String playerName = args.getByArgument(playerArg);
 						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 						if (playerId == null) {
 							throw CommandUtils.fail(sender, "No such player " + playerName + ".");
@@ -129,16 +129,13 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
-				.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID))));
-			arguments.add(new MultiLiteralArgument("kick"));
-			arguments.add(new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument(CHANNEL_CLASS_ID))
+				.withArguments(channelManageArg)
+				.withArguments(new LiteralArgument("kick"))
+				.withArguments(playerArg)
 				.executesNative((sender, args) -> {
-					String channelName = (String)args[1];
+					String channelName = args.getByArgument(channelManageArg);
 					Channel ch = ChannelManager.getChannel(channelName);
 					if (ch == null) {
 						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
@@ -150,7 +147,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 							throw CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
 						}
 
-						String playerName = (String) args[3];
+						String playerName = args.getByArgument(playerArg);
 						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
 						if (playerId == null) {
 							throw CommandUtils.fail(sender, "No such player " + playerName + ".");
@@ -162,15 +159,12 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
-				.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID))));
-			arguments.add(new MultiLiteralArgument("leave"));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument(CHANNEL_CLASS_ID))
+				.withArguments(channelListenArg)
+				.withArguments(new LiteralArgument("leave"))
 				.executesNative((sender, args) -> {
-					String channelId = (String)args[1];
+					String channelId = args.getByArgument(channelListenArg);
 					Channel ch = ChannelManager.getChannel(channelId);
 					if (ch == null) {
 						throw CommandUtils.fail(sender, "No such channel " + channelId + ".");

@@ -9,25 +9,23 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ChatChannelAutojoinCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
+			.and(ChannelPredicate.INSTANCE_OF_AUTOJOIN));
+		MultiLiteralArgument enableDisableArg = new MultiLiteralArgument("enable/disable", "enable", "disable");
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(new MultiLiteralArgument("autojoin"));
-			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
-				.and(ChannelPredicate.INSTANCE_OF_AUTOJOIN)));
-			arguments.add(new MultiLiteralArgument("get"));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("channel"))
+				.withArguments(new LiteralArgument("autojoin"))
+				.withArguments(channelArg)
+				.withArguments(new LiteralArgument("get"))
 				.executesNative((sender, args) -> {
-					String channelName = (String) args[2];
+					String channelName = args.getByArgument(channelArg);
 					Channel channel = ChannelManager.getChannel(channelName);
 
 					if (channel == null) {
@@ -38,27 +36,24 @@ public class ChatChannelAutojoinCommand {
 						throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
 					}
 
-					if (!(channel instanceof ChannelAutoJoin)) {
+					if (!(channel instanceof ChannelAutoJoin autoJoin)) {
 						throw CommandUtils.fail(sender, "This channel has no auto join setting.");
 					}
 
-					sender.sendMessage("Channel " + channelName + " auto join: " + (((ChannelAutoJoin) channel).getAutoJoin() ? "enabled." : "disabled."));
+					sender.sendMessage("Channel " + channelName + " auto join: " + (autoJoin.getAutoJoin() ? "enabled." : "disabled."));
 
 					return 1;
 				})
 				.register();
 
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("channel"));
-				arguments.add(new MultiLiteralArgument("autojoin"));
-				arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_MANAGE
-					.and(ChannelPredicate.INSTANCE_OF_AUTOJOIN)));
-				arguments.add(new MultiLiteralArgument("enable", "disable"));
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("channe"))
+					.withArguments(new LiteralArgument("autojoin"))
+					.withArguments(channelArg)
+					.withArguments(enableDisableArg)
 					.executesNative((sender, args) -> {
-						String channelName = (String) args[2];
+						String channelName = args.getByArgument(channelArg);
 						Channel channel = ChannelManager.getChannel(channelName);
 
 						if (channel == null) {
@@ -73,7 +68,7 @@ public class ChatChannelAutojoinCommand {
 							throw CommandUtils.fail(sender, "This channel does not support auto join settings.");
 						}
 
-						boolean newAutoJoin = args[3].equals("enable");
+						boolean newAutoJoin = args.getByArgument(enableDisableArg).equals("enable");
 
 						((ChannelAutoJoin) channel).setAutoJoin(newAutoJoin);
 						ChannelManager.saveChannel(channel);

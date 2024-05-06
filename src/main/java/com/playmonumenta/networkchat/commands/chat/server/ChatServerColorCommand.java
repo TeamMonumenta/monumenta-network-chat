@@ -15,6 +15,7 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,23 +24,24 @@ import net.kyori.adventure.text.format.TextColor;
 
 public class ChatServerColorCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		MultiLiteralArgument idArg = new MultiLiteralArgument("channelID",
+			ChannelAnnouncement.CHANNEL_CLASS_ID,
+			ChannelGlobal.CHANNEL_CLASS_ID,
+			ChannelLocal.CHANNEL_CLASS_ID,
+			ChannelParty.CHANNEL_CLASS_ID,
+			ChannelTeam.CHANNEL_CLASS_ID,
+			ChannelWhisper.CHANNEL_CLASS_ID,
+			ChannelWorld.CHANNEL_CLASS_ID
+		);
+		Argument<String> colorArg = new GreedyStringArgument("color").replaceSuggestions(ChatCommand.COLOR_SUGGESTIONS);
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("server"));
-			arguments.add(new MultiLiteralArgument("color"));
-			arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
-				ChannelGlobal.CHANNEL_CLASS_ID,
-				ChannelLocal.CHANNEL_CLASS_ID,
-				ChannelParty.CHANNEL_CLASS_ID,
-				ChannelTeam.CHANNEL_CLASS_ID,
-				ChannelWhisper.CHANNEL_CLASS_ID,
-				ChannelWorld.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("server"))
+				.withArguments(new LiteralArgument("color"))
+				.withArguments(idArg)
 				.executesNative((sender, args) -> {
-					String id = (String) args[2];
+					String id = args.getByArgument(idArg);
 					TextColor color = NetworkChatPlugin.messageColor(id);
 					sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
 					return 1;
@@ -47,26 +49,18 @@ public class ChatServerColorCommand {
 				.register();
 
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("server"));
-				arguments.add(new MultiLiteralArgument("color"));
-				arguments.add(new MultiLiteralArgument(ChannelAnnouncement.CHANNEL_CLASS_ID,
-					ChannelGlobal.CHANNEL_CLASS_ID,
-					ChannelLocal.CHANNEL_CLASS_ID,
-					ChannelParty.CHANNEL_CLASS_ID,
-					ChannelTeam.CHANNEL_CLASS_ID,
-					ChannelWhisper.CHANNEL_CLASS_ID,
-					ChannelWorld.CHANNEL_CLASS_ID));
-				arguments.add(new GreedyStringArgument("color").replaceSuggestions(ChatCommand.COLOR_SUGGESTIONS));
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("server"))
+					.withArguments(new LiteralArgument("color"))
+					.withArguments(idArg)
+					.withArguments(colorArg)
 					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
 							throw CommandUtils.fail(sender, "You do not have permission to change channel colors server-wide.");
 						}
 
-						String id = (String) args[2];
-						String colorString = (String) args[3];
+						String id = args.getByArgument(idArg);
+						String colorString = args.getByArgument(colorArg);
 						TextColor color = MessagingUtils.colorFromString(colorString);
 						if (color == null) {
 							throw CommandUtils.fail(sender, "No such color " + colorString);

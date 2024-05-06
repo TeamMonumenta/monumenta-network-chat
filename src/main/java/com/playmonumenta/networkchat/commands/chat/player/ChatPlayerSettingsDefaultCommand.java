@@ -7,25 +7,22 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import java.util.ArrayList;
-import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class ChatPlayerSettingsDefaultCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		MultiLiteralArgument keyArg = new MultiLiteralArgument("key", ChannelSettings.getFlagKeys());
+		MultiLiteralArgument valueArg = new MultiLiteralArgument("value", ChannelSettings.getFlagValues());
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("player"));
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("player"))
+				.withArguments(new LiteralArgument("settings"))
+				.withArguments(new LiteralArgument("default"))
+				.withArguments(keyArg)
 				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
@@ -40,19 +37,17 @@ public class ChatPlayerSettingsDefaultCommand {
 							throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						ChannelSettings settings = state.channelSettings();
-						return settings.commandFlag(sender, (String) args[3]);
+						return settings.commandFlag(sender, args.getByArgument(keyArg));
 					}
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("player"));
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("default"));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("player"))
+				.withArguments(new LiteralArgument("settings"))
+				.withArguments(new LiteralArgument("default"))
+				.withArguments(keyArg)
+				.withArguments(valueArg)
 				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
@@ -67,7 +62,7 @@ public class ChatPlayerSettingsDefaultCommand {
 							throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 						ChannelSettings settings = state.channelSettings();
-						return settings.commandFlag(sender, (String) args[3], (String) args[4]);
+						return settings.commandFlag(sender, args.getByArgument(keyArg), args.getByArgument(valueArg));
 					}
 				})
 				.register();

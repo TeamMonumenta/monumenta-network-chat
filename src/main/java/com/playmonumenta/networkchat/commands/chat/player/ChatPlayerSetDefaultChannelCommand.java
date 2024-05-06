@@ -11,24 +11,29 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import java.util.ArrayList;
-import java.util.List;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class ChatPlayerSetDefaultChannelCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
-
 		for (String baseCommand : ChatCommand.COMMANDS) {
 			for (String channelType : DefaultChannels.CHANNEL_TYPES) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-				arguments.add(new MultiLiteralArgument(channelType));
+				Argument<String> channelNameArg;
+				if (channelType.equals("default") || channelType.equals(DefaultChannels.GUILD_CHANNEL)) {
+					channelNameArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT);
+				} else if (channelType.equals(DefaultChannels.WORLD_CHANNEL)) {
+					channelNameArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT
+						.and(ChannelPredicate.channelType(ChannelWorld.CHANNEL_CLASS_ID)));
+				} else {
+					channelNameArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT
+						.and(ChannelPredicate.channelType(channelType)));
+				}
+
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("player"))
+					.withArguments(new LiteralArgument("setdefaultchannel"))
+					.withArguments(new LiteralArgument(channelType))
 					.executesNative((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player target)) {
@@ -48,21 +53,11 @@ public class ChatPlayerSetDefaultChannelCommand {
 					})
 					.register();
 
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("player"));
-				arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-				arguments.add(new MultiLiteralArgument(channelType));
-				if (channelType.equals("default") || channelType.equals(DefaultChannels.GUILD_CHANNEL)) {
-					arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT));
-				} else if (channelType.equals(DefaultChannels.WORLD_CHANNEL)) {
-					arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT
-						.and(ChannelPredicate.channelType(ChannelWorld.CHANNEL_CLASS_ID))));
-				} else {
-					arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT
-						.and(ChannelPredicate.channelType(channelType))));
-				}
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("player"))
+					.withArguments(new LiteralArgument("setdefaultchannel"))
+					.withArguments(new LiteralArgument(channelType))
+					.withArguments(channelNameArg)
 					.executesNative((sender, args) -> {
 						CommandSender callee = CommandUtils.getCallee(sender);
 						if (!(callee instanceof Player target)) {
@@ -76,7 +71,7 @@ public class ChatPlayerSetDefaultChannelCommand {
 							if (state == null) {
 								throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 							}
-							return state.defaultChannels().command(sender, channelType, (String) args[3]);
+							return state.defaultChannels().command(sender, channelType, args.getByArgument(channelNameArg));
 						}
 					})
 					.register();

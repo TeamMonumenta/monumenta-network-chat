@@ -7,6 +7,7 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
@@ -18,22 +19,17 @@ import org.bukkit.entity.Player;
 
 public class ChatPauseCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("pause"));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("pause"))
 				.executesNative((sender, args) -> {
 					return pause(sender);
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("unpause"));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("pause"))
 				.executesNative((sender, args) -> {
 					return unpause(sender);
 				})
@@ -41,12 +37,7 @@ public class ChatPauseCommand {
 		}
 
 		new CommandAPICommand("pausechat")
-			.executesNative((sender, args) -> {
-				return togglePause(sender);
-			})
-			.register();
-
-		new CommandAPICommand("pc")
+			.withAliases("pc")
 			.executesNative((sender, args) -> {
 				return togglePause(sender);
 			})

@@ -9,6 +9,7 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,12 +21,10 @@ public class ChatServerSetDefaultChannelCommand {
 		for (String baseCommand : ChatCommand.COMMANDS) {
 			for (String channelType : DefaultChannels.CHANNEL_TYPES) {
 				if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-					arguments.clear();
-					arguments.add(new MultiLiteralArgument("server"));
-					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-					arguments.add(new MultiLiteralArgument(channelType));
 					new CommandAPICommand(baseCommand)
-						.withArguments(arguments)
+						.withArguments(new LiteralArgument("server"))
+						.withArguments(new LiteralArgument("setdefaultchannel"))
+						.withArguments(new LiteralArgument(channelType))
 						.executesNative((sender, args) -> {
 							if (!CommandUtils.hasPermission(sender, "networkchat.setdefaultchannel")) {
 								throw CommandUtils.fail(sender, "You do not have permission to change server-wide default channels.");
@@ -35,27 +34,28 @@ public class ChatServerSetDefaultChannelCommand {
 						})
 						.register();
 
-					arguments.clear();
-					arguments.add(new MultiLiteralArgument("server"));
-					arguments.add(new MultiLiteralArgument("setdefaultchannel"));
-					arguments.add(new MultiLiteralArgument(channelType));
+					Argument<String> channelNameArg;
 					if (channelType.equals("default")) {
-						arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
+						channelNameArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN);
 					} else if (channelType.equals(DefaultChannels.WORLD_CHANNEL)) {
-						arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
-							.and(ChannelPredicate.channelType(ChannelWorld.CHANNEL_CLASS_ID))));
+						channelNameArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
+							.and(ChannelPredicate.channelType(ChannelWorld.CHANNEL_CLASS_ID)));
 					} else {
-						arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
-							.and(ChannelPredicate.channelType(channelType))));
+						channelNameArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
+							.and(ChannelPredicate.channelType(channelType)));
 					}
+
 					new CommandAPICommand(baseCommand)
-						.withArguments(arguments)
+						.withArguments(new LiteralArgument("server"))
+						.withArguments(new LiteralArgument("setdefaultchannel"))
+						.withArguments(new LiteralArgument(channelType))
+						.withArguments(channelNameArg)
 						.executesNative((sender, args) -> {
 							if (!CommandUtils.hasPermission(sender, "networkchat.setdefaultchannel")) {
 								throw CommandUtils.fail(sender, "You do not have permission to change server-wide default channels.");
 							}
 
-							int result = ChannelManager.getDefaultChannels().command(sender, channelType, (String) args[3]);
+							int result = ChannelManager.getDefaultChannels().command(sender, channelType, args.getByArgument(channelNameArg));
 							ChannelManager.saveDefaultChannels();
 							return result;
 						})

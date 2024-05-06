@@ -4,7 +4,7 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.command.CommandSender;
@@ -13,8 +13,8 @@ import org.bukkit.entity.Player;
 public class ChatPlayerResetNickCommand {
 	public static void register() {
 		List<Argument<?>> arguments = new ArrayList<>();
-		arguments.add(new MultiLiteralArgument("player"));
-		arguments.add(new MultiLiteralArgument("resetnick"));
+		arguments.add(new LiteralArgument("player"));
+		arguments.add(new LiteralArgument("resetnick"));
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
 			new CommandAPICommand(baseCommand)

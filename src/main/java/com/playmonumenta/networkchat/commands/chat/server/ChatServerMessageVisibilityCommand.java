@@ -7,41 +7,39 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatServerMessageVisibilityCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		MultiLiteralArgument keysArg = new MultiLiteralArgument("key", MessageVisibility.getVisibilityKeys());
+		MultiLiteralArgument valuesArg = new MultiLiteralArgument("values", MessageVisibility.getVisibilityValues());
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("server"));
-			arguments.add(new MultiLiteralArgument("messagevisibility"));
-			arguments.add(new MultiLiteralArgument("visibility"));
-			arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("server"))
+				.withArguments(new LiteralArgument("messagevisibility"))
+				.withArguments(new LiteralArgument("visibility"))
+				.withArguments(keysArg)
 				.executesNative((sender, args) -> {
-					return PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2]);
+					return PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, args.getByArgument(keysArg));
 				})
 				.register();
 
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("server"));
-				arguments.add(new MultiLiteralArgument("messagevisibility"));
-				arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityKeys()));
-				arguments.add(new MultiLiteralArgument(MessageVisibility.getVisibilityValues()));
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("server"))
+					.withArguments(new LiteralArgument("messagevisibility"))
+					.withArguments(keysArg)
+					.withArguments(valuesArg)
 					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.visibility.default")) {
 							throw CommandUtils.fail(sender, "You do not have permission to change server-wide message visibility.");
 						}
 
-						int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, (String) args[2], (String) args[3]);
+						int result = PlayerStateManager.getDefaultMessageVisibility().commandVisibility(sender, args.getByArgument(keysArg), args.getByArgument(valuesArg));
 						PlayerStateManager.saveSettings();
 						return result;
 					})

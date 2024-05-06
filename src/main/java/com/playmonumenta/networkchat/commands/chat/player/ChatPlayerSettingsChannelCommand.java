@@ -11,25 +11,24 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import java.util.ArrayList;
-import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class ChatPlayerSettingsChannelCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN);
+		MultiLiteralArgument keyArg = new MultiLiteralArgument("key", ChannelSettings.getFlagKeys());
+		MultiLiteralArgument valueArg = new MultiLiteralArgument("value", ChannelSettings.getFlagValues());
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("player"));
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("player"))
+				.withArguments(new LiteralArgument("settings"))
+				.withArguments(new LiteralArgument("channel"))
+				.withArguments(channelArg)
+				.withArguments(keyArg)
 				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
@@ -40,27 +39,25 @@ public class ChatPlayerSettingsChannelCommand {
 							throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 
-						String channelName = (String) args[3];
+						String channelName = args.getByArgument(channelArg);
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
 							throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
 						}
 
 						ChannelSettings settings = state.channelSettings(channel);
-						return settings.commandFlag(sender, (String) args[4]);
+						return settings.commandFlag(sender, args.getByArgument(keyArg));
 					}
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("player"));
-			arguments.add(new MultiLiteralArgument("settings"));
-			arguments.add(new MultiLiteralArgument("channel"));
-			arguments.add(ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagKeys()));
-			arguments.add(new MultiLiteralArgument(ChannelSettings.getFlagValues()));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("player"))
+				.withArguments(new LiteralArgument("settings"))
+				.withArguments(new LiteralArgument("channel"))
+				.withArguments(channelArg)
+				.withArguments(keyArg)
+				.withArguments(valueArg)
 				.executesNative((sender, args) -> {
 					CommandSender callee = CommandUtils.getCallee(sender);
 					if (!(callee instanceof Player target)) {
@@ -75,14 +72,14 @@ public class ChatPlayerSettingsChannelCommand {
 							throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 						}
 
-						String channelName = (String) args[3];
+						String channelName = args.getByArgument(channelArg);
 						Channel channel = ChannelManager.getChannel(channelName);
 						if (channel == null) {
 							throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
 						}
 
 						ChannelSettings settings = state.channelSettings(channel);
-						return settings.commandFlag(sender, (String) args[4], (String) args[5]);
+						return settings.commandFlag(sender, args.getByArgument(keyArg), args.getByArgument(valueArg));
 					}
 				})
 				.register();

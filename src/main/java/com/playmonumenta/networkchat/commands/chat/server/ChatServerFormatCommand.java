@@ -15,6 +15,7 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,26 +26,28 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 public class ChatServerFormatCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+
+		MultiLiteralArgument idArg = new MultiLiteralArgument("channelID",
+			"player",
+			"entity",
+			"sender",
+			ChannelAnnouncement.CHANNEL_CLASS_ID,
+			ChannelGlobal.CHANNEL_CLASS_ID,
+			ChannelLocal.CHANNEL_CLASS_ID,
+			ChannelParty.CHANNEL_CLASS_ID,
+			ChannelTeam.CHANNEL_CLASS_ID,
+			ChannelWhisper.CHANNEL_CLASS_ID,
+			ChannelWorld.CHANNEL_CLASS_ID
+		);
+		GreedyStringArgument formatArg = new GreedyStringArgument("format");
 
 		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("server"));
-			arguments.add(new MultiLiteralArgument("format"));
-			arguments.add(new MultiLiteralArgument("player",
-				"entity",
-				"sender",
-				ChannelAnnouncement.CHANNEL_CLASS_ID,
-				ChannelGlobal.CHANNEL_CLASS_ID,
-				ChannelLocal.CHANNEL_CLASS_ID,
-				ChannelParty.CHANNEL_CLASS_ID,
-				ChannelTeam.CHANNEL_CLASS_ID,
-				ChannelWhisper.CHANNEL_CLASS_ID,
-				ChannelWorld.CHANNEL_CLASS_ID));
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("server"))
+				.withArguments(new LiteralArgument("format"))
+				.withArguments(idArg)
 				.executesNative((sender, args) -> {
-					String id = (String) args[2];
+					String id = args.getByArgument(idArg);
 					TextColor color = NetworkChatPlugin.messageColor(id);
 					String format = NetworkChatPlugin.messageFormat(id);
 					if (format == null) {
@@ -74,30 +77,19 @@ public class ChatServerFormatCommand {
 				.register();
 
 			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				arguments.clear();
-				arguments.add(new MultiLiteralArgument("server"));
-				arguments.add(new MultiLiteralArgument("format"));
-				arguments.add(new MultiLiteralArgument("player",
-					"entity",
-					"sender",
-					ChannelAnnouncement.CHANNEL_CLASS_ID,
-					ChannelGlobal.CHANNEL_CLASS_ID,
-					ChannelLocal.CHANNEL_CLASS_ID,
-					ChannelParty.CHANNEL_CLASS_ID,
-					ChannelTeam.CHANNEL_CLASS_ID,
-					ChannelWhisper.CHANNEL_CLASS_ID,
-					ChannelWorld.CHANNEL_CLASS_ID));
-				arguments.add(new GreedyStringArgument("format"));
 				new CommandAPICommand(baseCommand)
-					.withArguments(arguments)
+					.withArguments(new LiteralArgument("server"))
+					.withArguments(new LiteralArgument("format"))
+					.withArguments(idArg)
+					.withArguments(formatArg)
 					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
 							throw CommandUtils.fail(sender, "You do not have permission to change message formatting.");
 						}
 
-						String id = (String) args[2];
+						String id = args.getByArgument(idArg);
 						TextColor color = NetworkChatPlugin.messageColor(id);
-						String format = (String) args[3];
+						String format = args.getByArgument(formatArg);
 						NetworkChatPlugin.messageFormat(id, format.replace("\\n", "\n"));
 
 						Component senderComponent = MessagingUtils.senderComponent(sender);

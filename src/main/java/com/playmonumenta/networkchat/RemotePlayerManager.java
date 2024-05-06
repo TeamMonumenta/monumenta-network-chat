@@ -19,6 +19,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -81,7 +82,7 @@ public class RemotePlayerManager implements Listener {
 
 	public static final String REMOTE_PLAYER_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.remoteplayer";
 	public static final String REFRESH_CHANNEL = "com.playmonumenta.networkchat.RemotePlayerManager.refresh";
-	public static final ArgumentSuggestions SUGGESTIONS_VISIBLE_PLAYER_NAMES = ArgumentSuggestions.strings(info ->
+	public static final ArgumentSuggestions<CommandSender> SUGGESTIONS_VISIBLE_PLAYER_NAMES = ArgumentSuggestions.strings(info ->
 		RemotePlayerManager.visiblePlayerNames().toArray(new String[0]));
 
 	private static @Nullable RemotePlayerManager INSTANCE = null;

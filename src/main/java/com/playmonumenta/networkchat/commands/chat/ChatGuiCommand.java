@@ -12,6 +12,7 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
@@ -40,11 +41,13 @@ public class ChatGuiCommand extends Gui {
 	public static void register() {
 		List<Argument<?>> arguments = new ArrayList<>();
 
+		GreedyStringArgument idArg = new GreedyStringArgument("message ID");
+
 		for (String baseCommand : ChatCommand.COMMANDS) {
 			arguments.clear();
-			arguments.add(new MultiLiteralArgument("gui"));
-			arguments.add(new MultiLiteralArgument("message"));
-			arguments.add(new GreedyStringArgument("message ID"));
+			arguments.add(new LiteralArgument("gui"));
+			arguments.add(new LiteralArgument("message"));
+			arguments.add(idArg);
 			new CommandAPICommand(baseCommand)
 				.withArguments(arguments)
 				.executesNative((sender, args) -> {
@@ -52,7 +55,7 @@ public class ChatGuiCommand extends Gui {
 						throw CommandUtils.fail(sender, "You do not have permission to run this command.");
 					}
 
-					messageGui(baseCommand, sender, (String) args[2]);
+					messageGui(baseCommand, sender, args.getByArgument(idArg));
 				})
 				.register();
 		}

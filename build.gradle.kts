@@ -69,7 +69,7 @@ dependencies {
     implementation("net.kyori:adventure-text-minimessage:4.11.0")
     implementation("org.apache.commons:commons-text:1.3")
     compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
-    compileOnly("dev.jorel.CommandAPI:commandapi-core:8.7.0")
+    compileOnly("dev.jorel:commandapi-bukkit-core:9.4.0")
     compileOnly("com.playmonumenta:monumenta-network-relay:1.1")
     compileOnly("com.playmonumenta:redissync:4.1")
     compileOnly("io.lettuce:lettuce-core:5.3.5.RELEASE")

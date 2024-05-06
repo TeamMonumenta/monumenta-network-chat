@@ -5,18 +5,16 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatListPlayersCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
-		arguments.add(new MultiLiteralArgument("listplayers"));
-
 		for (String baseCommand : ChatCommand.COMMANDS) {
 			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
+				.withArguments(new LiteralArgument("listplayers"))
 				.withPermission("networkchat.listplayers")
 				.executesNative((sender, args) -> {
 					if (!CommandUtils.hasPermission(sender, "networkchat.listplayers")) {
