@@ -83,7 +83,7 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 			new CommandAPICommand(baseCommand)
 				.withArguments(newArg)
 				.withArguments(channelArg)
-				.withArguments(new LiteralArgument(CHANNEL_CLASS_ID))
+				.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
 				.withOptionalArguments(autoJoinArg)
 				.withOptionalArguments(permissionArg)
 				.executesNative((sender, args) -> {

@@ -88,7 +88,7 @@ public class ChannelLocal extends Channel implements ChannelAutoJoin, ChannelPer
 			new CommandAPICommand(baseCommand)
 				.withArguments(newArg)
 				.withArguments(channelArg)
-				.withArguments(new LiteralArgument(CHANNEL_CLASS_ID))
+				.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
 				.withOptionalArguments(autoJoinArg)
 				.withOptionalArguments(permissionArg)
 				.executesNative((sender, args) -> {

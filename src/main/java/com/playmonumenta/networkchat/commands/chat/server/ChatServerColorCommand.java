@@ -24,7 +24,7 @@ import net.kyori.adventure.text.format.TextColor;
 
 public class ChatServerColorCommand {
 	public static void register() {
-		MultiLiteralArgument idArg = new MultiLiteralArgument("channelID",
+		MultiLiteralArgument channelTypeArg = new MultiLiteralArgument("Channel Type",
 			ChannelAnnouncement.CHANNEL_CLASS_ID,
 			ChannelGlobal.CHANNEL_CLASS_ID,
 			ChannelLocal.CHANNEL_CLASS_ID,
@@ -39,9 +39,9 @@ public class ChatServerColorCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(new LiteralArgument("server"))
 				.withArguments(new LiteralArgument("color"))
-				.withArguments(idArg)
+				.withArguments(channelTypeArg)
 				.executesNative((sender, args) -> {
-					String id = args.getByArgument(idArg);
+					String id = args.getByArgument(channelTypeArg);
 					TextColor color = NetworkChatPlugin.messageColor(id);
 					sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
 					return 1;
@@ -52,14 +52,14 @@ public class ChatServerColorCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(new LiteralArgument("server"))
 					.withArguments(new LiteralArgument("color"))
-					.withArguments(idArg)
+					.withArguments(channelTypeArg)
 					.withArguments(colorArg)
 					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
 							throw CommandUtils.fail(sender, "You do not have permission to change channel colors server-wide.");
 						}
 
-						String id = args.getByArgument(idArg);
+						String id = args.getByArgument(channelTypeArg);
 						String colorString = args.getByArgument(colorArg);
 						TextColor color = MessagingUtils.colorFromString(colorString);
 						if (color == null) {

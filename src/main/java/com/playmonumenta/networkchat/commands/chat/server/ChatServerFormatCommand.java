@@ -13,12 +13,9 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import java.util.ArrayList;
-import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
@@ -26,8 +23,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 public class ChatServerFormatCommand {
 	public static void register() {
-
-		MultiLiteralArgument idArg = new MultiLiteralArgument("channelID",
+		MultiLiteralArgument formatIdArg = new MultiLiteralArgument("Formatting ID",
 			"player",
 			"entity",
 			"sender",
@@ -45,9 +41,9 @@ public class ChatServerFormatCommand {
 			new CommandAPICommand(baseCommand)
 				.withArguments(new LiteralArgument("server"))
 				.withArguments(new LiteralArgument("format"))
-				.withArguments(idArg)
+				.withArguments(formatIdArg)
 				.executesNative((sender, args) -> {
-					String id = args.getByArgument(idArg);
+					String id = args.getByArgument(formatIdArg);
 					TextColor color = NetworkChatPlugin.messageColor(id);
 					String format = NetworkChatPlugin.messageFormat(id);
 					if (format == null) {
@@ -80,14 +76,14 @@ public class ChatServerFormatCommand {
 				new CommandAPICommand(baseCommand)
 					.withArguments(new LiteralArgument("server"))
 					.withArguments(new LiteralArgument("format"))
-					.withArguments(idArg)
+					.withArguments(formatIdArg)
 					.withArguments(formatArg)
 					.executesNative((sender, args) -> {
 						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
 							throw CommandUtils.fail(sender, "You do not have permission to change message formatting.");
 						}
 
-						String id = args.getByArgument(idArg);
+						String id = args.getByArgument(formatIdArg);
 						TextColor color = NetworkChatPlugin.messageColor(id);
 						String format = args.getByArgument(formatArg);
 						NetworkChatPlugin.messageFormat(id, format.replace("\\n", "\n"));

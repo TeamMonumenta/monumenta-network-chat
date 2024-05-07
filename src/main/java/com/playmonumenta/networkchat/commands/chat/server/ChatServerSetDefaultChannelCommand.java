@@ -16,15 +16,13 @@ import java.util.List;
 
 public class ChatServerSetDefaultChannelCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
-
 		for (String baseCommand : ChatCommand.COMMANDS) {
 			for (String channelType : DefaultChannels.CHANNEL_TYPES) {
 				if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 					new CommandAPICommand(baseCommand)
 						.withArguments(new LiteralArgument("server"))
 						.withArguments(new LiteralArgument("setdefaultchannel"))
-						.withArguments(new LiteralArgument(channelType))
+						.withArguments(new MultiLiteralArgument("Channel Type", channelType))
 						.executesNative((sender, args) -> {
 							if (!CommandUtils.hasPermission(sender, "networkchat.setdefaultchannel")) {
 								throw CommandUtils.fail(sender, "You do not have permission to change server-wide default channels.");
@@ -48,7 +46,7 @@ public class ChatServerSetDefaultChannelCommand {
 					new CommandAPICommand(baseCommand)
 						.withArguments(new LiteralArgument("server"))
 						.withArguments(new LiteralArgument("setdefaultchannel"))
-						.withArguments(new LiteralArgument(channelType))
+						.withArguments(new MultiLiteralArgument("Channel Type", channelType))
 						.withArguments(channelNameArg)
 						.executesNative((sender, args) -> {
 							if (!CommandUtils.hasPermission(sender, "networkchat.setdefaultchannel")) {
