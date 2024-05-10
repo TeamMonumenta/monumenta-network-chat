@@ -24,29 +24,27 @@ public class ChatChannelPermissionCommand {
 			.and(ChannelPredicate.INSTANCE_OF_PERMISSION_NODE));
 		GreedyStringArgument permsArg = new GreedyStringArgument("New channel perms");
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("channel"))
+			.withArguments(new LiteralArgument("permission"))
+			.withArguments(channelArg)
+			.withArguments(new LiteralArgument("get"))
+			.executesNative((sender, args) -> {
+				return getChannelPermission(sender, args.getByArgument(channelArg));
+			})
+			.register();
+
+		if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+			ChatCommand.getBaseCommand()
 				.withArguments(new LiteralArgument("channel"))
 				.withArguments(new LiteralArgument("permission"))
 				.withArguments(channelArg)
-				.withArguments(new LiteralArgument("get"))
+				.withArguments(new LiteralArgument("set"))
+				.withOptionalArguments(permsArg)
 				.executesNative((sender, args) -> {
-					return getChannelPermission(sender, args.getByArgument(channelArg));
+					return changeChannelPerms(sender, args.getByArgument(channelArg), args.getByArgument(permsArg));
 				})
 				.register();
-
-			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				new CommandAPICommand(baseCommand)
-					.withArguments(new LiteralArgument("channel"))
-					.withArguments(new LiteralArgument("permission"))
-					.withArguments(channelArg)
-					.withArguments(new LiteralArgument("set"))
-					.withOptionalArguments(permsArg)
-					.executesNative((sender, args) -> {
-						return changeChannelPerms(sender, args.getByArgument(channelArg), args.getByArgument(permsArg));
-					})
-					.register();
-			}
 		}
 	}
 

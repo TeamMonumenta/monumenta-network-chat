@@ -14,13 +14,17 @@ import com.playmonumenta.networkchat.commands.chat.ChatPlayerCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatSayCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatServerCommand;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
+import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
 import org.bukkit.command.CommandSender;
+import org.checkerframework.dataflow.qual.Pure;
+import org.jetbrains.annotations.Contract;
 
 public class ChatCommand {
-	public static final String[] COMMANDS = new String[]{"chat", "ch", "networkchat"};
+	public static final String COMMAND = "chat";
+	public static final String[] ALIASES = {"ch", "networkchat"};
 	public static final ArgumentSuggestions<CommandSender> COLOR_SUGGESTIONS = ArgumentSuggestions.strings("aqua", "dark_purple", "#0189af");
 	public static final ArgumentSuggestions<CommandSender> ALL_CACHED_PLAYER_NAMES_SUGGESTIONS = ArgumentSuggestions.strings((unused) -> MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new));
 
@@ -37,5 +41,9 @@ public class ChatCommand {
 		ChatPlayerCommand.register();
 		ChatSayCommand.register();
 		ChatServerCommand.register();
+	}
+
+	public static CommandAPICommand getBaseCommand() {
+		return new CommandAPICommand(COMMAND).withAliases(ALIASES);
 	}
 }

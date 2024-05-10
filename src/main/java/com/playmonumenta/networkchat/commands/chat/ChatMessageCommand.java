@@ -5,14 +5,10 @@ import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import org.bukkit.command.CommandSender;
@@ -23,52 +19,50 @@ public class ChatMessageCommand {
 			StringArgument idArg = new StringArgument("Message ID");
 			Argument<String> nameArg = new StringArgument("name").replaceSuggestions(ChatCommand.ALL_CACHED_PLAYER_NAMES_SUGGESTIONS);
 
-			for (String baseCommand : ChatCommand.COMMANDS) {
-				new CommandAPICommand(baseCommand)
-					.withArguments(new LiteralArgument("message"))
-					.withArguments(new LiteralArgument("delete"))
-					.withArguments(idArg)
-					.executesNative((sender, args) -> {
-						if (!CommandUtils.hasPermission(sender, "networkchat.delete.message")) {
-							throw CommandUtils.fail(sender, "You do not have permission to run this command.");
-						}
+			ChatCommand.getBaseCommand()
+				.withArguments(new LiteralArgument("message"))
+				.withArguments(new LiteralArgument("delete"))
+				.withArguments(idArg)
+				.executesNative((sender, args) -> {
+					if (!CommandUtils.hasPermission(sender, "networkchat.delete.message")) {
+						throw CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
 
-						return deleteMessage(sender, args.getByArgument(nameArg));
-					})
-					.register();
+					return deleteMessage(sender, args.getByArgument(nameArg));
+				})
+				.register();
 
-				new CommandAPICommand(baseCommand)
-					.withArguments(new LiteralArgument("message"))
-					.withArguments(new LiteralArgument("deletefromsender"))
-					.withArguments(nameArg)
-					.executes((sender, args) -> {
-						if (!CommandUtils.hasPermission(sender, "networkchat.message.deletefromsender")) {
-							throw CommandUtils.fail(sender, "You do not have permission to run this command.");
-						}
-						String targetName = args.getByArgument(nameArg);
-						@Nullable UUID targetId = MonumentaRedisSyncAPI.cachedNameToUuid(targetName);
-						if (targetId == null) {
-							throw CommandUtils.fail(sender, "The player " + targetName + " has not joined this server before. Double check capitalization and spelling.");
-						}
+			ChatCommand.getBaseCommand()
+				.withArguments(new LiteralArgument("message"))
+				.withArguments(new LiteralArgument("deletefromsender"))
+				.withArguments(nameArg)
+				.executes((sender, args) -> {
+					if (!CommandUtils.hasPermission(sender, "networkchat.message.deletefromsender")) {
+						throw CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
+					String targetName = args.getByArgument(nameArg);
+					@Nullable UUID targetId = MonumentaRedisSyncAPI.cachedNameToUuid(targetName);
+					if (targetId == null) {
+						throw CommandUtils.fail(sender, "The player " + targetName + " has not joined this server before. Double check capitalization and spelling.");
+					}
 
-						MessageManager.deleteMessagesFromSender(targetId);
-						return 1;
-					})
-					.register();
+					MessageManager.deleteMessagesFromSender(targetId);
+					return 1;
+				})
+				.register();
 
-				new CommandAPICommand(baseCommand)
-					.withArguments(new LiteralArgument("message"))
-					.withArguments(new LiteralArgument("clearchat"))
-					.executes((sender, args) -> {
-						if (!CommandUtils.hasPermission(sender, "networkchat.message.clearchat")) {
-							throw CommandUtils.fail(sender, "You do not have permission to run this command.");
-						}
+			ChatCommand.getBaseCommand()
+				.withArguments(new LiteralArgument("message"))
+				.withArguments(new LiteralArgument("clearchat"))
+				.executes((sender, args) -> {
+					if (!CommandUtils.hasPermission(sender, "networkchat.message.clearchat")) {
+						throw CommandUtils.fail(sender, "You do not have permission to run this command.");
+					}
 
-						MessageManager.clearChat();
-						return 1;
-					})
-					.register();
-			}
+					MessageManager.clearChat();
+					return 1;
+				})
+				.register();
 		}
 	}
 

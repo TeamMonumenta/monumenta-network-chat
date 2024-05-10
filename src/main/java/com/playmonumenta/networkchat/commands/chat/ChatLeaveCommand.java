@@ -25,11 +25,9 @@ public class ChatLeaveCommand {
 			.executesNative((sender, args) -> {
 				return leaveChannel(sender, args.getByArgument(channelArg));
 			});
-		leaveCommand.register();
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand).withSubcommand(leaveCommand).register();
-		}
+		leaveCommand.register();
+		ChatCommand.getBaseCommand().withSubcommand(leaveCommand).register();
 	}
 
 	private static int leaveChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {

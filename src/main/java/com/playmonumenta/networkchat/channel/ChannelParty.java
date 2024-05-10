@@ -16,7 +16,6 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
@@ -72,118 +71,116 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID)));
 		Argument<String> playerArg = new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES);
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(newArg)
-				.withArguments(channelArg)
-				.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.party")) {
-						throw CommandUtils.fail(sender, "You do not have permission to create party channels.");
+		ChatCommand.getBaseCommand()
+			.withArguments(newArg)
+			.withArguments(channelArg)
+			.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
+			.executesNative((sender, args) -> {
+				if (!CommandUtils.hasPermission(sender, "networkchat.new.party")) {
+					throw CommandUtils.fail(sender, "You do not have permission to create party channels.");
+				}
+
+				String channelName = args.getByArgument(channelArg);
+				ChannelParty newChannel;
+
+				try {
+					newChannel = new ChannelParty(channelName);
+				} catch (Exception e) {
+					throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+				}
+				// Add the sender to the party if they're a player
+				CommandSender callee = CommandUtils.getCallee(sender);
+				if (callee instanceof Player player) {
+					newChannel.addPlayer(player.getUniqueId(), false);
+				}
+				// Throws an exception if the channel already exists, failing the command.
+				ChannelManager.registerNewChannel(sender, newChannel);
+			})
+			.register();
+
+		ChatCommand.getBaseCommand()
+			.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
+			.withArguments(channelManageArg)
+			.withArguments(new LiteralArgument("invite"))
+			.withArguments(playerArg)
+			.executesNative((sender, args) -> {
+				String channelName = args.getByArgument(channelManageArg);
+				Channel ch = ChannelManager.getChannel(channelName);
+				if (ch == null) {
+					throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
+				}
+				if (!(ch instanceof ChannelParty channel)) {
+					throw CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
+				} else {
+					if (!channel.isParticipant(sender)) {
+						throw CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
 					}
 
-					String channelName = args.getByArgument(channelArg);
-					ChannelParty newChannel;
-
-					try {
-						newChannel = new ChannelParty(channelName);
-					} catch (Exception e) {
-						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+					String playerName = args.getByArgument(playerArg);
+					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+					if (playerId == null) {
+						throw CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
-					// Add the sender to the party if they're a player
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (callee instanceof Player player) {
-						newChannel.addPlayer(player.getUniqueId(), false);
+
+					sender.sendMessage(Component.text("Added " + playerName + " to " + channelName + ".", NamedTextColor.GRAY));
+					channel.addPlayer(playerId);
+				}
+			})
+			.register();
+
+		ChatCommand.getBaseCommand()
+			.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
+			.withArguments(channelManageArg)
+			.withArguments(new LiteralArgument("kick"))
+			.withArguments(playerArg)
+			.executesNative((sender, args) -> {
+				String channelName = args.getByArgument(channelManageArg);
+				Channel ch = ChannelManager.getChannel(channelName);
+				if (ch == null) {
+					throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
+				}
+				if (!(ch instanceof ChannelParty channel)) {
+					throw CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
+				} else {
+					if (!channel.isParticipant(sender)) {
+						throw CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
 					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
-				})
-				.register();
 
-			new CommandAPICommand(baseCommand)
-				.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
-				.withArguments(channelManageArg)
-				.withArguments(new LiteralArgument("invite"))
-				.withArguments(playerArg)
-				.executesNative((sender, args) -> {
-					String channelName = args.getByArgument(channelManageArg);
-					Channel ch = ChannelManager.getChannel(channelName);
-					if (ch == null) {
-						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					String playerName = args.getByArgument(playerArg);
+					UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
+					if (playerId == null) {
+						throw CommandUtils.fail(sender, "No such player " + playerName + ".");
 					}
-					if (!(ch instanceof ChannelParty channel)) {
-						throw CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
-					} else {
-						if (!channel.isParticipant(sender)) {
-							throw CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
-						}
 
-						String playerName = args.getByArgument(playerArg);
-						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
-						if (playerId == null) {
-							throw CommandUtils.fail(sender, "No such player " + playerName + ".");
-						}
+					channel.removePlayer(playerId);
+					sender.sendMessage(Component.text("Kicked " + playerName + " from " + channelName + ".", NamedTextColor.GRAY));
+				}
+			})
+			.register();
 
-						sender.sendMessage(Component.text("Added " + playerName + " to " + channelName + ".", NamedTextColor.GRAY));
-						channel.addPlayer(playerId);
+		ChatCommand.getBaseCommand()
+			.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
+			.withArguments(channelListenArg)
+			.withArguments(new LiteralArgument("leave"))
+			.executesNative((sender, args) -> {
+				String channelId = args.getByArgument(channelListenArg);
+				Channel ch = ChannelManager.getChannel(channelId);
+				if (ch == null) {
+					throw CommandUtils.fail(sender, "No such channel " + channelId + ".");
+				}
+				if (!(ch instanceof ChannelParty channel)) {
+					throw CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
+				} else {
+					if (!channel.isParticipant(sender)) {
+						throw CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
 					}
-				})
-				.register();
+					Player player = (Player) sender;
 
-			new CommandAPICommand(baseCommand)
-				.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
-				.withArguments(channelManageArg)
-				.withArguments(new LiteralArgument("kick"))
-				.withArguments(playerArg)
-				.executesNative((sender, args) -> {
-					String channelName = args.getByArgument(channelManageArg);
-					Channel ch = ChannelManager.getChannel(channelName);
-					if (ch == null) {
-						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
-					}
-					if (!(ch instanceof ChannelParty channel)) {
-						throw CommandUtils.fail(sender, "Channel " + channelName + " is not a party channel.");
-					} else {
-						if (!channel.isParticipant(sender)) {
-							throw CommandUtils.fail(sender, "You are not a participant of " + channelName + ".");
-						}
-
-						String playerName = args.getByArgument(playerArg);
-						UUID playerId = MonumentaRedisSyncAPI.cachedNameToUuid(playerName);
-						if (playerId == null) {
-							throw CommandUtils.fail(sender, "No such player " + playerName + ".");
-						}
-
-						channel.removePlayer(playerId);
-						sender.sendMessage(Component.text("Kicked " + playerName + " from " + channelName + ".", NamedTextColor.GRAY));
-					}
-				})
-				.register();
-
-			new CommandAPICommand(baseCommand)
-				.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
-				.withArguments(channelListenArg)
-				.withArguments(new LiteralArgument("leave"))
-				.executesNative((sender, args) -> {
-					String channelId = args.getByArgument(channelListenArg);
-					Channel ch = ChannelManager.getChannel(channelId);
-					if (ch == null) {
-						throw CommandUtils.fail(sender, "No such channel " + channelId + ".");
-					}
-					if (!(ch instanceof ChannelParty channel)) {
-						throw CommandUtils.fail(sender, "Channel " + channelId + " is not a party channel.");
-					} else {
-						if (!channel.isParticipant(sender)) {
-							throw CommandUtils.fail(sender, "You are not a participant of " + channelId + ".");
-						}
-						Player player = (Player) sender;
-
-						channel.removePlayer(player.getUniqueId());
-						sender.sendMessage(Component.text("You have left " + channelId + ".", NamedTextColor.GRAY));
-					}
-				})
-				.register();
-		}
+					channel.removePlayer(player.getUniqueId());
+					sender.sendMessage(Component.text("You have left " + channelId + ".", NamedTextColor.GRAY));
+				}
+			})
+			.register();
 	}
 
 	@Override

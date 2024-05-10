@@ -16,20 +16,18 @@ public class ChatPlayerResetNickCommand {
 		arguments.add(new LiteralArgument("player"));
 		arguments.add(new LiteralArgument("resetnick"));
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player target)) {
-						throw CommandUtils.fail(sender, "This command can only be run as a player.");
-					} else {
-						target.displayName(null);
-						target.playerListName(null);
-					}
-					return 1;
-				})
-				.register();
-		}
+		ChatCommand.getBaseCommand()
+			.withArguments(arguments)
+			.executesNative((sender, args) -> {
+				CommandSender callee = CommandUtils.getCallee(sender);
+				if (!(callee instanceof Player target)) {
+					throw CommandUtils.fail(sender, "This command can only be run as a player.");
+				} else {
+					target.displayName(null);
+					target.playerListName(null);
+				}
+				return 1;
+			})
+			.register();
 	}
 }

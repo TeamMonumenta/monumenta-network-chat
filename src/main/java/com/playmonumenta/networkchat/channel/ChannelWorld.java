@@ -17,7 +17,6 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
@@ -88,39 +87,37 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 		BooleanArgument autoJoinArg = new BooleanArgument("Auto Join");
 		GreedyStringArgument permissionArg = new GreedyStringArgument("Channel Permission");
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(newArg)
-				.withArguments(channelArg)
-				.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
-				.withOptionalArguments(autoJoinArg)
-				.withOptionalArguments(permissionArg)
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.world")) {
-						throw CommandUtils.fail(sender, "You do not have permission to create world channels.");
-					}
+		ChatCommand.getBaseCommand()
+			.withArguments(newArg)
+			.withArguments(channelArg)
+			.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
+			.withOptionalArguments(autoJoinArg)
+			.withOptionalArguments(permissionArg)
+			.executesNative((sender, args) -> {
+				if (!CommandUtils.hasPermission(sender, "networkchat.new.world")) {
+					throw CommandUtils.fail(sender, "You do not have permission to create world channels.");
+				}
 
-					String channelName = args.getByArgument(channelArg);
-					ChannelWorld newChannel;
+				String channelName = args.getByArgument(channelArg);
+				ChannelWorld newChannel;
 
-					try {
-						newChannel = new ChannelWorld(channelName);
-						Boolean autoJoin = args.getByArgument(autoJoinArg);
-						if (autoJoin != null) {
-							newChannel.setAutoJoin(autoJoin);
-						}
-						String permission = args.getByArgument(permissionArg);
-						if (permission != null && !permission.isEmpty()) {
-							newChannel.setChannelPermission(permission);
-						}
-					} catch (Exception e) {
-						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+				try {
+					newChannel = new ChannelWorld(channelName);
+					Boolean autoJoin = args.getByArgument(autoJoinArg);
+					if (autoJoin != null) {
+						newChannel.setAutoJoin(autoJoin);
 					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
-				})
-				.register();
-		}
+					String permission = args.getByArgument(permissionArg);
+					if (permission != null && !permission.isEmpty()) {
+						newChannel.setChannelPermission(permission);
+					}
+				} catch (Exception e) {
+					throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+				}
+				// Throws an exception if the channel already exists, failing the command.
+				ChannelManager.registerNewChannel(sender, newChannel);
+			})
+			.register();
 	}
 
 	@Override

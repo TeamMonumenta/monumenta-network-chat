@@ -6,7 +6,6 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.LiteralArgument;
@@ -47,110 +46,108 @@ public class ChatPlayerIgnoreCommand {
 				}
 			}));
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(new LiteralArgument("player"))
-				.withArguments(new LiteralArgument("ignore"))
-				.withArguments(new LiteralArgument("hide"))
-				.withArguments(nameArg1)
-				.executesNative((sender, args) -> {
-					if (CommandUtils.checkSudoCommandDisallowed(sender)) {
-						throw CommandUtils.fail(sender, "You may not change other players' ignored players.");
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("player"))
+			.withArguments(new LiteralArgument("ignore"))
+			.withArguments(new LiteralArgument("hide"))
+			.withArguments(nameArg1)
+			.executesNative((sender, args) -> {
+				if (CommandUtils.checkSudoCommandDisallowed(sender)) {
+					throw CommandUtils.fail(sender, "You may not change other players' ignored players.");
+				}
+				CommandSender callee = CommandUtils.getCallee(sender);
+				if (!(callee instanceof Player target)) {
+					throw CommandUtils.fail(sender, "This command can only be run as a player.");
+				} else {
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 					}
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player target)) {
-						throw CommandUtils.fail(sender, "This command can only be run as a player.");
+					String ignoredName = args.getByArgument(nameArg1);
+					if (ignoredName.equals(target.getName())) {
+						throw CommandUtils.fail(sender, "You cannot ignore yourself.");
+					}
+					@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
+					if (ignoredId == null) {
+						throw CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and may not be ignored. Double check capitalization and spelling.");
+					}
+					Set<UUID> ignoredPlayers = state.getIgnoredPlayerIds();
+					if (ignoredPlayers.contains(ignoredId)) {
+						target.sendMessage(Component.text("You are still ignoring " + ignoredName, NamedTextColor.GRAY));
 					} else {
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
-						}
-						String ignoredName = args.getByArgument(nameArg1);
-						if (ignoredName.equals(target.getName())) {
-							throw CommandUtils.fail(sender, "You cannot ignore yourself.");
-						}
-						@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
-						if (ignoredId == null) {
-							throw CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and may not be ignored. Double check capitalization and spelling.");
-						}
-						Set<UUID> ignoredPlayers = state.getIgnoredPlayerIds();
-						if (ignoredPlayers.contains(ignoredId)) {
-							target.sendMessage(Component.text("You are still ignoring " + ignoredName, NamedTextColor.GRAY));
-						} else {
-							ignoredPlayers.add(ignoredId);
-							target.sendMessage(Component.text("You are now ignoring " + ignoredName, NamedTextColor.GRAY));
-						}
+						ignoredPlayers.add(ignoredId);
+						target.sendMessage(Component.text("You are now ignoring " + ignoredName, NamedTextColor.GRAY));
 					}
-					return 1;
-				})
-				.register();
+				}
+				return 1;
+			})
+			.register();
 
-			new CommandAPICommand(baseCommand)
-				.withArguments(new LiteralArgument("player"))
-				.withArguments(new LiteralArgument("ignore"))
-				.withArguments(new LiteralArgument("list"))
-				.executesNative((sender, args) -> {
-					if (CommandUtils.checkSudoCommandDisallowed(sender)) {
-						throw CommandUtils.fail(sender, "You may not change other players' ignored players.");
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("player"))
+			.withArguments(new LiteralArgument("ignore"))
+			.withArguments(new LiteralArgument("list"))
+			.executesNative((sender, args) -> {
+				if (CommandUtils.checkSudoCommandDisallowed(sender)) {
+					throw CommandUtils.fail(sender, "You may not change other players' ignored players.");
+				}
+				CommandSender callee = CommandUtils.getCallee(sender);
+				if (!(callee instanceof Player target)) {
+					throw CommandUtils.fail(sender, "This command can only be run as a player.");
+				} else {
+					PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 					}
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player target)) {
-						throw CommandUtils.fail(sender, "This command can only be run as a player.");
-					} else {
-						PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
-						}
-						Set<String> ignoredNames = state.getIgnoredPlayerNames();
-						target.sendMessage(Component.text("You are ignoring:", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
-						boolean lightLine = false;
-						TextColor lineColor;
-						for (String ignoredName : ignoredNames) {
-							lightLine = !lightLine;
-							lineColor = lightLine ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
-							target.sendMessage(Component.text("- " + ignoredName, lineColor));
-						}
+					Set<String> ignoredNames = state.getIgnoredPlayerNames();
+					target.sendMessage(Component.text("You are ignoring:", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
+					boolean lightLine = false;
+					TextColor lineColor;
+					for (String ignoredName : ignoredNames) {
 						lightLine = !lightLine;
 						lineColor = lightLine ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
-						target.sendMessage(Component.text("Players ignored: " + ignoredNames.size(), lineColor));
+						target.sendMessage(Component.text("- " + ignoredName, lineColor));
 					}
-					return 1;
-				})
-				.register();
+					lightLine = !lightLine;
+					lineColor = lightLine ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY;
+					target.sendMessage(Component.text("Players ignored: " + ignoredNames.size(), lineColor));
+				}
+				return 1;
+			})
+			.register();
 
-			new CommandAPICommand(baseCommand)
-				.withArguments(new LiteralArgument("player"))
-				.withArguments(new LiteralArgument("ignore"))
-				.withArguments(new LiteralArgument("show"))
-				.withArguments(nameArg2)
-				.executesNative((sender, args) -> {
-					if (CommandUtils.checkSudoCommandDisallowed(sender)) {
-						throw CommandUtils.fail(sender, "You may not change other players' ignored players.");
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("player"))
+			.withArguments(new LiteralArgument("ignore"))
+			.withArguments(new LiteralArgument("show"))
+			.withArguments(nameArg2)
+			.executesNative((sender, args) -> {
+				if (CommandUtils.checkSudoCommandDisallowed(sender)) {
+					throw CommandUtils.fail(sender, "You may not change other players' ignored players.");
+				}
+				CommandSender callee = CommandUtils.getCallee(sender);
+				if (!(callee instanceof Player target)) {
+					throw CommandUtils.fail(sender, "This command can only be run as a player.");
+				} else {
+					@Nullable PlayerState state = PlayerStateManager.getPlayerState(target);
+					if (state == null) {
+						throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 					}
-					CommandSender callee = CommandUtils.getCallee(sender);
-					if (!(callee instanceof Player target)) {
-						throw CommandUtils.fail(sender, "This command can only be run as a player.");
+					String ignoredName = args.getByArgument(nameArg2);
+					@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
+					if (ignoredId == null) {
+						throw CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and could not be ignored. Double check capitalization and spelling.");
+					}
+					Set<UUID> ignoredPlayers = state.getIgnoredPlayerIds();
+					if (ignoredPlayers.contains(ignoredId)) {
+						ignoredPlayers.remove(ignoredId);
+						target.sendMessage(Component.text("You are no longer ignoring " + ignoredName, NamedTextColor.GRAY));
 					} else {
-						@Nullable PlayerState state = PlayerStateManager.getPlayerState(target);
-						if (state == null) {
-							throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
-						}
-						String ignoredName = args.getByArgument(nameArg2);
-						@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);
-						if (ignoredId == null) {
-							throw CommandUtils.fail(sender, "The player " + ignoredName + " has not joined this server before and could not be ignored. Double check capitalization and spelling.");
-						}
-						Set<UUID> ignoredPlayers = state.getIgnoredPlayerIds();
-						if (ignoredPlayers.contains(ignoredId)) {
-							ignoredPlayers.remove(ignoredId);
-							target.sendMessage(Component.text("You are no longer ignoring " + ignoredName, NamedTextColor.GRAY));
-						} else {
-							target.sendMessage(Component.text("You are still not ignoring " + ignoredName, NamedTextColor.GRAY));
-						}
+						target.sendMessage(Component.text("You are still not ignoring " + ignoredName, NamedTextColor.GRAY));
 					}
-					return 1;
-				})
-				.register();
-		}
+				}
+				return 1;
+			})
+			.register();
 	}
 }

@@ -23,12 +23,29 @@ public class ChatChannelSettingsCommand {
 		FloatArgument volumeArg = new FloatArgument("Volume", 0.0f, 1.0f);
 		FloatArgument pitchArg = new FloatArgument("Pitch", 0.5f, 2.0f);
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(new LiteralArgument("channel"))
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("channel"))
+			.withArguments(new LiteralArgument("settings"))
+			.withArguments(channelArg)
+			.withArguments(keyArg)
+			.executesNative((sender, args) -> {
+				String channelName = args.getByArgument(channelArg);
+				Channel channel = ChannelManager.getChannel(channelName);
+				if (channel == null) {
+					throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
+				}
+
+				ChannelSettings settings = channel.channelSettings();
+				return settings.commandFlag(sender, args.getByArgument(keyArg));
+			})
+			.register();
+
+		if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+			ChatCommand.getBaseCommand().withArguments(new LiteralArgument("channel"))
 				.withArguments(new LiteralArgument("settings"))
 				.withArguments(channelArg)
 				.withArguments(keyArg)
+				.withArguments(valueArg)
 				.executesNative((sender, args) -> {
 					String channelName = args.getByArgument(channelArg);
 					Channel channel = ChannelManager.getChannel(channelName);
@@ -36,88 +53,69 @@ public class ChatChannelSettingsCommand {
 						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
 					}
 
+					if (!channel.mayManage(sender)) {
+						throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
+					}
+
 					ChannelSettings settings = channel.channelSettings();
-					return settings.commandFlag(sender, args.getByArgument(keyArg));
+					int result = settings.commandFlag(sender, args.getByArgument(keyArg), args.getByArgument(valueArg));
+					ChannelManager.saveChannel(channel);
+					return result;
 				})
 				.register();
 
-			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				new CommandAPICommand(baseCommand).withArguments(new LiteralArgument("channel"))
-					.withArguments(new LiteralArgument("settings"))
-					.withArguments(channelArg)
-					.withArguments(keyArg)
-					.withArguments(valueArg)
-					.executesNative((sender, args) -> {
-						String channelName = args.getByArgument(channelArg);
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
+			ChatCommand.getBaseCommand()
+				.withArguments(new LiteralArgument("channel"))
+				.withArguments(new LiteralArgument("settings"))
+				.withArguments(channelArg)
+				.withArguments(new LiteralArgument("sound"))
+				.withArguments(new LiteralArgument("add"))
+				.withArguments(soundArg)
+				.withOptionalArguments(volumeArg)
+				.withOptionalArguments(pitchArg)
+				.executesNative((sender, args) -> {
+					String channelName = args.getByArgument(channelArg);
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
 
-						if (!channel.mayManage(sender)) {
-							throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
-						}
+					if (!channel.mayManage(sender)) {
+						throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
+					}
 
-						ChannelSettings settings = channel.channelSettings();
-						int result = settings.commandFlag(sender, args.getByArgument(keyArg), args.getByArgument(valueArg));
-						ChannelManager.saveChannel(channel);
-						return result;
-					})
-					.register();
+					ChannelSettings settings = channel.channelSettings();
+					settings.addSound(args.getByArgument(soundArg), args.getByArgumentOrDefault(volumeArg, 1.0f), args.getByArgumentOrDefault(pitchArg, 1.0f));
+					ChannelManager.saveChannel(channel);
 
-				new CommandAPICommand(baseCommand)
-					.withArguments(new LiteralArgument("channel"))
-					.withArguments(new LiteralArgument("settings"))
-					.withArguments(channelArg)
-					.withArguments(new LiteralArgument("sound"))
-					.withArguments(new LiteralArgument("add"))
-					.withArguments(soundArg)
-					.withOptionalArguments(volumeArg)
-					.withOptionalArguments(pitchArg)
-					.executesNative((sender, args) -> {
-						String channelName = args.getByArgument(channelArg);
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
+					return 1;
+				})
+				.register();
 
-						if (!channel.mayManage(sender)) {
-							throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
-						}
+			ChatCommand.getBaseCommand()
+				.withArguments(new LiteralArgument("channel"))
+				.withArguments(new LiteralArgument("settings"))
+				.withArguments(channelArg)
+				.withArguments(new LiteralArgument("sound"))
+				.withArguments(new LiteralArgument("clear"))
+				.executesNative((sender, args) -> {
+					String channelName = args.getByArgument(channelArg);
+					Channel channel = ChannelManager.getChannel(channelName);
+					if (channel == null) {
+						throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
+					}
 
-						ChannelSettings settings = channel.channelSettings();
-						settings.addSound(args.getByArgument(soundArg), args.getByArgumentOrDefault(volumeArg, 1.0f), args.getByArgumentOrDefault(pitchArg, 1.0f));
-						ChannelManager.saveChannel(channel);
+					if (!channel.mayManage(sender)) {
+						throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
+					}
 
-						return 1;
-					})
-					.register();
+					ChannelSettings settings = channel.channelSettings();
+					settings.clearSound();
+					ChannelManager.saveChannel(channel);
 
-				new CommandAPICommand(baseCommand)
-					.withArguments(new LiteralArgument("channel"))
-					.withArguments(new LiteralArgument("settings"))
-					.withArguments(channelArg)
-					.withArguments(new LiteralArgument("sound"))
-					.withArguments(new LiteralArgument("clear"))
-					.executesNative((sender, args) -> {
-						String channelName = args.getByArgument(channelArg);
-						Channel channel = ChannelManager.getChannel(channelName);
-						if (channel == null) {
-							throw CommandUtils.fail(sender, "No such channel " + channelName + ".");
-						}
-
-						if (!channel.mayManage(sender)) {
-							throw CommandUtils.fail(sender, "You do not have permission to manage channel " + channel.getName() + ".");
-						}
-
-						ChannelSettings settings = channel.channelSettings();
-						settings.clearSound();
-						ChannelManager.saveChannel(channel);
-
-						return 1;
-					})
-					.register();
-			}
+					return 1;
+				})
+				.register();
 		}
 	}
 }

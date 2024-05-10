@@ -12,7 +12,6 @@ import com.playmonumenta.networkchat.channel.ChannelWorld;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
@@ -37,23 +36,59 @@ public class ChatServerFormatCommand {
 		);
 		GreedyStringArgument formatArg = new GreedyStringArgument("format");
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("server"))
+			.withArguments(new LiteralArgument("format"))
+			.withArguments(formatIdArg)
+			.executesNative((sender, args) -> {
+				String id = args.getByArgument(formatIdArg);
+				TextColor color = NetworkChatPlugin.messageColor(id);
+				String format = NetworkChatPlugin.messageFormat(id);
+				if (format == null) {
+					format = "";
+				}
+				format = format.replace("\n", "\\n");
+
+				Component senderComponent = MessagingUtils.senderComponent(sender);
+				sender.sendMessage(Component.text(id + " is " + format, color)
+					.clickEvent(ClickEvent.suggestCommand("/" + ChatCommand.COMMAND + " format default " + id + " " + format)));
+				if (id.equals("player")) {
+					sender.sendMessage(Component.text("Example: ").append(senderComponent));
+				} else {
+					String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
+					Component fullMessage = Component.empty()
+						.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix,
+							Placeholder.unparsed("channel_name", "ExampleChannel"),
+							Placeholder.component("sender", senderComponent),
+							Placeholder.component("receiver", senderComponent)))
+						.append(Component.empty().color(color).append(Component.text("Test message")));
+
+					sender.sendMessage(Component.text("Example message:", color));
+					sender.sendMessage(fullMessage);
+				}
+				return 1;
+			})
+			.register();
+
+		if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+			ChatCommand.getBaseCommand()
 				.withArguments(new LiteralArgument("server"))
 				.withArguments(new LiteralArgument("format"))
 				.withArguments(formatIdArg)
+				.withArguments(formatArg)
 				.executesNative((sender, args) -> {
+					if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
+						throw CommandUtils.fail(sender, "You do not have permission to change message formatting.");
+					}
+
 					String id = args.getByArgument(formatIdArg);
 					TextColor color = NetworkChatPlugin.messageColor(id);
-					String format = NetworkChatPlugin.messageFormat(id);
-					if (format == null) {
-						format = "";
-					}
-					format = format.replace("\n", "\\n");
+					String format = args.getByArgument(formatArg);
+					NetworkChatPlugin.messageFormat(id, format.replace("\\n", "\n"));
 
 					Component senderComponent = MessagingUtils.senderComponent(sender);
-					sender.sendMessage(Component.text(id + " is " + format, color)
-						.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
+					sender.sendMessage(Component.text(id + " set to " + format, color)
+						.clickEvent(ClickEvent.suggestCommand("/" + ChatCommand.COMMAND + " format default " + id + " " + format)));
 					if (id.equals("player")) {
 						sender.sendMessage(Component.text("Example: ").append(senderComponent));
 					} else {
@@ -71,44 +106,6 @@ public class ChatServerFormatCommand {
 					return 1;
 				})
 				.register();
-
-			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				new CommandAPICommand(baseCommand)
-					.withArguments(new LiteralArgument("server"))
-					.withArguments(new LiteralArgument("format"))
-					.withArguments(formatIdArg)
-					.withArguments(formatArg)
-					.executesNative((sender, args) -> {
-						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
-							throw CommandUtils.fail(sender, "You do not have permission to change message formatting.");
-						}
-
-						String id = args.getByArgument(formatIdArg);
-						TextColor color = NetworkChatPlugin.messageColor(id);
-						String format = args.getByArgument(formatArg);
-						NetworkChatPlugin.messageFormat(id, format.replace("\\n", "\n"));
-
-						Component senderComponent = MessagingUtils.senderComponent(sender);
-						sender.sendMessage(Component.text(id + " set to " + format, color)
-							.clickEvent(ClickEvent.suggestCommand("/" + baseCommand + " format default " + id + " " + format)));
-						if (id.equals("player")) {
-							sender.sendMessage(Component.text("Example: ").append(senderComponent));
-						} else {
-							String prefix = format.replace("<channel_color>", MessagingUtils.colorToMiniMessage(color));
-							Component fullMessage = Component.empty()
-								.append(MessagingUtils.CHANNEL_HEADER_FMT_MINIMESSAGE.deserialize(prefix,
-									Placeholder.unparsed("channel_name", "ExampleChannel"),
-									Placeholder.component("sender", senderComponent),
-									Placeholder.component("receiver", senderComponent)))
-								.append(Component.empty().color(color).append(Component.text("Test message")));
-
-							sender.sendMessage(Component.text("Example message:", color));
-							sender.sendMessage(fullMessage);
-						}
-						return 1;
-					})
-					.register();
-			}
 		}
 	}
 }

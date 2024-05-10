@@ -20,21 +20,19 @@ import org.bukkit.entity.Player;
 public class ChatPauseCommand {
 	public static void register() {
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(new LiteralArgument("pause"))
-				.executesNative((sender, args) -> {
-					return pause(sender);
-				})
-				.register();
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("pause"))
+			.executesNative((sender, args) -> {
+				return pause(sender);
+			})
+			.register();
 
-			new CommandAPICommand(baseCommand)
-				.withArguments(new LiteralArgument("pause"))
-				.executesNative((sender, args) -> {
-					return unpause(sender);
-				})
-				.register();
-		}
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("unpause"))
+			.executesNative((sender, args) -> {
+				return unpause(sender);
+			})
+			.register();
 
 		new CommandAPICommand("pausechat")
 			.withAliases("pc")

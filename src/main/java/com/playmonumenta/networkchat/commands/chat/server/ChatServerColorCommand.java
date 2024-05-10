@@ -12,13 +12,10 @@ import com.playmonumenta.networkchat.channel.ChannelWorld;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import java.util.ArrayList;
-import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 
@@ -35,42 +32,40 @@ public class ChatServerColorCommand {
 		);
 		Argument<String> colorArg = new GreedyStringArgument("color").replaceSuggestions(ChatCommand.COLOR_SUGGESTIONS);
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("server"))
+			.withArguments(new LiteralArgument("color"))
+			.withArguments(channelTypeArg)
+			.executesNative((sender, args) -> {
+				String id = args.getByArgument(channelTypeArg);
+				TextColor color = NetworkChatPlugin.messageColor(id);
+				sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
+				return 1;
+			})
+			.register();
+
+		if (NetworkChatProperties.getChatCommandModifyEnabled()) {
+			ChatCommand.getBaseCommand()
 				.withArguments(new LiteralArgument("server"))
 				.withArguments(new LiteralArgument("color"))
 				.withArguments(channelTypeArg)
+				.withArguments(colorArg)
 				.executesNative((sender, args) -> {
+					if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
+						throw CommandUtils.fail(sender, "You do not have permission to change channel colors server-wide.");
+					}
+
 					String id = args.getByArgument(channelTypeArg);
-					TextColor color = NetworkChatPlugin.messageColor(id);
-					sender.sendMessage(Component.text(id + " is " + MessagingUtils.colorToString(color), color));
+					String colorString = args.getByArgument(colorArg);
+					TextColor color = MessagingUtils.colorFromString(colorString);
+					if (color == null) {
+						throw CommandUtils.fail(sender, "No such color " + colorString);
+					}
+					NetworkChatPlugin.messageColor(id, color);
+					sender.sendMessage(Component.text(id + " set to " + MessagingUtils.colorToString(color), color));
 					return 1;
 				})
 				.register();
-
-			if (NetworkChatProperties.getChatCommandModifyEnabled()) {
-				new CommandAPICommand(baseCommand)
-					.withArguments(new LiteralArgument("server"))
-					.withArguments(new LiteralArgument("color"))
-					.withArguments(channelTypeArg)
-					.withArguments(colorArg)
-					.executesNative((sender, args) -> {
-						if (!CommandUtils.hasPermission(sender, "networkchat.format.default")) {
-							throw CommandUtils.fail(sender, "You do not have permission to change channel colors server-wide.");
-						}
-
-						String id = args.getByArgument(channelTypeArg);
-						String colorString = args.getByArgument(colorArg);
-						TextColor color = MessagingUtils.colorFromString(colorString);
-						if (color == null) {
-							throw CommandUtils.fail(sender, "No such color " + colorString);
-						}
-						NetworkChatPlugin.messageColor(id, color);
-						sender.sendMessage(Component.text(id + " set to " + MessagingUtils.colorToString(color), color));
-						return 1;
-					})
-					.register();
-			}
 		}
 	}
 }

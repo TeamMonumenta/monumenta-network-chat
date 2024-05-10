@@ -28,24 +28,22 @@ public class ChatSayCommand {
 		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT);
 		GreedyStringArgument messageArg = new GreedyStringArgument("message");
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(new LiteralArgument("say"))
-				.withArguments(channelArg)
-				.executesNative((sender, args) -> {
-					return setActiveChannel(sender, args.getByArgument(channelArg));
-				})
-				.register();
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("say"))
+			.withArguments(channelArg)
+			.executesNative((sender, args) -> {
+				return setActiveChannel(sender, args.getByArgument(channelArg));
+			})
+			.register();
 
-			new CommandAPICommand(baseCommand)
-				.withArguments(new LiteralArgument("say"))
-				.withArguments(channelArg)
-				.withArguments(messageArg)
-				.executesNative((sender, args) -> {
-					return sendMessage(sender, args.getByArgument(channelArg), args.getByArgument(messageArg));
-				})
-				.register();
-		}
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("say"))
+			.withArguments(channelArg)
+			.withArguments(messageArg)
+			.executesNative((sender, args) -> {
+				return sendMessage(sender, args.getByArgument(channelArg), args.getByArgument(messageArg));
+			})
+			.register();
 
 		Set<String> usedShortcuts = new HashSet<>();
 		for (String channelType : DefaultChannels.CHANNEL_TYPES) {

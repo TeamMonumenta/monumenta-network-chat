@@ -25,18 +25,9 @@ public class ChatJoinCommand {
 			.executesNative((sender, args) -> {
 				return joinChannel(sender, args.getByArgument(channelArg));
 			});
+
 		joinCommand.register();
-
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand).withSubcommand(joinCommand).register();
-		}
-
-		new CommandAPICommand("join")
-			.withArguments(channelArg)
-			.executesNative((sender, args) -> {
-				return joinChannel(sender, args.getByArgument(channelArg));
-			})
-			.register();
+		ChatCommand.getBaseCommand().withSubcommand(joinCommand).register();
 	}
 
 	private static int joinChannel(CommandSender sender, String channelName) throws WrapperCommandSyntaxException {
