@@ -140,11 +140,11 @@ public class ChannelManager implements Listener {
 		return matches;
 	}
 
-	public static ArgumentSuggestions getChannelNameSuggestions(String channelType) {
+	public static ArgumentSuggestions<CommandSender> getChannelNameSuggestions(String channelType) {
 		return getChannelNameSuggestions(ChannelPredicate.channelType(channelType));
 	}
 
-	public static ArgumentSuggestions getChannelNameSuggestions(ChannelPredicate channelPredicate) {
+	public static ArgumentSuggestions<CommandSender> getChannelNameSuggestions(ChannelPredicate channelPredicate) {
 		return ArgumentSuggestions.strings(info -> {
 			Predicate<Channel> predicate = channelPredicate.toPredicate(info.sender());
 			return CommandUtils.quoteIfNeeded(ChannelManager.getChannelNames(predicate)).toArray(new String[0]);

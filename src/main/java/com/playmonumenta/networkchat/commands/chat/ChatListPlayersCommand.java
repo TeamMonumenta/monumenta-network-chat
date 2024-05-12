@@ -3,30 +3,21 @@ package com.playmonumenta.networkchat.commands.chat;
 import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
-import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import java.util.ArrayList;
-import java.util.List;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 
 public class ChatListPlayersCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
-		arguments.add(new MultiLiteralArgument("listplayers"));
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("listplayers"))
+			.withPermission("networkchat.listplayers")
+			.executesNative((sender, args) -> {
+				if (!CommandUtils.hasPermission(sender, "networkchat.listplayers")) {
+					throw CommandUtils.fail(sender, "You do not have permission to run this command.");
+				}
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.withPermission("networkchat.listplayers")
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.listplayers")) {
-						throw CommandUtils.fail(sender, "You do not have permission to run this command.");
-					}
-
-					RemotePlayerManager.showOnlinePlayers(CommandUtils.getCallee(sender));
-					return 1;
-				})
-				.register();
-		}
+				RemotePlayerManager.showOnlinePlayers(CommandUtils.getCallee(sender));
+				return 1;
+			})
+			.register();
 	}
 }

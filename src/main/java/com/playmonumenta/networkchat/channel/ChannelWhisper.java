@@ -71,27 +71,24 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	public static void registerNewChannelCommands() {
 		// Setting up new whisper channels will be done via /msg, /tell, /w, and similar,
 		// not through /chat new Blah whisper. The provided arguments are ignored.
-		List<Argument<?>> arguments = new ArrayList<>();
+		Argument<String> recipientArg = new StringArgument("recipient").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES);
+		GreedyStringArgument messageArg = new GreedyStringArgument("message");
 
 		for (String command : WHISPER_COMMANDS) {
 			CommandAPI.unregister(command);
 
-			arguments.clear();
-			arguments.add(new StringArgument("recipient").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
 			new CommandAPICommand(command)
-				.withArguments(arguments)
+				.withArguments(recipientArg)
 				.executesNative((sender, args) -> {
-					return runCommandSet(sender, (String)args[0]);
+					return runCommandSet(sender, args.getByArgument(recipientArg));
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new StringArgument("recipient").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
-			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
-				.withArguments(arguments)
+				.withArguments(recipientArg)
+				.withArguments(messageArg)
 				.executesNative((sender, args) -> {
-					return runCommandSay(sender, (String)args[0], (String)args[1]);
+					return runCommandSay(sender, args.getByArgument(recipientArg), args.getByArgument(messageArg));
 				})
 				.register();
 		}
@@ -102,12 +99,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			})
 			.register();
 
-		arguments.clear();
-		arguments.add(new GreedyStringArgument("message"));
 		new CommandAPICommand(REPLY_COMMAND)
-			.withArguments(arguments)
+			.withArguments(messageArg)
 			.executesNative((sender, args) -> {
-				return runCommandReplySay(sender, (String)args[0]);
+				return runCommandReplySay(sender, args.getByArgument(messageArg));
 			})
 			.register();
 	}

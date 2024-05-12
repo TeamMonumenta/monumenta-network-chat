@@ -6,9 +6,8 @@ import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -103,84 +102,82 @@ public class ChatHelpCommand {
 
 	private static void registerHelpCommandNode(final @Nullable ZipFile zip, final List<String> argStrings, final HelpTreeNode node) {
 		List<Argument<?>> arguments = new ArrayList<>();
-		arguments.add(new MultiLiteralArgument("help"));
+		arguments.add(new LiteralArgument("help"));
 		for (String arg : argStrings) {
-			arguments.add(new MultiLiteralArgument(arg));
+			arguments.add(new LiteralArgument(arg));
 		}
-		for (final String baseCommand : ChatCommand.COMMANDS) {
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					if (CommandUtils.checkSudoCommandDisallowed(sender)) {
-						throw CommandUtils.fail(sender, "You may not show other players help info.");
-					}
-					CommandSender callee = CommandUtils.getCallee(sender);
+		ChatCommand.getBaseCommand()
+			.withArguments(arguments)
+			.executesNative((sender, args) -> {
+				if (CommandUtils.checkSudoCommandDisallowed(sender)) {
+					throw CommandUtils.fail(sender, "You may not show other players help info.");
+				}
+				CommandSender callee = CommandUtils.getCallee(sender);
 
-					// Title
-					StringBuilder titleBuilder = new StringBuilder("/").append(baseCommand).append(" help");
+				// Title
+				StringBuilder titleBuilder = new StringBuilder("/").append(ChatCommand.COMMAND).append(" help");
+				for (String arg : argStrings) {
+					titleBuilder.append(' ').append(arg);
+				}
+				titleBuilder.append(':');
+				callee.sendMessage(Component.text(titleBuilder.toString(), NamedTextColor.GOLD, TextDecoration.BOLD));
+
+				// Node's help info (if any)
+				@Nullable BufferedReader helpFile = null;
+				if (node.mExternalPath != null) {
+					try {
+						helpFile = new BufferedReader(new InputStreamReader(new FileInputStream(node.mExternalPath), StandardCharsets.UTF_8));
+					} catch (IOException ex) {
+						callee.sendMessage(Component.text("Unable to load server-specific help file. Attempting to load default help file...", NamedTextColor.RED));
+					}
+				}
+				if (helpFile == null && node.mResourcePath != null && zip != null) {
+					ZipEntry zipEntry = zip.getEntry(node.mResourcePath);
+					try {
+						helpFile = new BufferedReader(new InputStreamReader(zip.getInputStream(zipEntry), StandardCharsets.UTF_8));
+					} catch (IOException ex) {
+						throw CommandUtils.fail(callee, "Unable to load help file. This shard may need to restart.");
+					}
+				}
+				if (helpFile != null) {
+					try {
+						for (@Nullable String line; (line = helpFile.readLine()) != null; ) {
+							callee.sendMessage(Component.empty()
+								.color(NamedTextColor.GREEN)
+								.append(MessagingUtils.getSenderFmtMinimessage().deserialize(line)));
+						}
+					} catch (IOException ex) {
+						throw CommandUtils.fail(callee, "Failed to read all lines from help file. This shard may need to restart.");
+					}
+				}
+
+				// Back link (if applicable)
+				if (!argStrings.isEmpty()) {
+					StringBuilder parentCmdBuilder = new StringBuilder("/")
+						.append(ChatCommand.COMMAND)
+						.append(" help");
+					for (String arg : argStrings.subList(0, argStrings.size() - 1)) {
+						parentCmdBuilder.append(' ').append(arg);
+					}
+					callee.sendMessage(Component.text("[Back]", NamedTextColor.LIGHT_PURPLE)
+						.clickEvent(ClickEvent.runCommand(parentCmdBuilder.toString())));
+				}
+
+				// Child links
+				for (String childArg : node.keySet()) {
+					StringBuilder childCmdBuilder = new StringBuilder("/")
+						.append(ChatCommand.COMMAND)
+						.append(" help");
 					for (String arg : argStrings) {
-						titleBuilder.append(' ').append(arg);
+						childCmdBuilder.append(' ').append(arg);
 					}
-					titleBuilder.append(':');
-					callee.sendMessage(Component.text(titleBuilder.toString(), NamedTextColor.GOLD, TextDecoration.BOLD));
-
-					// Node's help info (if any)
-					@Nullable BufferedReader helpFile = null;
-					if (node.mExternalPath != null) {
-						try {
-							helpFile = new BufferedReader(new InputStreamReader(new FileInputStream(node.mExternalPath), StandardCharsets.UTF_8));
-						} catch (IOException ex) {
-							callee.sendMessage(Component.text("Unable to load server-specific help file. Attempting to load default help file...", NamedTextColor.RED));
-						}
-					}
-					if (helpFile == null && node.mResourcePath != null && zip != null) {
-						ZipEntry zipEntry = zip.getEntry(node.mResourcePath);
-						try {
-							helpFile = new BufferedReader(new InputStreamReader(zip.getInputStream(zipEntry), StandardCharsets.UTF_8));
-						} catch (IOException ex) {
-							throw CommandUtils.fail(callee, "Unable to load help file. This shard may need to restart.");
-						}
-					}
-					if (helpFile != null) {
-						try {
-							for (@Nullable String line; (line = helpFile.readLine()) != null; ) {
-								callee.sendMessage(Component.empty()
-									.color(NamedTextColor.GREEN)
-									.append(MessagingUtils.getSenderFmtMinimessage().deserialize(line)));
-							}
-						} catch (IOException ex) {
-							throw CommandUtils.fail(callee, "Failed to read all lines from help file. This shard may need to restart.");
-						}
-					}
-
-					// Back link (if applicable)
-					if (!argStrings.isEmpty()) {
-						StringBuilder parentCmdBuilder = new StringBuilder("/")
-							.append(baseCommand)
-							.append(" help");
-						for (String arg : argStrings.subList(0, argStrings.size() - 1)) {
-							parentCmdBuilder.append(' ').append(arg);
-						}
-						callee.sendMessage(Component.text("[Back]", NamedTextColor.LIGHT_PURPLE)
-							.clickEvent(ClickEvent.runCommand(parentCmdBuilder.toString())));
-					}
-
-					// Child links
-					for (String childArg : node.keySet()) {
-						StringBuilder childCmdBuilder = new StringBuilder("/")
-							.append(baseCommand)
-							.append(" help");
-						for (String arg : argStrings) {
-							childCmdBuilder.append(' ').append(arg);
-						}
-						childCmdBuilder.append(' ').append(childArg);
-						callee.sendMessage(Component.text("[" + childArg + "]", NamedTextColor.LIGHT_PURPLE)
-							.clickEvent(ClickEvent.runCommand(childCmdBuilder.toString())));
-					}
-					return 1;
-				})
-				.register();
-		}
+					childCmdBuilder.append(' ').append(childArg);
+					callee.sendMessage(Component.text("[" + childArg + "]", NamedTextColor.LIGHT_PURPLE)
+						.clickEvent(ClickEvent.runCommand(childCmdBuilder.toString())));
+				}
+				return 1;
+			})
+			.register();
 
 		for (Map.Entry<String, HelpTreeNode> entry : node.entrySet()) {
 			String arg = entry.getKey();

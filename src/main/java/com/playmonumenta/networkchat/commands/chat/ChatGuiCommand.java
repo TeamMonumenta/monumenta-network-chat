@@ -9,13 +9,9 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.custominventory.Gui;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -28,37 +24,31 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 public class ChatGuiCommand extends Gui {
-	final String mBaseCommand;
 	final Message mMessage;
 
-	public ChatGuiCommand(Player player, String baseCommand, Message message) {
+	public ChatGuiCommand(Player player, Message message) {
 		super(player, 9, message.shownMessage(player));
-		mBaseCommand = baseCommand;
 		mMessage = message;
 	}
 
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		GreedyStringArgument idArg = new GreedyStringArgument("message ID");
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("gui"));
-			arguments.add(new MultiLiteralArgument("message"));
-			arguments.add(new GreedyStringArgument("message ID"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.gui.message")) {
-						throw CommandUtils.fail(sender, "You do not have permission to run this command.");
-					}
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("gui"))
+			.withArguments(new LiteralArgument("message"))
+			.withArguments(idArg)
+			.executesNative((sender, args) -> {
+				if (!CommandUtils.hasPermission(sender, "networkchat.gui.message")) {
+					throw CommandUtils.fail(sender, "You do not have permission to run this command.");
+				}
 
-					messageGui(baseCommand, sender, (String) args[2]);
-				})
-				.register();
-		}
+				messageGui(sender, args.getByArgument(idArg));
+			})
+			.register();
 	}
 
-	private static void messageGui(String baseCommand, CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
+	private static void messageGui(CommandSender sender, String messageIdStr) throws WrapperCommandSyntaxException {
 		CommandSender callee = CommandUtils.getCallee(sender);
 		if (!(callee instanceof Player target)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
@@ -79,7 +69,7 @@ public class ChatGuiCommand extends Gui {
 			if (message == null) {
 				throw CommandUtils.fail(sender, "That message is no longer available on this shard. Pause chat and avoid switching shards to keep messages loaded.");
 			}
-			new ChatGuiCommand(target, baseCommand, message).open();
+			new ChatGuiCommand(target, message).open();
 		}
 	}
 
@@ -102,7 +92,7 @@ public class ChatGuiCommand extends Gui {
 			item.setItemMeta(meta);
 			setItem(0, item)
 				.onLeftClick(() -> {
-					mPlayer.performCommand(mBaseCommand + " leave " + channel.getName());
+					mPlayer.performCommand(ChatCommand.COMMAND + " leave " + channel.getName());
 					close();
 				});
 
@@ -116,7 +106,7 @@ public class ChatGuiCommand extends Gui {
 					mPlayer.sendMessage(
 						Component.text("[Edit your channel settings for " + channel.getName() + "]",
 							NamedTextColor.LIGHT_PURPLE)
-							.clickEvent(ClickEvent.suggestCommand("/" + mBaseCommand
+							.clickEvent(ClickEvent.suggestCommand("/" + ChatCommand.COMMAND
 								+ " player settings channel " + channel.getName() + " ")));
 					close();
 				});
@@ -132,7 +122,7 @@ public class ChatGuiCommand extends Gui {
 						mPlayer.sendMessage(
 							Component.text("[Rename channel " + channel.getName() + "]",
 									NamedTextColor.LIGHT_PURPLE)
-								.clickEvent(ClickEvent.suggestCommand("/" + mBaseCommand
+								.clickEvent(ClickEvent.suggestCommand("/" + ChatCommand.COMMAND
 									+ " channel rename " + channel.getName() + " ")));
 						close();
 					});
@@ -151,7 +141,7 @@ public class ChatGuiCommand extends Gui {
 						mPlayer.sendMessage(
 							Component.text("[Edit " + fromName + "'s access to channel " + channel.getName() + "]",
 									NamedTextColor.LIGHT_PURPLE)
-								.clickEvent(ClickEvent.suggestCommand("/" + mBaseCommand
+								.clickEvent(ClickEvent.suggestCommand("/" + ChatCommand.COMMAND
 									+ " channel access " + channel.getName() + " player " + fromName + " ")));
 						close();
 					});
@@ -166,7 +156,7 @@ public class ChatGuiCommand extends Gui {
 			item.setItemMeta(meta);
 			setItem(7, item)
 				.onLeftClick(() -> {
-					mPlayer.performCommand(mBaseCommand
+					mPlayer.performCommand(ChatCommand.COMMAND
 						+ " message delete " + mMessage.getUniqueId().toString());
 					close();
 				});
@@ -182,7 +172,7 @@ public class ChatGuiCommand extends Gui {
 				item.setItemMeta(meta);
 				setItem(8, item)
 					.onLeftClick(() -> {
-						mPlayer.performCommand(mBaseCommand
+						mPlayer.performCommand(ChatCommand.COMMAND
 							+ " message deletefromsender " + fromName);
 						close();
 					});
