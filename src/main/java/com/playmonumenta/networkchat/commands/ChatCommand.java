@@ -19,8 +19,6 @@ import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.zip.ZipFile;
 import javax.annotation.Nullable;
 import org.bukkit.command.CommandSender;
-import org.checkerframework.dataflow.qual.Pure;
-import org.jetbrains.annotations.Contract;
 
 public class ChatCommand {
 	public static final String COMMAND = "chat";
