@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.GatherRemotePlayerDataEvent;
+import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.RemotePlayerAPI;
 import com.playmonumenta.networkrelay.RemotePlayerData;
 import com.playmonumenta.networkrelay.RemotePlayerLoadedEvent;
@@ -98,8 +99,29 @@ public class RemotePlayerListener implements Listener {
 		audience.sendMessage(line);
 
 		// Remote shards
-		//for (Map.Entry<String, Map<String, RemotePlayerState>> shardRemotePlayerPairs : mRemotePlayersByShard.entrySet()) {
-		// TODO Reworking this from NetworkChat's RPM
+		shardPlayers.clear();
+		for (String remoteShardName : NetworkRelayAPI.getOnlineShardNames()) {
+			lightRow = !lightRow;
+			for (RemotePlayerData remotePlayerData : RemotePlayerAPI.getVisiblePlayersOnServer(remoteShardName)) {
+				UUID playerUuid = remotePlayerData.mUuid;
+				Component playerComponent = mPlayerComponents.get(playerUuid);
+				if (playerComponent == null) {
+					continue;
+				}
+				String playerName = remotePlayerData.mName;
+				shardPlayers.put(playerName, playerComponent);
+			}
+			firstName = true;
+			line = Component.text(remoteShardName + ": ").color(lightRow ? NamedTextColor.BLUE : NamedTextColor.DARK_BLUE);
+			for (Component playerComp : shardPlayers.values()) {
+				if (!firstName) {
+					line = line.append(Component.text(", "));
+				}
+				line = line.append(playerComp);
+				firstName = false;
+			}
+			audience.sendMessage(line);
+		}
 	}
 
 	private static void updatePlayerComponent(RemotePlayerMinecraft minecraftPlayerData) {
