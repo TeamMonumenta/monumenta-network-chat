@@ -1,5 +1,6 @@
 package com.playmonumenta.networkchat.commands.chat.player;
 
+import com.playmonumenta.networkchat.RemotePlayerListener;
 import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
@@ -22,6 +23,7 @@ public class ChatPlayerRefreshCommand {
 					throw CommandUtils.fail(sender, "This command can only be run as a player.");
 				} else {
 					RemotePlayerManager.refreshLocalPlayer(target);
+					RemotePlayerListener.refreshLocalPlayer(target);
 				}
 				return 1;
 			})
@@ -37,6 +39,7 @@ public class ChatPlayerRefreshCommand {
 
 				for (Player player : players) {
 					RemotePlayerManager.refreshLocalPlayer(player);
+					RemotePlayerListener.refreshLocalPlayer(player);
 				}
 				return 1;
 			})
