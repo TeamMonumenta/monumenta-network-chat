@@ -98,7 +98,8 @@ public class RemotePlayerListener implements Listener {
 		audience.sendMessage(line);
 
 		// Remote shards
-		for (Map.Entry<String, Map<String, RemotePlayerState>> shardRemotePlayerPairs : mRemotePlayersByShard.entrySet()) {
+		//for (Map.Entry<String, Map<String, RemotePlayerState>> shardRemotePlayerPairs : mRemotePlayersByShard.entrySet()) {
+		// TODO Reworking this from NetworkChat's RPM
 	}
 
 	private static void updatePlayerComponent(RemotePlayerMinecraft minecraftPlayerData) {
