@@ -96,7 +96,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 				                        false,
 				                        "\\{jndi:([^}]+)\\}",
 				                        true)
-				.command("auditlogsevereplayer @S \"@S attempted a Log4J exploit\"")
+				.command("auditlogsevereplayer @S \"@T @S attempted a Log4J exploit\"")
 				.replacementMessage("<red>Log4J exploit attempt: $1</red>");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
@@ -108,7 +108,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			                            false,
 			                            "(^|[^a-z0-9])(n[ .,_-]?[i1][ .,_-]?g[ .,_-]?(?:g[ .,_-]?)+(?:a|[e3][ .,_-]?r)(?:[ .,_-]?[s$5])*)([^a-z0-9]|$)",
 			                            true)
-				.command("auditlogsevereplayer @S \"@S said the N word in <channel_name>: @OE\"")
+				.command("auditlogsevereplayer @S \"@T @S said the N word in <channel_name>: @OE\"")
 				.replacementMessage("$1<red>$2</red>$3");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
@@ -120,7 +120,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 					false,
 					"(^|[^a-z0-9])(f[ .,_-]?[a4][ .,_-]?g[ .,_-]?(?:g[ .,_-]?(?:[o0][ .,_-]?t)?)?(?:[ .,_-]?[s$5])*)([^a-z0-9]|$)",
 					true)
-				.command("auditlogsevereplayer @S \"@S said the homophobic F slur in <channel_name>: @OE\"")
+				.command("auditlogsevereplayer @S \"@T @S said the homophobic F slur in <channel_name>: @OE\"")
 				.replacementMessage("$1<red>$2</red>$3");
 		} catch (WrapperCommandSyntaxException e) {
 			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);

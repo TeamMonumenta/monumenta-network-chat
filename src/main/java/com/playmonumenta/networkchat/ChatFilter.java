@@ -21,6 +21,7 @@ import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.text.StringEscapeUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.block.CommandBlock;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 
@@ -265,10 +266,19 @@ public class ChatFilter {
 					}
 					command = command.replace("<channel_name>", channelName);
 
+					String senderType;
+					String senderUuid = "NotAnEntity";
 					command = command.replace("@S", sender.getName());
 					if (callee instanceof Entity entity) {
-						command = command.replace("@U", entity.getUniqueId().toString().toLowerCase());
+						senderType = entity.getType().key().toString();
+						senderUuid = entity.getUniqueId().toString().toLowerCase();
+					} else if (callee instanceof CommandBlock commandBlock) {
+						senderType = commandBlock.getType().key().toString();
+					} else {
+						senderType = callee.getClass().getName();
 					}
+					command = command.replace("@T", senderType);
+					command = command.replace("@U", senderUuid);
 					String originalMessage = MessagingUtils.plainText(localResult.originalComponent());
 					String replacedMessage = MessagingUtils.plainText(localResult.component());
 					command = command.replace("@OE", StringEscapeUtils.escapeJson(originalMessage));
