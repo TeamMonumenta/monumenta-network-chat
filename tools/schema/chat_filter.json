@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "filters": {
+      "items": {
+        "type": "object",
+        "$ref": "chat_filter_pattern.json",
+        "headerTemplate": "{{i1}}: {{self.mId}}"
+      },
+      "title": "A list of chat filter patterns applied in order",
+      "type": "array",
+      "format": "tabs"
+    }
+  },
+  "title": "Chat Filters",
+  "type": "object",
+  "defaultProperties": [
+    "filters"
+  ],
+  "additionalProperties": false
+}

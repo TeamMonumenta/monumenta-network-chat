@@ -19,7 +19,6 @@ import org.bukkit.entity.Player;
 
 public class ChatPauseCommand {
 	public static void register() {
-
 		ChatCommand.getBaseCommand()
 			.withArguments(new LiteralArgument("pause"))
 			.executesNative((sender, args) -> {
