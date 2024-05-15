@@ -353,6 +353,8 @@ public class ChatFilter {
 			fallbackGlobalFilter(sender, filter);
 		}
 
+		sender.sendMessage(Component.text("Loaded " + filter.mFilters.size() + " filter pattern(s)", NamedTextColor.GREEN));
+
 		return filter;
 	}
 
