@@ -266,7 +266,7 @@ public class ChatFilter {
 					if (message != null) {
 						Channel channel = message.getChannel();
 						if (channel != null) {
-							channelName = channel.getName();
+							channelName = channel.getFriendlyName();
 						}
 					}
 					command = command.replace("<channel_name>", channelName);

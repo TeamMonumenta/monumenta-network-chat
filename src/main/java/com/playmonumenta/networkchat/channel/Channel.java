@@ -195,6 +195,10 @@ public abstract class Channel {
 		return mName;
 	}
 
+	public String getFriendlyName() {
+		return getName();
+	}
+
 	public @Nullable TextColor color() {
 		return mMessageColor;
 	}

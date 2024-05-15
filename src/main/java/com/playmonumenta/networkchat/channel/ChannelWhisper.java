@@ -13,6 +13,7 @@ import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
@@ -278,6 +279,29 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		StringBuilder name = new StringBuilder("Whisper");
 		for (UUID participant : participantsList) {
 			name.append("_").append(participant.toString());
+		}
+		return name.toString();
+	}
+
+	@Override
+	public String getFriendlyName() {
+		return getFriendlyName(mParticipants);
+	}
+
+	public static String getFriendlyName(Collection<UUID> participants) {
+		List<UUID> participantsList = new ArrayList<>(participants);
+		if (participantsList.size() == 1) {
+			participantsList.add(participantsList.get(0));
+		} else {
+			Collections.sort(participantsList);
+		}
+		StringBuilder name = new StringBuilder("Whisper");
+		for (UUID participant : participantsList) {
+			String participantName = MonumentaRedisSyncAPI.cachedUuidToName(participant);
+			if (participantName == null) {
+				participantName = participant.toString();
+			}
+			name.append(":").append(participantName);
 		}
 		return name.toString();
 	}
