@@ -360,7 +360,7 @@ public class ChatFilter {
 
 	private static ChatFilter fallbackGlobalFilter(CommandSender sender, ChatFilter filter) {
 		try {
-			filter.addFilter(Bukkit.getConsoleSender(),
+			filter.addFilter(sender,
 					"LOG4J_EXPLOIT",
 					false,
 					"\\{jndi:([^}]+)\\}",
@@ -368,11 +368,11 @@ public class ChatFilter {
 				.command("auditlogsevereplayer @S \"@T @S attempted a Log4J exploit\"")
 				.replacementMessage("<red>Log4J exploit attempt: $1</red>");
 		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			MessagingUtils.sendStackTrace(sender, e);
 		}
 
 		try {
-			filter.addFilter(Bukkit.getConsoleSender(),
+			filter.addFilter(sender,
 					"N_WORD",
 					false,
 					"(^|[^a-z0-9])(n[ .,_-]?[i1][ .,_-]?g[ .,_-]?(?:g[ .,_-]?)+(?:a|[e3][ .,_-]?r)(?:[ .,_-]?[s$5])*)([^a-z0-9]|$)",
@@ -380,11 +380,11 @@ public class ChatFilter {
 				.command("auditlogsevereplayer @S \"@T @S said the N word in <channel_name>: @OE\"")
 				.replacementMessage("$1<red>$2</red>$3");
 		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			MessagingUtils.sendStackTrace(sender, e);
 		}
 
 		try {
-			filter.addFilter(Bukkit.getConsoleSender(),
+			filter.addFilter(sender,
 					"F_HOMOPHOBIC",
 					false,
 					"(^|[^a-z0-9])(f[ .,_-]?[a4][ .,_-]?g[ .,_-]?(?:g[ .,_-]?(?:[o0][ .,_-]?t)?)?(?:[ .,_-]?[s$5])*)([^a-z0-9]|$)",
@@ -392,40 +392,40 @@ public class ChatFilter {
 				.command("auditlogsevereplayer @S \"@T @S said the homophobic F slur in <channel_name>: @OE\"")
 				.replacementMessage("$1<red>$2</red>$3");
 		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			MessagingUtils.sendStackTrace(sender, e);
 		}
 
 		try {
-			filter.addFilter(Bukkit.getConsoleSender(),
+			filter.addFilter(sender,
 					"URL",
 					false,
 					"(?<=^|[^\\\\])https?://[!#-&(-;=?-\\[\\]-z|~]+",
 					false)
 				.replacementMessage("<blue><u><click:open_url:\"$0\">$0</click></u></blue>");
 		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			MessagingUtils.sendStackTrace(sender, e);
 		}
 
 		try {
-			filter.addFilter(Bukkit.getConsoleSender(),
+			filter.addFilter(sender,
 					"Spoiler",
 					false,
 					"(?<=^|[^\\\\])\\|\\|([^|]*[^|\\s\\\\][^|\\\\]*)\\|\\|",
 					false)
 				.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
 		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			MessagingUtils.sendStackTrace(sender, e);
 		}
 
 		try {
-			filter.addFilter(Bukkit.getConsoleSender(),
+			filter.addFilter(sender,
 					"CodeBlock",
 					false,
 					"(?<=^|[^\\\\])`([^`]*[^`\\s\\\\][^`\\\\]*)`",
 					false)
 				.replacementMessage("<font:uniform><hover:show_text:\"Click to copy\nShift+click to insert\n$\\1\"><click:copy_to_clipboard:\"$\\1\"><insert:\"$\\1\">$1</insert></click></hover></font>");
 		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
+			MessagingUtils.sendStackTrace(sender, e);
 		}
 
 		return filter;
