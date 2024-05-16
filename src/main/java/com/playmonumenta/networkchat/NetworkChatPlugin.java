@@ -183,7 +183,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	}
 
 	public static void reload(CommandSender sender) {
-		mGlobalChatFilter = ChatFilter.globalFilter(sender);
+		Bukkit.getScheduler().runTaskAsynchronously(NetworkChatPlugin.getInstance(),
+			() -> mGlobalChatFilter = ChatFilter.globalFilter(sender));
 	}
 
 	public static int getMessageTtl() {
