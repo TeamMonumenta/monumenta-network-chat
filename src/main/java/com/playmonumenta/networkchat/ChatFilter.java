@@ -1,14 +1,19 @@
 package com.playmonumenta.networkchat;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.utils.CommandUtils;
+import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkchat.utils.ReplacerWithEscape;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.MatchResult;
@@ -21,6 +26,7 @@ import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.text.StringEscapeUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.block.CommandBlock;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 
@@ -260,15 +266,24 @@ public class ChatFilter {
 					if (message != null) {
 						Channel channel = message.getChannel();
 						if (channel != null) {
-							channelName = channel.getName();
+							channelName = channel.getFriendlyName();
 						}
 					}
 					command = command.replace("<channel_name>", channelName);
 
+					String senderType;
+					String senderUuid = "NotAnEntity";
 					command = command.replace("@S", sender.getName());
 					if (callee instanceof Entity entity) {
-						command = command.replace("@U", entity.getUniqueId().toString().toLowerCase());
+						senderType = entity.getType().key().toString();
+						senderUuid = entity.getUniqueId().toString().toLowerCase();
+					} else if (callee instanceof CommandBlock commandBlock) {
+						senderType = commandBlock.getType().key().toString();
+					} else {
+						senderType = callee.getClass().getName();
 					}
+					command = command.replace("@T", senderType);
+					command = command.replace("@U", senderUuid);
 					String originalMessage = MessagingUtils.plainText(localResult.originalComponent());
 					String replacedMessage = MessagingUtils.plainText(localResult.component());
 					command = command.replace("@OE", StringEscapeUtils.escapeJson(originalMessage));
@@ -288,6 +303,133 @@ public class ChatFilter {
 	}
 
 	private final Map<String, ChatFilterPattern> mFilters = new HashMap<>();
+
+	public static ChatFilter globalFilter(CommandSender sender) {
+		ChatFilter filter = new ChatFilter();
+
+		String folderLocation = NetworkChatPlugin.getInstance().getDataFolder() + File.separator + "global_filters";
+		File directory = new File(folderLocation);
+		if (!directory.isDirectory()) {
+			sender.sendMessage(Component.text("global_filters folder does not exist; using default", NamedTextColor.YELLOW));
+		} else {
+			Gson gson = new Gson();
+
+			ArrayList<File> files = FileUtils.getFilesInDirectory(sender,
+				folderLocation,
+				".json",
+				"Unable to find global filters due to IO error:");
+			if (files.isEmpty()) {
+				sender.sendMessage(Component.text("global_filters folder has no filter files; using default", NamedTextColor.YELLOW));
+			}
+			Collections.sort(files);
+
+			for (File file : files) {
+				String content;
+				try {
+					content = FileUtils.readFile(file.getPath());
+				} catch (Exception e) {
+					sender.sendMessage(Component.text("Failed to load global filter file '" + file.getPath() + "'", NamedTextColor.RED));
+					MessagingUtils.sendStackTrace(sender, e);
+					continue;
+				}
+
+				JsonObject patternObject = gson.fromJson(content, JsonObject.class);
+				if (patternObject == null) {
+					sender.sendMessage(Component.text("Failed to parse global filter file '" + file.getPath() + "' as JSON object", NamedTextColor.RED));
+					continue;
+				}
+
+				try {
+					ChatFilterPattern pattern = ChatFilterPattern.fromJson(sender, patternObject);
+					filter.mFilters.put(pattern.id(), pattern);
+				} catch (Exception e) {
+					sender.sendMessage(Component.text("Failed to load chat filter pattern: ", NamedTextColor.RED));
+					MessagingUtils.sendStackTrace(sender, e);
+				}
+			}
+		}
+
+		if (filter.mFilters.isEmpty()) {
+			fallbackGlobalFilter(sender, filter);
+		}
+
+		sender.sendMessage(Component.text("Loaded " + filter.mFilters.size() + " filter pattern(s)", NamedTextColor.GREEN));
+
+		return filter;
+	}
+
+	private static ChatFilter fallbackGlobalFilter(CommandSender sender, ChatFilter filter) {
+		try {
+			filter.addFilter(sender,
+					"LOG4J_EXPLOIT",
+					false,
+					"\\{jndi:([^}]+)\\}",
+					true)
+				.command("auditlogsevereplayer @S \"@T @S attempted a Log4J exploit\"")
+				.replacementMessage("<red>Log4J exploit attempt: $1</red>");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(sender, e);
+		}
+
+		try {
+			filter.addFilter(sender,
+					"N_WORD",
+					false,
+					"(^|[^a-z0-9])(n[ .,_-]?[i1][ .,_-]?g[ .,_-]?(?:g[ .,_-]?)+(?:a|[e3][ .,_-]?r)(?:[ .,_-]?[s$5])*)([^a-z0-9]|$)",
+					true)
+				.command("auditlogsevereplayer @S \"@T @S said the N word in <channel_name>: @OE\"")
+				.replacementMessage("$1<red>$2</red>$3");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(sender, e);
+		}
+
+		try {
+			filter.addFilter(sender,
+					"F_HOMOPHOBIC",
+					false,
+					"(^|[^a-z0-9])(f[ .,_-]?[a4][ .,_-]?g[ .,_-]?(?:g[ .,_-]?(?:[o0][ .,_-]?t)?)?(?:[ .,_-]?[s$5])*)([^a-z0-9]|$)",
+					true)
+				.command("auditlogsevereplayer @S \"@T @S said the homophobic F slur in <channel_name>: @OE\"")
+				.replacementMessage("$1<red>$2</red>$3");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(sender, e);
+		}
+
+		try {
+			filter.addFilter(sender,
+					"URL",
+					false,
+					"(?<=^|[^\\\\])https?://[!#-&(-;=?-\\[\\]-z|~]+",
+					false)
+				.replacementMessage("<blue><u><click:open_url:\"$0\">$0</click></u></blue>");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(sender, e);
+		}
+
+		try {
+			filter.addFilter(sender,
+					"Spoiler",
+					false,
+					"(?<=^|[^\\\\])\\|\\|([^|]*[^|\\s\\\\][^|\\\\]*)\\|\\|",
+					false)
+				.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(sender, e);
+		}
+
+		try {
+			filter.addFilter(sender,
+					"CodeBlock",
+					false,
+					"(?<=^|[^\\\\])`([^`]*[^`\\s\\\\][^`\\\\]*)`",
+					false)
+				.replacementMessage("<font:uniform><hover:show_text:\"Click to copy\nShift+click to insert\n$\\1\"><click:copy_to_clipboard:\"$\\1\"><insert:\"$\\1\">$1</insert></click></hover></font>");
+		} catch (WrapperCommandSyntaxException e) {
+			MessagingUtils.sendStackTrace(sender, e);
+		}
+
+		return filter;
+	}
 
 	public static ChatFilter fromJson(CommandSender sender, JsonObject object) {
 		ChatFilter filter = new ChatFilter();

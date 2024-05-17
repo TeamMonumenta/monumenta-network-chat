@@ -18,7 +18,6 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -29,6 +28,7 @@ import javax.annotation.Nullable;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -90,75 +90,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mMessageColors.putAll(mDefaultMessageColors);
 		mMessageFormats.putAll(mDefaultMessageFormats);
 
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-				                        "LOG4J_EXPLOIT",
-				                        false,
-				                        "\\{jndi:([^}]+)\\}",
-				                        true)
-				.command("auditlogsevereplayer @S \"@S attempted a Log4J exploit\"")
-				.replacementMessage("<red>Log4J exploit attempt: $1</red>");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-			                            "N_WORD",
-			                            false,
-			                            "(^|[^a-z0-9])(n[ .,_-]?[i1][ .,_-]?g[ .,_-]?(?:g[ .,_-]?)+(?:a|[e3][ .,_-]?r)(?:[ .,_-]?[s$5])*)([^a-z0-9]|$)",
-			                            true)
-				.command("auditlogsevereplayer @S \"@S said the N word in <channel_name>: @OE\"")
-				.replacementMessage("$1<red>$2</red>$3");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-					"F_HOMOPHOBIC",
-					false,
-					"(^|[^a-z0-9])(f[ .,_-]?[a4][ .,_-]?g[ .,_-]?(?:g[ .,_-]?(?:[o0][ .,_-]?t)?)?(?:[ .,_-]?[s$5])*)([^a-z0-9]|$)",
-					true)
-				.command("auditlogsevereplayer @S \"@S said the homophobic F slur in <channel_name>: @OE\"")
-				.replacementMessage("$1<red>$2</red>$3");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-			                            "URL",
-			                            false,
-			                            "(?<=^|[^\\\\])https?://[!#-&(-;=?-\\[\\]-z|~]+",
-			                            false)
-				.replacementMessage("<blue><u><click:open_url:\"$0\">$0</click></u></blue>");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-			                            "Spoiler",
-			                            false,
-			                            "(?<=^|[^\\\\])\\|\\|([^|]*[^|\\s\\\\][^|\\\\]*)\\|\\|",
-			                            false)
-				.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-					"CodeBlock",
-					false,
-					"(?<=^|[^\\\\])`([^`]*[^`\\s\\\\][^`\\\\]*)`",
-					false)
-				.replacementMessage("<font:uniform><hover:show_text:\"Click to copy\nShift+click to insert\n$\\1\"><click:copy_to_clipboard:\"$\\1\"><insert:\"$\\1\">$1</insert></click></hover></font>");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
 		ChangeLogLevel.register();
 		@Nullable ZipFile zip = null;
 		try {
@@ -172,6 +103,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	@Override
 	public void onEnable() {
 		INSTANCE = this;
+
+		reload(Bukkit.getConsoleSender());
 
 		/* Check for Placeholder API */
 		if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
@@ -247,6 +180,11 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
 		}
 		return mLogger;
+	}
+
+	public static void reload(CommandSender sender) {
+		Bukkit.getScheduler().runTaskAsynchronously(NetworkChatPlugin.getInstance(),
+			() -> mGlobalChatFilter = ChatFilter.globalFilter(sender));
 	}
 
 	public static int getMessageTtl() {

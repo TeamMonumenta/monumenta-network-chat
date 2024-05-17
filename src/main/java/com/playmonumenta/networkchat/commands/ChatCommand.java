@@ -11,6 +11,7 @@ import com.playmonumenta.networkchat.commands.chat.ChatMessageCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatNewCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatPauseCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatPlayerCommand;
+import com.playmonumenta.networkchat.commands.chat.ChatReloadCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatSayCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatServerCommand;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
@@ -37,6 +38,7 @@ public class ChatCommand {
 		ChatMessageCommand.register();
 		ChatPauseCommand.register();
 		ChatPlayerCommand.register();
+		ChatReloadCommand.register();
 		ChatSayCommand.register();
 		ChatServerCommand.register();
 	}
