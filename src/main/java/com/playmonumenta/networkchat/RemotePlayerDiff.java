@@ -1,12 +1,15 @@
 package com.playmonumenta.networkchat;
 
+import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +22,7 @@ public class RemotePlayerDiff {
 		public int mLastUpdateTick;
 		public @Nullable Integer mLastChatUpdateTick = null;
 		public @Nullable Integer mLastRelayUpdateTick = null;
-		public final List<String> mCauses = new ArrayList<>();
+		public String mLastCause = "???";
 		public boolean mChatVersionUpdated = false;
 		public boolean mRelayVersionUpdated = false;
 
@@ -31,7 +34,6 @@ public class RemotePlayerDiff {
 
 		public void update(String cause, boolean causedByRelay) {
 			int currentTick = Bukkit.getCurrentTick();
-			boolean isNew = mCauses.isEmpty();
 			mLastUpdateTick = currentTick;
 			if (causedByRelay) {
 				mRelayVersionUpdated = true;
@@ -40,19 +42,74 @@ public class RemotePlayerDiff {
 				mChatVersionUpdated = true;
 				mLastChatUpdateTick = currentTick;
 			}
-			if (!mCauses.contains(cause)) {
-				mCauses.add(cause);
-			}
+			mLastCause = cause;
 			if (mPlayerName == null) {
 				mPlayerName = MonumentaRedisSyncAPI.cachedUuidToName(mPlayerUuid);
 			}
 
-			// TODO log this update
+			logStatus(currentTick);
 		}
 
-		// TODO Method to check expiry and/or important time intervals
+		/**
+		 * Check expiry and other important time intervals
+		 * @param currentTick The current server tick
+		 * @return true if this entry has expired
+		 */
+		public boolean checkDeadline(int currentTick) {
+			boolean hasExpired = currentTick - mLastUpdateTick >= TIME_LIMIT_TICKS;
 
-		// TODO Logging method
+			if (
+				hasExpired
+					|| (mLastChatUpdateTick != null && currentTick - mLastChatUpdateTick == TIME_LIMIT_TICKS)
+					|| (mLastRelayUpdateTick != null && currentTick - mLastRelayUpdateTick == TIME_LIMIT_TICKS)
+			) {
+				logStatus(currentTick);
+			}
+
+			return hasExpired;
+		}
+
+		/**
+		 * Logs the current difference between Chat/Relay implementations, if any
+		 * @param currentTick The current server tick
+		 */
+		public void logStatus(int currentTick) {
+			@Nullable Component chatResult = RemotePlayerManager.getPlayerComponent(mPlayerUuid);
+			@Nullable Component relayResult = RemotePlayerListener.getPlayerComponent(mPlayerUuid);
+			boolean differs = Objects.equals(chatResult, relayResult);
+			boolean deadlineExpired = currentTick - mLastUpdateTick >= TIME_LIMIT_TICKS;
+			boolean isProblem = differs && deadlineExpired;
+
+			int ticksSinceChatUpdate = mLastChatUpdateTick == null ? -1 : currentTick - mLastChatUpdateTick;
+			int ticksSinceRelayUpdate = mLastRelayUpdateTick == null ? -1 : currentTick - mLastRelayUpdateTick;
+
+			StringBuilder diffStatus = new StringBuilder("[RPM Diff] ");
+			diffStatus.append(mPlayerName);
+			diffStatus.append(" at ");
+			diffStatus.append(ticksSinceChatUpdate);
+			diffStatus.append(" ticks since chat update and ");
+			diffStatus.append(ticksSinceRelayUpdate);
+			diffStatus.append(" ticks since relay update last caused by ");
+			diffStatus.append(mLastCause);
+			diffStatus.append(differs ? " differs: " : " matches: ");
+			if (chatResult == null && relayResult == null) {
+				diffStatus.append("both null");
+			} else if (chatResult == null) {
+				diffStatus.append("chat is null, but relay is set");
+			} else if (relayResult == null) {
+				diffStatus.append("relay is null, but chat is set");
+			} else {
+				// IntelliJ incorrectly assumes Components that are not null are equal when using Objects.equals();
+				// use a.equals(b) if more information is required
+				diffStatus.append("both set");
+			}
+
+			if (isProblem) {
+				MMLog.warning(diffStatus.toString());
+			} else {
+				MMLog.info(diffStatus.toString());
+			}
+		}
 	}
 
 	public static final int TIME_LIMIT_TICKS = 20;
@@ -61,7 +118,7 @@ public class RemotePlayerDiff {
 	private static final Map<UUID, DiffDeadline> mDeadlinesByPlayer = new HashMap<>();
 	private static @Nullable BukkitRunnable mDiffRunnable = null;
 
-	public void update(UUID playerUuid, String cause, boolean causedByRelay) {
+	public static void update(UUID playerUuid, String cause, boolean causedByRelay) {
 		// Check if an upcoming deadline already exists for this player
 		DiffDeadline deadline = mDeadlinesByPlayer.get(playerUuid);
 		if (deadline != null) {
@@ -76,7 +133,7 @@ public class RemotePlayerDiff {
 		startRunnable();
 	}
 
-	public void startRunnable() {
+	public static void startRunnable() {
 		if (mDiffRunnable != null && !mDiffRunnable.isCancelled()) {
 			return;
 		}
@@ -86,17 +143,13 @@ public class RemotePlayerDiff {
 			public void run() {
 				int currentTick = Bukkit.getCurrentTick();
 
-				// Go through the backlog first if needed
 				Iterator<DiffDeadline> it = mUpcomingDeadlines.iterator();
 				while (it.hasNext()) {
 					DiffDeadline otherDeadline = it.next();
-					if (currentTick - otherDeadline.mLastUpdateTick < TIME_LIMIT_TICKS) {
-						continue;
+					if (otherDeadline.checkDeadline(currentTick)) {
+						it.remove();
+						mDeadlinesByPlayer.remove(otherDeadline.mPlayerUuid);
 					}
-					it.remove();
-					mDeadlinesByPlayer.remove(otherDeadline.mPlayerUuid);
-
-					// TODO Deadline has passed, verify results
 				}
 
 				if (mUpcomingDeadlines.isEmpty()) {

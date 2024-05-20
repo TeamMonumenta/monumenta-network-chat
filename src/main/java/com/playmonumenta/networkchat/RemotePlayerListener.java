@@ -126,22 +126,28 @@ public class RemotePlayerListener implements Listener {
 
 	private static void updatePlayerComponent(RemotePlayerMinecraft minecraftPlayerData) {
 		String pluginName = NetworkChatPlugin.getInstance().getName();
+		UUID playerUuid = minecraftPlayerData.getUuid();
 		JsonObject chatMinecraftData = minecraftPlayerData.getPluginData(pluginName);
 		if (chatMinecraftData == null) {
 			unsetPlayerComponent(minecraftPlayerData);
+			RemotePlayerDiff.update(playerUuid, "missing chat data", true);
+			return;
 		}
 		JsonElement componentJson = chatMinecraftData.get("playerComponent");
 		if (componentJson == null) {
 			unsetPlayerComponent(minecraftPlayerData);
+			RemotePlayerDiff.update(playerUuid, "missing player component", true);
+			return;
 		}
 		Component playerComponent = MessagingUtils.fromJson(componentJson);
-		UUID playerUuid = minecraftPlayerData.getUuid();
 		mPlayerComponents.put(playerUuid, playerComponent);
+		RemotePlayerDiff.update(playerUuid, "update/load", true);
 	}
 
 	private static void unsetPlayerComponent(RemotePlayerMinecraft minecraftPlayerData) {
 		UUID playerUuid = minecraftPlayerData.getUuid();
 		mPlayerComponents.remove(playerUuid);
+		RemotePlayerDiff.update(playerUuid, "unload", true);
 	}
 
 	// Player ran a command

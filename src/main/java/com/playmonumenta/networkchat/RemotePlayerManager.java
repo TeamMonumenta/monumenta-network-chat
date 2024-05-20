@@ -232,6 +232,7 @@ public class RemotePlayerManager implements Listener {
 		}
 
 		remotePlayerState.broadcast();
+		RemotePlayerDiff.update(player.getUniqueId(), "local update/load", false);
 	}
 
 	private static void unregisterPlayer(UUID playerId) {
@@ -246,6 +247,7 @@ public class RemotePlayerManager implements Listener {
 		    mPlayersByUuid.remove(playerId);
 		    mPlayersByName.remove(lastRemotePlayerState.mName);
 		    mVisiblePlayers.remove(playerId);
+			RemotePlayerDiff.update(playerId, "any unregister", false);
 		}
 	}
 
@@ -273,12 +275,14 @@ public class RemotePlayerManager implements Listener {
 		    if (!remotePlayerState.mIsHidden) {
 		        mVisiblePlayers.add(remotePlayerState.mUuid);
 		    }
+			RemotePlayerDiff.update(remotePlayerState.mUuid, "remote update/load", false);
 		} else if (!NetworkChatPlugin.getShardName().equals(remotePlayerState.mShard)) {
 			MMLog.fine("Detected race condition, triggering refresh on " + remotePlayerState.mName);
 			@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayerState.mUuid);
 			if (localPlayer != null) {
 				refreshLocalPlayer(localPlayer);
 			}
+			RemotePlayerDiff.update(remotePlayerState.mUuid, "remote unload", false);
 		}
 	}
 
