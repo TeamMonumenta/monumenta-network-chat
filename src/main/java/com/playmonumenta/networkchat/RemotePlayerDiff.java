@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat;
 
 import com.playmonumenta.networkchat.utils.MMLog;
+import com.playmonumenta.networkrelay.RemotePlayerAPI;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -74,9 +75,13 @@ public class RemotePlayerDiff {
 		 * @param currentTick The current server tick
 		 */
 		public void logStatus(int currentTick) {
-			@Nullable Component chatResult = RemotePlayerManager.getPlayerComponent(mPlayerUuid);
-			@Nullable Component relayResult = RemotePlayerListener.getPlayerComponent(mPlayerUuid);
-			boolean differs = Objects.equals(chatResult, relayResult);
+			@Nullable Component chatComponent = RemotePlayerManager.getPlayerComponent(mPlayerUuid);
+			@Nullable Component relayComponent = RemotePlayerListener.getPlayerComponent(mPlayerUuid);
+			@Nullable String chatShard = RemotePlayerManager.getPlayerShard(mPlayerUuid);
+			@Nullable String relayShard = RemotePlayerAPI.getPlayerShard(mPlayerUuid);
+			boolean componentDiffers = Objects.equals(chatComponent, relayComponent);
+			boolean shardDiffers = Objects.equals(chatShard, relayShard);
+			boolean differs = componentDiffers || shardDiffers;
 			boolean deadlineExpired = currentTick - mLastUpdateTick >= TIME_LIMIT_TICKS;
 			boolean isProblem = differs && deadlineExpired;
 
@@ -87,16 +92,21 @@ public class RemotePlayerDiff {
 			diffStatus.append(mPlayerName);
 			diffStatus.append(" at ");
 			diffStatus.append(ticksSinceChatUpdate);
-			diffStatus.append(" ticks since chat update and ");
+			diffStatus.append(" ticks since chat update (");
+			diffStatus.append(chatShard == null ? "offline" : chatShard);
+			diffStatus.append(") and ");
 			diffStatus.append(ticksSinceRelayUpdate);
-			diffStatus.append(" ticks since relay update last caused by ");
+			diffStatus.append(" ticks since relay update (");
+			diffStatus.append(relayShard == null ? "offline" : relayShard);
+			diffStatus.append(") last caused by ");
 			diffStatus.append(mLastCause);
-			diffStatus.append(differs ? " differs: " : " matches: ");
-			if (chatResult == null && relayResult == null) {
+			diffStatus.append("; component ");
+			diffStatus.append(componentDiffers ? "differs: " : "matches: ");
+			if (chatComponent == null && relayComponent == null) {
 				diffStatus.append("both null");
-			} else if (chatResult == null) {
+			} else if (chatComponent == null) {
 				diffStatus.append("chat is null, but relay is set");
-			} else if (relayResult == null) {
+			} else if (relayComponent == null) {
 				diffStatus.append("relay is null, but chat is set");
 			} else {
 				// IntelliJ incorrectly assumes Components that are not null are equal when using Objects.equals();
