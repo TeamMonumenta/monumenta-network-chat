@@ -1,6 +1,8 @@
 package com.playmonumenta.networkchat;
 
+import com.google.gson.JsonElement;
 import com.playmonumenta.networkchat.utils.MMLog;
+import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.RemotePlayerAPI;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import java.util.ArrayList;
@@ -8,7 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -77,10 +78,14 @@ public class RemotePlayerDiff {
 		public void logStatus(int currentTick) {
 			@Nullable Component chatComponent = RemotePlayerManager.getPlayerComponent(mPlayerUuid);
 			@Nullable Component relayComponent = RemotePlayerListener.getPlayerComponent(mPlayerUuid);
+			@Nullable JsonElement chatJson = chatComponent == null ? null : MessagingUtils.toJson(chatComponent);
+			@Nullable JsonElement relayJson = relayComponent == null ? null : MessagingUtils.toJson(relayComponent);
+			@Nullable String chatJsonStr = chatJson == null ? "null" : chatJson.toString();
+			@Nullable String relayJsonStr = relayJson == null ? "null" : relayJson.toString();
 			@Nullable String chatShard = RemotePlayerManager.getPlayerShard(mPlayerUuid);
 			@Nullable String relayShard = RemotePlayerAPI.getPlayerShard(mPlayerUuid);
-			boolean componentDiffers = Objects.equals(chatComponent, relayComponent);
-			boolean shardDiffers = Objects.equals(chatShard, relayShard);
+			boolean componentDiffers = strDiffers(chatJsonStr, relayJsonStr);
+			boolean shardDiffers = strDiffers(chatShard, relayShard);
 			boolean differs = componentDiffers || shardDiffers;
 			boolean deadlineExpired = currentTick - mLastUpdateTick >= TIME_LIMIT_TICKS;
 			boolean isProblem = differs && deadlineExpired;
@@ -88,7 +93,9 @@ public class RemotePlayerDiff {
 			int ticksSinceChatUpdate = mLastChatUpdateTick == null ? -1 : currentTick - mLastChatUpdateTick;
 			int ticksSinceRelayUpdate = mLastRelayUpdateTick == null ? -1 : currentTick - mLastRelayUpdateTick;
 
-			StringBuilder diffStatus = new StringBuilder("[RPM Diff] ");
+			List<String> additionalLines = new ArrayList<>();
+
+			StringBuilder diffStatus = new StringBuilder("[RPM Diff.1] ");
 			diffStatus.append(mPlayerName);
 			diffStatus.append(" at ");
 			diffStatus.append(ticksSinceChatUpdate);
@@ -102,23 +109,36 @@ public class RemotePlayerDiff {
 			diffStatus.append(mLastCause);
 			diffStatus.append("; component ");
 			diffStatus.append(componentDiffers ? "differs: " : "matches: ");
-			if (chatComponent == null && relayComponent == null) {
+			if (chatJson == null && relayJson == null) {
 				diffStatus.append("both null");
-			} else if (chatComponent == null) {
+			} else if (chatJsonStr == null) {
 				diffStatus.append("chat is null, but relay is set");
-			} else if (relayComponent == null) {
+			} else if (relayJsonStr == null) {
 				diffStatus.append("relay is null, but chat is set");
 			} else {
 				// IntelliJ incorrectly assumes Components that are not null are equal when using Objects.equals();
 				// use a.equals(b) if more information is required
 				diffStatus.append("both set");
+				additionalLines.add("[RPM Diff.2] Chat component: " + chatJsonStr);
+				additionalLines.add("[RPM Diff.3] Relay component: " + relayJsonStr);
 			}
 
 			if (isProblem) {
 				MMLog.warning(diffStatus.toString());
+				for (String line : additionalLines) {
+					MMLog.warning(line);
+				}
 			} else {
 				MMLog.info(diffStatus.toString());
+				// Additional lines not required until deadline has been reached
 			}
+		}
+
+		private boolean strDiffers(String a, String b) {
+			if (a == null) {
+				return b == null;
+			}
+			return a.equals(b);
 		}
 	}
 
