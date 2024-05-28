@@ -28,7 +28,7 @@ public class ChatMessageCommand {
 						throw CommandUtils.fail(sender, "You do not have permission to run this command.");
 					}
 
-					return deleteMessage(sender, args.getByArgument(nameArg));
+					return deleteMessage(sender, args.getByArgument(idArg));
 				})
 				.register();
 
