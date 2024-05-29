@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -84,8 +85,8 @@ public class RemotePlayerDiff {
 			@Nullable String relayJsonStr = relayJson == null ? "null" : relayJson.toString();
 			@Nullable String chatShard = RemotePlayerManager.getPlayerShard(mPlayerUuid);
 			@Nullable String relayShard = RemotePlayerAPI.getPlayerShard(mPlayerUuid);
-			boolean componentDiffers = strDiffers(chatJsonStr, relayJsonStr);
-			boolean shardDiffers = strDiffers(chatShard, relayShard);
+			boolean componentDiffers = !Objects.equals(chatComponent, relayComponent);
+			boolean shardDiffers = !Objects.equals(chatShard, relayShard);
 			boolean differs = componentDiffers || shardDiffers;
 			boolean deadlineExpired = currentTick - mLastUpdateTick >= TIME_LIMIT_TICKS;
 			boolean isProblem = differs && deadlineExpired;
@@ -132,13 +133,6 @@ public class RemotePlayerDiff {
 				MMLog.info(diffStatus.toString());
 				// Additional lines not required until deadline has been reached
 			}
-		}
-
-		private boolean strDiffers(String a, String b) {
-			if (a == null) {
-				return b == null;
-			}
-			return a.equals(b);
 		}
 	}
 
