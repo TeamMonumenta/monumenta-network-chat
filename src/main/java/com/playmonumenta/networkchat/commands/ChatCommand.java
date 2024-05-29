@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands;
 
 import com.playmonumenta.networkchat.NetworkChatPlugin;
+import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.commands.chat.ChatChannelCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatGuiCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatHelpCommand;
@@ -24,8 +25,14 @@ import org.bukkit.command.CommandSender;
 public class ChatCommand {
 	public static final String COMMAND = "chat";
 	public static final String[] ALIASES = {"ch", "networkchat"};
+	public static final String LIST_OFFLINE_PLAYERS_PERM = "networkchat.listoffline";
 	public static final ArgumentSuggestions<CommandSender> COLOR_SUGGESTIONS = ArgumentSuggestions.strings("aqua", "dark_purple", "#0189af");
-	public static final ArgumentSuggestions<CommandSender> ALL_CACHED_PLAYER_NAMES_SUGGESTIONS = ArgumentSuggestions.strings((unused) -> MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new));
+	public static final ArgumentSuggestions<CommandSender> ALL_CACHED_PLAYER_NAMES_SUGGESTIONS = ArgumentSuggestions.strings((info) -> {
+		if (info.sender().hasPermission(LIST_OFFLINE_PLAYERS_PERM)) {
+			return MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new);
+		}
+		return RemotePlayerManager.visiblePlayerNames().toArray(new String[0]);
+	});
 
 	public static void register(NetworkChatPlugin plugin, final @Nullable ZipFile zip) {
 		ChatHelpCommand.register(plugin, zip);
