@@ -22,7 +22,7 @@ public class ChatPlayerRefreshCommand {
 				if (!(callee instanceof Player target)) {
 					throw CommandUtils.fail(sender, "This command can only be run as a player.");
 				} else {
-					RemotePlayerManager.refreshLocalPlayer(target);
+					RemotePlayerManager.refreshLocalPlayerTemp(target);
 					RemotePlayerListener.refreshLocalPlayer(target);
 				}
 				return 1;
@@ -38,7 +38,7 @@ public class ChatPlayerRefreshCommand {
 				Collection<Player> players = args.getByArgument(playersArg);
 
 				for (Player player : players) {
-					RemotePlayerManager.refreshLocalPlayer(player);
+					RemotePlayerManager.refreshLocalPlayerTemp(player);
 					RemotePlayerListener.refreshLocalPlayer(player);
 				}
 				return 1;

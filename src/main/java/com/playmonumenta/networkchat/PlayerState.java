@@ -762,7 +762,7 @@ public class PlayerState {
 		}
 		if (profileMessage == null) {
 			mProfileMessage = "";
-			RemotePlayerManager.refreshLocalPlayer(player);
+			RemotePlayerManager.refreshLocalPlayerTemp(player);
 			RemotePlayerAPI.refreshPlayer(player.getUniqueId());
 			return;
 		}
@@ -773,7 +773,7 @@ public class PlayerState {
 		}
 
 		mProfileMessage = profileMessage;
-		RemotePlayerManager.refreshLocalPlayer(player);
+		RemotePlayerManager.refreshLocalPlayerTemp(player);
 		RemotePlayerAPI.refreshPlayer(player.getUniqueId());
 	}
 }

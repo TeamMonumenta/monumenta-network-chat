@@ -105,7 +105,7 @@ public class RemotePlayerManager implements Listener {
 		boolean cachedResult = isPlayerVisible(player.getUniqueId());
 		boolean currentResult = isLocalPlayerVisible(player);
 		if (cachedResult ^ currentResult) {
-			refreshLocalPlayer(player);
+			refreshLocalPlayerTemp(player);
 		}
 		return currentResult;
 	}
@@ -212,12 +212,17 @@ public class RemotePlayerManager implements Listener {
 
 	public static void refreshLocalPlayers() {
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			refreshLocalPlayer(player);
+			refreshLocalPlayerTemp(player);
 		}
 	}
 
-	// Run this on any player to update their displayed name
+	// Run this on any player to update their displayed name (Temporarily using renamed method for testing)
 	public static void refreshLocalPlayer(Player player) {
+		refreshLocalPlayerTemp(player);
+		RemotePlayerListener.refreshLocalPlayer(player);
+	}
+
+	public static void refreshLocalPlayerTemp(Player player) {
 		MMLog.fine("Refreshing local player " + player.getName());
 		RemotePlayerState remotePlayerState = new RemotePlayerState(player, true);
 
@@ -280,7 +285,7 @@ public class RemotePlayerManager implements Listener {
 			MMLog.fine("Detected race condition, triggering refresh on " + remotePlayerState.mName);
 			@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayerState.mUuid);
 			if (localPlayer != null) {
-				refreshLocalPlayer(localPlayer);
+				refreshLocalPlayerTemp(localPlayer);
 			}
 			RemotePlayerDiff.update(remotePlayerState.mUuid, "remote unload", false);
 		}
@@ -334,7 +339,7 @@ public class RemotePlayerManager implements Listener {
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		refreshLocalPlayer(player);
+		refreshLocalPlayerTemp(player);
 	}
 
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
