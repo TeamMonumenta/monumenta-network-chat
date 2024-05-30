@@ -2,6 +2,7 @@ package com.playmonumenta.networkchat.commands.chat.player;
 
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
+import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -23,9 +24,13 @@ import org.bukkit.entity.Player;
 public class ChatPlayerIgnoreCommand {
 	public static void register() {
 		Argument<String> nameArg1 = new StringArgument("name").replaceSuggestions(
-			ArgumentSuggestions.strings(suggestionInfo -> {
-				String selfStr = CommandUtils.getCallee(suggestionInfo.sender()) instanceof Player player ? player.getName() : null;
-				return MonumentaRedisSyncAPI.getAllCachedPlayerNames().stream().filter(player -> !player.equals(selfStr)).toArray(String[]::new);
+			ArgumentSuggestions.strings(info -> {
+				CommandSender sender = info.sender();
+				String selfStr = CommandUtils.getCallee(sender) instanceof Player player ? player.getName() : null;
+				if (sender.hasPermission(ChatCommand.LIST_OFFLINE_PLAYERS_PERM)) {
+					return MonumentaRedisSyncAPI.getAllCachedPlayerNames().stream().filter(player -> !player.equals(selfStr)).toArray(String[]::new);
+				}
+				return RemotePlayerManager.visiblePlayerNames().stream().filter(player -> !player.equals(selfStr)).toArray(String[]::new);
 			}));
 
 		Argument<String> nameArg2 = new StringArgument("name")
