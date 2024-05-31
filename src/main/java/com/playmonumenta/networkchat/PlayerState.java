@@ -15,6 +15,7 @@ import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import com.playmonumenta.networkrelay.RemotePlayerAPI;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
@@ -761,7 +762,8 @@ public class PlayerState {
 		}
 		if (profileMessage == null) {
 			mProfileMessage = "";
-			RemotePlayerManager.refreshLocalPlayer(player);
+			RemotePlayerManager.refreshLocalPlayerTemp(player);
+			RemotePlayerAPI.refreshPlayer(player.getUniqueId());
 			return;
 		}
 
@@ -771,6 +773,7 @@ public class PlayerState {
 		}
 
 		mProfileMessage = profileMessage;
-		RemotePlayerManager.refreshLocalPlayer(player);
+		RemotePlayerManager.refreshLocalPlayerTemp(player);
+		RemotePlayerAPI.refreshPlayer(player.getUniqueId());
 	}
 }

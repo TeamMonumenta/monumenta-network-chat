@@ -422,7 +422,7 @@ public class Message implements AutoCloseable {
 				@Nullable JsonPrimitive shardJson = mExtraData.getAsJsonPrimitive("shard");
 				if (shardJson != null) {
 					String shard = shardJson.getAsString();
-					if (!shard.equals("*") && !shard.equals(RemotePlayerManager.getShardName())) {
+					if (!shard.equals("*") && !shard.equals(NetworkChatPlugin.getShardName())) {
 						return Component.text("[NOT VISIBLE ON THIS SHARD]", NamedTextColor.RED, TextDecoration.BOLD);
 					}
 				}
@@ -449,7 +449,7 @@ public class Message implements AutoCloseable {
 				@Nullable JsonPrimitive shardJson = mExtraData.getAsJsonPrimitive("shard");
 				if (shardJson != null) {
 					String shard = shardJson.getAsString();
-					if (!shard.equals("*") && !shard.equals(RemotePlayerManager.getShardName())) {
+					if (!shard.equals("*") && !shard.equals(NetworkChatPlugin.getShardName())) {
 						return;
 					}
 				}

@@ -9,7 +9,6 @@ import com.playmonumenta.networkchat.MessageManager;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
-import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
@@ -227,7 +226,7 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 		}
 
 		JsonObject extraData = new JsonObject();
-		extraData.addProperty("fromShard", RemotePlayerManager.getShardName());
+		extraData.addProperty("fromShard", NetworkChatPlugin.getShardName());
 		extraData.addProperty("fromWorld", world.getName());
 
 		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
@@ -258,7 +257,7 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 			return;
 		}
 		fromShard = fromShardJsonPrimitive.getAsString();
-		if (!fromShard.equals(RemotePlayerManager.getShardName())) {
+		if (!fromShard.equals(NetworkChatPlugin.getShardName())) {
 			// TODO Chat spy here
 			return;
 		}

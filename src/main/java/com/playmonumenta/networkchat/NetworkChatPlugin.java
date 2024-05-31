@@ -51,6 +51,19 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static ChatFilter mGlobalChatFilter = new ChatFilter();
 	private static final ReplacementsManager mReplacementsManager = new ReplacementsManager();
 
+	public static String getShardName() {
+		@Nullable String shardName = null;
+		try {
+			shardName = NetworkRelayAPI.getShardName();
+		} catch (Exception e) {
+			MMLog.severe("Failed to get shard name");
+		}
+		if (shardName == null) {
+			throw new RuntimeException("Got null shard name");
+		}
+		return shardName;
+	}
+
 	@Override
 	public void onLoad() {
 		if (mLogger == null) {
@@ -115,6 +128,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 		getServer().getPluginManager().registerEvents(ChannelManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(MessageManager.getInstance(), this);
+		getServer().getPluginManager().registerEvents(RemotePlayerListener.getInstance(), this);
 		getServer().getPluginManager().registerEvents(PlayerStateManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(RemotePlayerManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(this, this);
@@ -280,6 +294,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		saveFormats();
 		if (id.equals("player")) {
 			RemotePlayerManager.refreshLocalPlayers();
+			RemotePlayerListener.refreshLocalPlayers();
 		}
 	}
 

@@ -9,7 +9,6 @@ import com.playmonumenta.networkchat.MessageManager;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
-import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
@@ -212,7 +211,7 @@ public class ChannelLocal extends Channel implements ChannelAutoJoin, ChannelPer
 		}
 
 		JsonObject extraData = new JsonObject();
-		extraData.addProperty("fromShard", RemotePlayerManager.getShardName());
+		extraData.addProperty("fromShard", NetworkChatPlugin.getShardName());
 
 		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
 		if (message == null) {
@@ -239,7 +238,7 @@ public class ChannelLocal extends Channel implements ChannelAutoJoin, ChannelPer
 			MMLog.warning("Got local chat message with invalid fromShard json, ignoring.");
 			return;
 		}
-		if (!Objects.equals(RemotePlayerManager.getShardName(), fromShardJsonPrimitive.getAsString())) {
+		if (!Objects.equals(NetworkChatPlugin.getShardName(), fromShardJsonPrimitive.getAsString())) {
 			// TODO Chat spy here
 			return;
 		}
