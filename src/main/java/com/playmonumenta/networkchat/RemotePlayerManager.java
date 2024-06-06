@@ -291,7 +291,7 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
-	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void destOnlineEvent(DestOnlineEvent event) {
 		String remoteShardName = event.getDest();
 		if (NetworkChatPlugin.getShardName().equals(remoteShardName)) {
@@ -318,7 +318,7 @@ public class RemotePlayerManager implements Listener {
 	}
 
 	// Player ran a command
-	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void playerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
 		String command = event.getMessage();
 
@@ -336,13 +336,13 @@ public class RemotePlayerManager implements Listener {
 		}
 	}
 
-	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		refreshLocalPlayerTemp(player);
 	}
 
-	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		RemotePlayerState remotePlayerState = new RemotePlayerState(player, false);
@@ -350,7 +350,7 @@ public class RemotePlayerManager implements Listener {
 		remotePlayerState.broadcast();
 	}
 
-	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		switch (event.getChannel()) {
 			case REMOTE_PLAYER_CHANNEL -> {
