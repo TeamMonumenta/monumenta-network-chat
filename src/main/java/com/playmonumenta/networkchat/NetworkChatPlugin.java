@@ -302,6 +302,14 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		return mGlobalChatFilter;
 	}
 
+	/**
+	 * Gets the global bad word filter for use in external plugins
+	 * @return the global bad word filter
+	 */
+	public static ChatFilter globalBadWordFilter() {
+		return mGlobalChatFilter.badWordFiltersOnly();
+	}
+
 	public static void globalFilterFromJson(JsonObject dataJson) {
 		mGlobalChatFilter = ChatFilter.fromJson(Bukkit.getConsoleSender(), dataJson);
 	}
