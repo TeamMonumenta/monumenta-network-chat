@@ -462,6 +462,18 @@ public class ChatFilter {
 		return object;
 	}
 
+	public ChatFilter badWordFiltersOnly() {
+		ChatFilter result = new ChatFilter();
+		for (Map.Entry<String, ChatFilterPattern> filterEntry : mFilters.entrySet()) {
+			ChatFilterPattern filterPattern = filterEntry.getValue();
+			if (!filterPattern.isBadWord()) {
+				continue;
+			}
+			result.mFilters.put(filterEntry.getKey(), filterPattern);
+		}
+		return result;
+	}
+
 	public ChatFilterPattern addFilter(CommandSender sender,
 	                      String id,
 	                      boolean isLiteral,
@@ -492,16 +504,15 @@ public class ChatFilter {
 		}
 	}
 
-	public Component run(CommandSender sender, Component component) {
+	public ChatFilterResult run(CommandSender sender, Component component) {
 		ChatFilterResult filterResult = new ChatFilterResult(component);
 		run(sender, filterResult);
-		return filterResult.component();
+		return filterResult;
 	}
 
-	public String run(CommandSender sender, String plainText) {
+	public ChatFilterResult run(CommandSender sender, String plainText) {
 		Component component = Component.text(plainText);
-		component = run(sender, component);
-		return MessagingUtils.plainText(component);
+		return run(sender, component);
 	}
 
 	public boolean hasBadWord(CommandSender sender, Component component) {
