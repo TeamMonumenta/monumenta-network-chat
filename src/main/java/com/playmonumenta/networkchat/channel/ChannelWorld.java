@@ -27,7 +27,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -229,7 +228,7 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 		extraData.addProperty("fromShard", NetworkChatPlugin.getShardName());
 		extraData.addProperty("fromWorld", world.getName());
 
-		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		@Nullable Message message = Message.createMessage(this, sender, extraData, messageText);
 		if (message == null) {
 			return;
 		}
@@ -316,7 +315,7 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 	@Override
 	public void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
-		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
+		recipient.sendMessage(shownMessage(recipient, message));
 		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
