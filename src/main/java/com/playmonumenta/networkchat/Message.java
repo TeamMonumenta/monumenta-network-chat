@@ -11,8 +11,6 @@ import java.lang.ref.Cleaner;
 import java.time.Instant;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.kyori.adventure.audience.MessageType;
-import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -51,7 +49,6 @@ public class Message implements AutoCloseable {
 	private final UUID mId;
 	private final Instant mInstant;
 	private final @Nullable UUID mChannelId;
-	private final MessageType mMessageType;
 	private final @Nullable UUID mSenderId;
 	private final String mSenderName;
 	private final @Nullable NamespacedKey mSenderType;
@@ -64,7 +61,6 @@ public class Message implements AutoCloseable {
 	private Message(UUID id,
 	                Instant instant,
 	                @Nullable UUID channelId,
-	                MessageType messageType,
 	                @Nullable UUID senderId,
 	                String senderName,
 	                @Nullable NamespacedKey senderType,
@@ -75,7 +71,6 @@ public class Message implements AutoCloseable {
 		mId = id;
 		mInstant = instant;
 		mChannelId = channelId;
-		mMessageType = messageType;
 		mSenderId = senderId;
 		mSenderName = senderName;
 		mSenderType = senderType;
@@ -92,7 +87,6 @@ public class Message implements AutoCloseable {
 
 	// Normally called through a channel
 	protected static @Nullable Message createMessage(Channel channel,
-	                                                 MessageType messageType,
 	                                                 CommandSender sender,
 	                                                 @Nullable JsonObject extraData,
 	                                                 Component message) throws WrapperCommandSyntaxException {
@@ -111,7 +105,6 @@ public class Message implements AutoCloseable {
 		result = new Message(UUID.randomUUID(),
 			instant,
 			channelId,
-			messageType,
 			senderId,
 			sender.getName(),
 			senderType,
@@ -149,7 +142,6 @@ public class Message implements AutoCloseable {
 		result = new Message(UUID.randomUUID(),
 			instant,
 			channelId,
-		    messageType,
 		    senderId,
 		    sender.getName(),
 		    senderType,
@@ -162,17 +154,15 @@ public class Message implements AutoCloseable {
 
 	// Normally called through a channel
 	public static @Nullable Message createMessage(Channel channel,
-	                                       MessageType messageType,
 	                                       CommandSender sender,
 	                                       @Nullable JsonObject extraData,
 	                                       String message) throws WrapperCommandSyntaxException {
 		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).deserialize(message);
-		return createMessage(channel, messageType, sender, extraData, messageComponent);
+		return createMessage(channel, sender, extraData, messageComponent);
 	}
 
 	// Raw, non-channel messages (use sparingly)
-	protected static Message createRawMessage(MessageType messageType,
-	                                          @Nullable UUID senderId,
+	protected static Message createRawMessage(@Nullable UUID senderId,
 	                                          @Nullable JsonObject extraData,
 	                                          Component message) {
 		UUID id = UUID.randomUUID();
@@ -195,7 +185,6 @@ public class Message implements AutoCloseable {
 		return new Message(id,
 		                   instant,
 		                   null,
-		                   messageType,
 		                   senderId,
 		                   senderName,
 		                   senderType,
@@ -230,17 +219,6 @@ public class Message implements AutoCloseable {
 		@Nullable JsonElement channelIdJson = object.get("channelId");
 		if (channelIdJson != null) {
 			channelId = UUID.fromString(channelIdJson.getAsString());
-		}
-		MessageType messageType = MessageType.CHAT;
-		@Nullable JsonElement messageTypeJson = object.get("messageType");
-		if (messageTypeJson != null) {
-			String messageTypeName = messageTypeJson.getAsString();
-			for (MessageType possibleType : MessageType.values()) {
-				if (possibleType.name().equals(messageTypeName)) {
-					messageType = possibleType;
-					break;
-				}
-			}
 		}
 		@Nullable UUID senderId = null;
 		@Nullable JsonElement senderIdJson = object.get("senderId");
@@ -287,7 +265,6 @@ public class Message implements AutoCloseable {
 		return new Message(id,
 		                   instant,
 		                   channelId,
-		                   messageType,
 		                   senderId,
 		                   senderName,
 		                   senderType,
@@ -305,7 +282,6 @@ public class Message implements AutoCloseable {
 		if (mChannelId != null) {
 			object.addProperty("channelId", mChannelId.toString());
 		}
-		object.addProperty("messageType", mMessageType.name());
 		if (mSenderId != null) {
 			object.addProperty("senderId", mSenderId.toString());
 		}
@@ -362,19 +338,8 @@ public class Message implements AutoCloseable {
 		return mExtraData;
 	}
 
-	public MessageType getMessageType() {
-		return mMessageType;
-	}
-
 	public @Nullable UUID getSenderId() {
 		return mSenderId;
-	}
-
-	public Identity getSenderIdentity() {
-		if (mSenderIsPlayer && mSenderId != null) {
-			return Identity.identity(mSenderId);
-		}
-		return Identity.nil();
 	}
 
 	public String getSenderName() {
@@ -454,7 +419,7 @@ public class Message implements AutoCloseable {
 					}
 				}
 			}
-			recipient.sendMessage(getSenderIdentity(), mMessage, mMessageType);
+			recipient.sendMessage(mMessage);
 			return;
 		}
 		channel.showMessage(recipient, this);

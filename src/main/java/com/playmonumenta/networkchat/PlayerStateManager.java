@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -105,13 +104,7 @@ public class PlayerStateManager implements Listener {
 						}
 					}
 
-					MessageType messageType;
-					if (chatType.equals(ChatType.CHAT)) {
-						messageType = MessageType.CHAT;
-					} else {
-						messageType = MessageType.SYSTEM;
-					}
-					Message message = Message.createRawMessage(messageType, sender, null, messageComponent);
+					Message message = Message.createRawMessage(sender, null, messageComponent);
 
 					PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
 					if (playerState != null) {

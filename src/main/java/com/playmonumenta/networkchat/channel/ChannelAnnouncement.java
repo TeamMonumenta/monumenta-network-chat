@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import me.clip.placeholderapi.PlaceholderAPI;
-import net.kyori.adventure.audience.MessageType;
-import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -213,7 +211,7 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 
 		messageText = PlaceholderAPI.setPlaceholders(null, messageText);
 
-		@Nullable Message message = Message.createMessage(this, MessageType.SYSTEM, sender, null, messageText);
+		@Nullable Message message = Message.createMessage(this, sender, null, messageText);
 		if (message == null) {
 			return;
 		}
@@ -261,7 +259,7 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 
 	@Override
 	public void showMessage(CommandSender recipient, Message message) {
-		recipient.sendMessage(Identity.nil(), shownMessage(recipient, message), message.getMessageType());
+		recipient.sendMessage(shownMessage(recipient, message));
 		if (recipient instanceof Player player) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
