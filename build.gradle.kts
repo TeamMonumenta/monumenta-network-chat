@@ -1,5 +1,6 @@
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import groovy.lang.Closure
 import net.ltgt.gradle.errorprone.errorprone
 import net.ltgt.gradle.errorprone.CheckSeverity
 
@@ -20,54 +21,16 @@ repositories {
     mavenLocal()
 	mavenCentral()
 
-    maven {
-        url = uri("mvn-repo")
-    }
-
-    maven {
-        url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-
-    maven {
-        url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-    }
-
-    maven {
-        url = uri("https://jitpack.io")
-    }
-
-    maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-    }
-
-    maven {
-        url = uri("https://libraries.minecraft.net")
-    }
-
-    maven {
-        url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/")
-    }
-
-    maven {
-        url = uri("https://repo.dmulloy2.net/repository/public/")
-    }
-
-    maven {
-        url = uri("https://repo.maven.apache.org/maven2/")
-    }
-
-    // NBT API, pulled in by CommandAPI
-    maven {
-        url = uri("https://repo.codemc.org/repository/maven-public/")
-    }
-
-    maven {
-        url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/")
-    }
-
-    maven {
-        url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-redis-sync/master/mvn-repo/")
-    }
+    maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+    maven("https://jitpack.io")
+	maven("https://oss.sonatype.org/content/repositories/snapshots/")
+	maven("https://libraries.minecraft.net")
+	maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+	maven("https://repo.dmulloy2.net/repository/public/")
+	maven("https://repo.maven.apache.org/maven2/")
+	maven("https://repo.codemc.org/repository/maven-public/")
+	maven("https://maven.playmonumenta.com/releases/")
 }
 
 dependencies {
@@ -85,7 +48,7 @@ dependencies {
 }
 
 group = "com.playmonumenta"
-val gitVersion: groovy.lang.Closure<String> by extra
+val gitVersion: Closure<String> by extra
 version = gitVersion()
 description = "MonumentaNetworkChat"
 java.sourceCompatibility = JavaVersion.VERSION_17
@@ -112,23 +75,34 @@ pmd {
     isConsoleOutput = true
     toolVersion = "6.41.0"
     ruleSets = listOf("$rootDir/pmd-ruleset.xml")
-    setIgnoreFailures(true)
+	isIgnoreFailures = true
+}
+
+java {
+	withJavadocJar()
+	withSourcesJar()
 }
 
 publishing {
-    publications.create<MavenPublication>("maven") {
-        project.shadow.component(this)
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/TeamMonumenta/monumenta-network-chat")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
+	publications {
+		create<MavenPublication>("maven") {
+			from(components["java"])
+		}
+	}
+	repositories {
+		maven {
+			name = "MonumentaMaven"
+			url = when (version.toString().endsWith("SNAPSHOT")) {
+				true -> uri("https://maven.playmonumenta.com/snapshots")
+				false -> uri("https://maven.playmonumenta.com/releases")
+			}
+
+			credentials {
+				username = System.getenv("USERNAME")
+				password = System.getenv("TOKEN")
+			}
+		}
+	}
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -156,4 +130,4 @@ tasks.withType<JavaCompile>().configureEach {
     }
 }
 
-ssh.easySetup(tasks.named<ShadowJar>("shadowJar").get(), "NetworkChat")
+ssh.easySetup(tasks.shadowJar.get(), "NetworkChat")
