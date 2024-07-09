@@ -47,7 +47,8 @@ public class EquipmentHoverReplacement extends InlineReplacement {
 			"equipmenthover");
 		mReplacements.add(Pair.of(mEquipmentRegex, sender -> {
 			if (sender instanceof Player player
-				&& !BANNED_MATERIALS.contains(player.getInventory().getItemInMainHand().getType())) {
+				&& !BANNED_MATERIALS.contains(player.getInventory().getItemInMainHand().getType())
+				&& !BANNED_MATERIALS.contains(player.getInventory().getItemInOffHand().getType())) {
 				ItemStack item = new ItemStack(Material.PAPER);
 				ItemMeta meta = item.getItemMeta();
 				meta.displayName(Component.text(player.getName() + "'s Equipment", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
