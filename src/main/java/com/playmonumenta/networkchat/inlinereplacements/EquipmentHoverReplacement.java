@@ -1,7 +1,10 @@
 package com.playmonumenta.networkchat.inlinereplacements;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -15,6 +18,26 @@ import org.intellij.lang.annotations.RegExp;
 
 public class EquipmentHoverReplacement extends InlineReplacement {
 
+	private static final Set<Material> BANNED_MATERIALS;
+
+	static {
+		Set<Material> bannedMaterials = new HashSet<>();
+		bannedMaterials.add(Material.WRITTEN_BOOK);
+
+		for (Material mat : Material.values()) {
+			if (!mat.isItem()) {
+				continue;
+			}
+
+			String id = mat.getKey().toString();
+			if (id.endsWith("shulker_box") || id.endsWith("_sign")) {
+				bannedMaterials.add(mat);
+			}
+		}
+
+		BANNED_MATERIALS = bannedMaterials.stream().collect(Collectors.toUnmodifiableSet());
+	}
+
 	@RegExp
 	private static final String mEquipmentRegex = "<equipment>";
 
@@ -23,7 +46,8 @@ public class EquipmentHoverReplacement extends InlineReplacement {
 			"(?<=^|[^\\\\])<(equipment)>",
 			"equipmenthover");
 		mReplacements.add(Pair.of(mEquipmentRegex, sender -> {
-			if (sender instanceof Player player) {
+			if (sender instanceof Player player
+				&& !BANNED_MATERIALS.contains(player.getInventory().getItemInMainHand().getType())) {
 				ItemStack item = new ItemStack(Material.PAPER);
 				ItemMeta meta = item.getItemMeta();
 				meta.displayName(Component.text(player.getName() + "'s Equipment", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
