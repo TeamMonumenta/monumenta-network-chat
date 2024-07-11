@@ -12,7 +12,7 @@ plugins {
     id("net.minecrell.plugin-yml.bukkit") version "0.5.1" // Generates plugin.yml
     id("net.ltgt.errorprone") version "2.0.2"
     id("net.ltgt.nullaway") version "1.3.0"
-	id("com.playmonumenta.deployment") version "1.2"
+	id("com.playmonumenta.deployment") version "1.+"
     checkstyle
     pmd
 }
