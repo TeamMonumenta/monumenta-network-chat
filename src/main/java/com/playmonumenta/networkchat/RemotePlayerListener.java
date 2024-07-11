@@ -33,7 +33,9 @@ public class RemotePlayerListener implements Listener {
 	private static @Nullable RemotePlayerListener INSTANCE = null;
 	private static final Map<UUID, Component> mPlayerComponents = new HashMap<>();
 
-	private RemotePlayerListener() {}
+	private RemotePlayerListener() {
+
+	}
 
 	public static RemotePlayerListener getInstance() {
 		if (INSTANCE == null) {
