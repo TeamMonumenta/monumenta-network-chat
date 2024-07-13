@@ -10,6 +10,7 @@ import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -59,6 +60,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	protected ChannelWhisper(JsonObject channelJson) throws Exception {
 		super(channelJson);
 		participantsFromJson(mParticipants, channelJson);
+		mDefaultSettings = new ChannelSettings();
+		mDefaultSettings.clearSound();
+		mDefaultSettings.addSound(Sound.ENTITY_PLAYER_LEVELUP, 1, 0.5f);
 	}
 
 	@Override
@@ -344,11 +348,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	@Override
 	public boolean shouldAutoJoin(PlayerState state) {
 		return false;
-	}
-
-	@Override
-	public boolean mayManage(CommandSender sender) {
-		return isParticipantOrModerator(sender);
 	}
 
 	@Override
