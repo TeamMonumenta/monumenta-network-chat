@@ -46,7 +46,7 @@ public class ChatChannelAutojoinCommand {
 
 		if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 			ChatCommand.getBaseCommand()
-				.withArguments(new LiteralArgument("channe"))
+				.withArguments(new LiteralArgument("channel"))
 				.withArguments(new LiteralArgument("autojoin"))
 				.withArguments(channelArg)
 				.withArguments(enableDisableArg)
