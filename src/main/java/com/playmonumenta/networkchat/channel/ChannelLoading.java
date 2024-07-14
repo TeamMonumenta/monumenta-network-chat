@@ -60,10 +60,20 @@ public class ChannelLoading extends Channel {
 		throw CommandAPI.failWithString("This channel is still loading, please try again.");
 	}
 
+	@Override
+	public void setDescription(String description) throws WrapperCommandSyntaxException {
+		throw CommandAPI.failWithString("This channel is still loading, please try again.");
+	}
+
 	// NOTE: This should not be called for this class.
 	@Override
 	public String getName() {
 		throw new RuntimeException("Cannot getName() for loading channels");
+	}
+
+	@Override
+	public String getDescription() {
+		throw new RuntimeException("Cannot getDescription() for loading channels");
 	}
 
 	@Override

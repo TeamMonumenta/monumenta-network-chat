@@ -244,6 +244,7 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
