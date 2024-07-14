@@ -39,7 +39,7 @@ public class ChatChannelDescriptionCommand {
 
 	private static int changeChannelDescription(CommandSender sender, String newChannelDescription, String channelName) throws WrapperCommandSyntaxException {
 		ChannelManager.changeChannelDescription(newChannelDescription, channelName);
-		sender.sendMessage(Component.text("Channel " + channelName +  " description updated to " + newChannelDescription, NamedTextColor.GRAY));
+		sender.sendMessage(Component.text("Channel " + channelName + " description updated to " + newChannelDescription, NamedTextColor.GRAY));
 		return 1;
 	}
 }
