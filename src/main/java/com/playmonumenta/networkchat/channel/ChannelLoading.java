@@ -30,7 +30,7 @@ public class ChannelLoading extends Channel {
 	/* Note: This channel type may only be created by this plugin while waiting for Redis data.
 	 * This is why it is the only channel whose constructor is protected, and has no name. */
 	public ChannelLoading(UUID channelId) {
-		super(channelId, Instant.MIN, "Loading_" + channelId, "");
+		super(channelId, Instant.MIN, "Loading_" + channelId);
 	}
 
 	// NOTE: This channel type should never be saved, as it could overwrite a real channel.
@@ -60,20 +60,10 @@ public class ChannelLoading extends Channel {
 		throw CommandAPI.failWithString("This channel is still loading, please try again.");
 	}
 
-	@Override
-	public void setDescription(String description) throws WrapperCommandSyntaxException {
-		throw CommandAPI.failWithString("This channel is still loading, please try again.");
-	}
-
 	// NOTE: This should not be called for this class.
 	@Override
 	public String getName() {
 		throw new RuntimeException("Cannot getName() for loading channels");
-	}
-
-	@Override
-	public String getDescription() {
-		throw new RuntimeException("Cannot getDescription() for loading channels");
 	}
 
 	@Override

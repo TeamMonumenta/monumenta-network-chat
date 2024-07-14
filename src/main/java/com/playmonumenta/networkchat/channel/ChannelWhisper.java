@@ -46,12 +46,12 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 	protected final Set<UUID> mParticipants = new TreeSet<>();
 
-	public ChannelWhisper(UUID from, UUID to, String description) {
-		this(UUID.randomUUID(), Instant.now(), List.of(from, to), description);
+	public ChannelWhisper(UUID from, UUID to) {
+		this(UUID.randomUUID(), Instant.now(), List.of(from, to));
 	}
 
-	private ChannelWhisper(UUID channelId, Instant lastUpdate, List<UUID> participants, String description) {
-		super(channelId, lastUpdate, getName(participants), description);
+	private ChannelWhisper(UUID channelId, Instant lastUpdate, List<UUID> participants) {
+		super(channelId, lastUpdate, getName(participants));
 		mParticipants.addAll(participants);
 		mDefaultSettings.addSound(Sound.ENTITY_PLAYER_LEVELUP, 1, 0.5f);
 	}
@@ -125,8 +125,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			@Nullable ChannelWhisper channel = senderState.getWhisperChannel(recipientUuid);
 			if (channel == null) {
 				try {
-					String description = mUnsetDescription;
-					channel = new ChannelWhisper(sendingPlayer.getUniqueId(), recipientUuid, description);
+					channel = new ChannelWhisper(sendingPlayer.getUniqueId(), recipientUuid);
 				} catch (Exception e) {
 					throw CommandUtils.fail(sender, "Could not create new whisper channel: Could not connect to RabbitMQ.");
 				}
@@ -160,8 +159,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			@Nullable ChannelWhisper channel = senderState.getWhisperChannel(recipientUuid);
 			if (channel == null) {
 				try {
-					String description = mUnsetDescription;
-					channel = new ChannelWhisper(sendingPlayer.getUniqueId(), recipientUuid, description);
+					channel = new ChannelWhisper(sendingPlayer.getUniqueId(), recipientUuid);
 				} catch (Exception e) {
 					throw CommandUtils.fail(sender, "Could not create new whisper channel: Could not connect to RabbitMQ.");
 				}
