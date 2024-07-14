@@ -128,6 +128,23 @@ public class ChatGuiCommand extends Gui {
 					});
 			}
 
+			if (CommandUtils.hasPermission(mPlayer, "networkchat.description")) {
+				item = new ItemStack(Material.JUNGLE_SIGN);
+				meta = item.getItemMeta();
+				meta.displayName(Component.text("Change channel description", NamedTextColor.LIGHT_PURPLE)
+					.decoration(TextDecoration.ITALIC, false));
+				item.setItemMeta(meta);
+				setItem(3, item)
+					.onLeftClick(() -> {
+						mPlayer.sendMessage(
+							Component.text("[Change " + channel.getName() + " description]",
+									NamedTextColor.LIGHT_PURPLE)
+								.clickEvent(ClickEvent.suggestCommand("/" + ChatCommand.COMMAND
+									+ " channel description " + channel.getName() + " ")));
+						close();
+					});
+			}
+
 			if (mMessage.senderIsPlayer() && channel.mayManage(mPlayer)) {
 				String fromName = mMessage.getSenderName();
 
@@ -136,7 +153,7 @@ public class ChatGuiCommand extends Gui {
 				meta.displayName(Component.text("Sender channel access", NamedTextColor.LIGHT_PURPLE)
 					.decoration(TextDecoration.ITALIC, false));
 				item.setItemMeta(meta);
-				setItem(3, item)
+				setItem(4, item)
 					.onLeftClick(() -> {
 						mPlayer.sendMessage(
 							Component.text("[Edit " + fromName + "'s access to channel " + channel.getName() + "]",

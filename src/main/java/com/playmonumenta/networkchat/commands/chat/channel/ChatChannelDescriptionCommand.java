@@ -18,6 +18,9 @@ public class ChatChannelDescriptionCommand {
 			Argument<String> newChannelDescription = ChannelManager.getChannelDescriptionArgument("New Channel Description");
 			Argument<String> channelName = ChannelManager.getChannelNameArgument("Channel Name", ChannelPredicate.MAY_MANAGE);
 
+			// When changing a description, it should also be changed in
+			// epic/data/datapacks/base/data/monumenta/functions/chat/formatting.mcfunction
+
 			ChatCommand.getBaseCommand()
 				.withArguments(new LiteralArgument("channel"))
 				.withArguments(new LiteralArgument("description"))
@@ -35,7 +38,6 @@ public class ChatChannelDescriptionCommand {
 	}
 
 	private static int changeChannelDescription(CommandSender sender, String newChannelDescription, String channelName) throws WrapperCommandSyntaxException {
-		// May call throw CommandUtils.fail(sender, )
 		ChannelManager.changeChannelDescription(newChannelDescription, channelName);
 		sender.sendMessage(Component.text("Channel " + channelName +  " description updated to " + newChannelDescription, NamedTextColor.GRAY));
 		return 1;
