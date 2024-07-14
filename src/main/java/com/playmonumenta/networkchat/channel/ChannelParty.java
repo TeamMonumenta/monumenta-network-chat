@@ -43,12 +43,12 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 
 	protected final Set<UUID> mParticipants = new TreeSet<>();
 
-	private ChannelParty(UUID channelId, Instant lastUpdate, String name) {
-		super(channelId, lastUpdate, name);
+	private ChannelParty(UUID channelId, Instant lastUpdate, String name, String description) {
+		super(channelId, lastUpdate, name, description);
 	}
 
-	public ChannelParty(String name) {
-		this(UUID.randomUUID(), Instant.now(), name);
+	public ChannelParty(String name, String description) {
+		this(UUID.randomUUID(), Instant.now(), name, description);
 	}
 
 	protected ChannelParty(JsonObject channelJson) throws Exception {
@@ -80,10 +80,11 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 				}
 
 				String channelName = args.getByArgument(channelArg);
+				String description = mUnsetDescription;
 				ChannelParty newChannel;
 
 				try {
-					newChannel = new ChannelParty(channelName);
+					newChannel = new ChannelParty(channelName, description);
 				} catch (Exception e) {
 					throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
 				}
@@ -334,6 +335,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()

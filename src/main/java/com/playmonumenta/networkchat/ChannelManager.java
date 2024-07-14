@@ -159,6 +159,10 @@ public class ChannelManager implements Listener {
 		return new TextArgument(argName).replaceSuggestions(getChannelNameSuggestions(channelPredicate));
 	}
 
+	public static Argument<String> getChannelDescriptionArgument(String argDescription) {
+		return new TextArgument(argDescription);
+	}
+
 	public static @Nullable String getChannelName(UUID channelId) {
 		return mChannelNames.get(channelId);
 	}
@@ -412,6 +416,21 @@ public class ChannelManager implements Listener {
 		RedisAPI.getInstance().async().hdel(REDIS_CHANNEL_NAME_TO_UUID_PATH, oldName);
 	}
 
+	public static void changeChannelDescription(String newChannelDescription, String channelName) throws WrapperCommandSyntaxException {
+		@Nullable UUID channelId = mChannelIdsByName.get(channelName);
+		if (channelId == null) {
+			throw CommandAPI.failWithString("Channel " + channelName + " does not exist!");
+		}
+		Channel channel = mChannels.get(channelId);
+		if (channel == null || channel instanceof ChannelLoading) {
+			loadChannel(channelId);
+			throw CommandAPI.failWithString("Channel " + channelName + " not yet loaded, try again.");
+		}
+
+		channel.setDescription(newChannelDescription);
+		saveChannel(channel);
+	}
+
 	public static void deleteChannel(String channelName) throws WrapperCommandSyntaxException {
 		Channel channel = getChannel(channelName);
 		if (channel == null) {
@@ -580,6 +599,7 @@ public class ChannelManager implements Listener {
 
 		String channelIdStr = channel.getUniqueId().toString();
 		String channelName = channel.getName();
+		String channelDescription = channel.getDescription();
 		JsonObject channelJson = channel.toJson();
 		String channelJsonStr = channelJson.toString();
 
@@ -590,6 +610,7 @@ public class ChannelManager implements Listener {
 
 		JsonObject wrappedChannelJson = new JsonObject();
 		wrappedChannelJson.addProperty("channelId", channelIdStr);
+		wrappedChannelJson.addProperty("description", channelDescription);
 		wrappedChannelJson.addProperty("channelLastUpdate", channel.lastModified().toEpochMilli());
 		wrappedChannelJson.add("channelData", channelJson);
 		try {

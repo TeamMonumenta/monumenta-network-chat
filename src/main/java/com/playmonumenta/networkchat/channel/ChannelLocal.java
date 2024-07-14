@@ -41,12 +41,12 @@ public class ChannelLocal extends Channel implements ChannelAutoJoin, ChannelPer
 	protected boolean mAutoJoin = true;
 	private @Nullable String mChannelPermission = null;
 
-	private ChannelLocal(UUID channelId, Instant lastUpdate, String name) {
-		super(channelId, lastUpdate, name);
+	private ChannelLocal(UUID channelId, Instant lastUpdate, String name, String description) {
+		super(channelId, lastUpdate, name, description);
 	}
 
-	public ChannelLocal(String name) {
-		this(UUID.randomUUID(), Instant.now(), name);
+	public ChannelLocal(String name, String description) {
+		this(UUID.randomUUID(), Instant.now(), name, description);
 	}
 
 	protected ChannelLocal(JsonObject channelJson) throws Exception {
@@ -94,10 +94,11 @@ public class ChannelLocal extends Channel implements ChannelAutoJoin, ChannelPer
 				}
 
 				String channelName = args.getByArgument(channelArg);
+				String description = mUnsetDescription;
 				ChannelLocal newChannel;
 
 				try {
-					newChannel = new ChannelLocal(channelName);
+					newChannel = new ChannelLocal(channelName, description);
 					Boolean autoJoin = args.getByArgument(autoJoinArg);
 					if (autoJoin != null) {
 						newChannel.setAutoJoin(autoJoin);
@@ -270,6 +271,7 @@ public class ChannelLocal extends Channel implements ChannelAutoJoin, ChannelPer
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
