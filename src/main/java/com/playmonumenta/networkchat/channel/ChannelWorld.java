@@ -44,12 +44,12 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 	protected boolean mAutoJoin = true;
 	private @Nullable String mChannelPermission = null;
 
-	private ChannelWorld(UUID channelId, Instant lastUpdate, String name) {
-		super(channelId, lastUpdate, name);
+	private ChannelWorld(UUID channelId, Instant lastUpdate, String name, String description) {
+		super(channelId, lastUpdate, name, description);
 	}
 
-	public ChannelWorld(String name) {
-		this(UUID.randomUUID(), Instant.now(), name);
+	public ChannelWorld(String name, String description) {
+		this(UUID.randomUUID(), Instant.now(), name, description);
 	}
 
 	protected ChannelWorld(JsonObject channelJson) throws Exception {
@@ -97,10 +97,11 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 				}
 
 				String channelName = args.getByArgument(channelArg);
+				String description = mUnsetDescription;
 				ChannelWorld newChannel;
 
 				try {
-					newChannel = new ChannelWorld(channelName);
+					newChannel = new ChannelWorld(channelName, description);
 					Boolean autoJoin = args.getByArgument(autoJoinArg);
 					if (autoJoin != null) {
 						newChannel.setAutoJoin(autoJoin);
@@ -303,6 +304,7 @@ public class ChannelWorld extends Channel implements ChannelAutoJoin, ChannelPer
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()

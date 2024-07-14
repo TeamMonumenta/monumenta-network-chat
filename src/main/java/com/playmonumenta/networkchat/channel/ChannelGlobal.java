@@ -37,12 +37,12 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 	protected boolean mAutoJoin = true;
 	private @Nullable String mChannelPermission = null;
 
-	private ChannelGlobal(UUID channelId, Instant lastUpdate, String name) {
-		super(channelId, lastUpdate, name);
+	private ChannelGlobal(UUID channelId, Instant lastUpdate, String name, String description) {
+		super(channelId, lastUpdate, name, description);
 	}
 
-	public ChannelGlobal(String name) {
-		this(UUID.randomUUID(), Instant.now(), name);
+	public ChannelGlobal(String name, String description) {
+		this(UUID.randomUUID(), Instant.now(), name, description);
 	}
 
 	protected ChannelGlobal(JsonObject channelJson) throws Exception {
@@ -90,10 +90,11 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 				}
 
 				String channelName = args.getByArgument(channelArg);
+				String description = mUnsetDescription;
 				ChannelGlobal newChannel;
 
 				try {
-					newChannel = new ChannelGlobal(channelName);
+					newChannel = new ChannelGlobal(channelName, description);
 					Boolean autoJoin = args.getByArgument(autoJoinArg);
 					if (autoJoin != null) {
 						newChannel.setAutoJoin(autoJoin);
@@ -244,6 +245,7 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()

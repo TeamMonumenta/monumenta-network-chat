@@ -39,12 +39,12 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 	protected boolean mAutoJoin = true;
 	protected @Nullable String mChannelPermission = null;
 
-	public ChannelAnnouncement(String name) {
-		this(UUID.randomUUID(), Instant.now(), name);
+	public ChannelAnnouncement(String name, String description) {
+		this(UUID.randomUUID(), Instant.now(), name, description);
 	}
 
-	private ChannelAnnouncement(UUID channelId, Instant lastUpdate, String name) {
-		super(channelId, lastUpdate, name);
+	private ChannelAnnouncement(UUID channelId, Instant lastUpdate, String name, String description) {
+		super(channelId, lastUpdate, name, description);
 		mDefaultSettings.messagesPlaySound(true);
 		mDefaultSettings.addSound(Sound.ENTITY_PLAYER_LEVELUP, 1, 0.5f);
 	}
@@ -94,10 +94,11 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 				}
 
 				String channelName = args.getByArgument(channelArg);
+				String description = mUnsetDescription;
 				ChannelAnnouncement newChannel;
 
 				try {
-					newChannel = new ChannelAnnouncement(channelName);
+					newChannel = new ChannelAnnouncement(channelName, description);
 					Boolean autoJoin = args.getByArgument(autoJoinArg);
 					if (autoJoin != null) {
 						newChannel.setAutoJoin(autoJoin);
@@ -250,6 +251,7 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()

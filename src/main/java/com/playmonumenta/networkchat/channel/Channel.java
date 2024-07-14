@@ -26,15 +26,18 @@ public abstract class Channel {
 	protected final UUID mId;
 	protected Instant mLastUpdate;
 	protected String mName;
+	protected String mDescription;
+	protected static String mUnsetDescription = "<gray>Description unset.";
 	protected @Nullable TextColor mMessageColor = null;
 	protected ChannelSettings mDefaultSettings;
 	protected ChannelAccess mDefaultAccess;
 	protected final Map<UUID, ChannelAccess> mPlayerAccess;
 
-	protected Channel(UUID channelId, Instant lastUpdate, String name) {
+	protected Channel(UUID channelId, Instant lastUpdate, String name, String description) {
 		mId = channelId;
 		mLastUpdate = lastUpdate;
 		mName = name;
+		mDescription = description;
 		mDefaultSettings = new ChannelSettings();
 		mDefaultAccess = new ChannelAccess();
 		mPlayerAccess = new HashMap<>();
@@ -65,6 +68,7 @@ public abstract class Channel {
 			mLastUpdate = Instant.now();
 		}
 		JsonPrimitive namePrimitive = channelJson.getAsJsonPrimitive("name");
+		JsonPrimitive descriptionPrimitive = channelJson.getAsJsonPrimitive("description");
 		if (namePrimitive != null) {
 			mName = namePrimitive.getAsString();
 		} else if (requireName) {
@@ -73,6 +77,7 @@ public abstract class Channel {
 			mName = "Missing_Name_" + mId;
 		}
 		mPlayerAccess = new HashMap<>();
+		mDescription = descriptionPrimitive.getAsString();
 
 		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
 		if (messageColorJson != null && messageColorJson.isString()) {
@@ -155,6 +160,7 @@ public abstract class Channel {
 		result.addProperty("uuid", mId.toString());
 		result.addProperty("lastUpdate", mLastUpdate.toEpochMilli());
 		result.addProperty("name", mName);
+		result.addProperty("description", mDescription);
 		if (mMessageColor != null) {
 			result.addProperty("messageColor", MessagingUtils.colorToString(mMessageColor));
 		}
@@ -190,9 +196,17 @@ public abstract class Channel {
 		mName = name;
 	}
 
+	public void setDescription(String description) throws WrapperCommandSyntaxException {
+		mDescription = description;
+	}
+
 	// Return this channel's name
 	public String getName() {
 		return mName;
+	}
+
+	public String getDescription() {
+		return mDescription;
 	}
 
 	public String getFriendlyName() {

@@ -37,13 +37,13 @@ public class ChannelTeam extends Channel {
 
 	private final String mTeamName;
 
-	private ChannelTeam(UUID channelId, Instant lastUpdate, String teamName) {
-		super(channelId, lastUpdate, "Team_" + teamName);
+	private ChannelTeam(UUID channelId, Instant lastUpdate, String teamName, String description) {
+		super(channelId, lastUpdate, "Team_" + teamName, description);
 		mTeamName = teamName;
 	}
 
-	public ChannelTeam(String teamName) {
-		this(UUID.randomUUID(), Instant.now(), teamName);
+	public ChannelTeam(String teamName, String description) {
+		this(UUID.randomUUID(), Instant.now(), teamName, description);
 	}
 
 	protected ChannelTeam(JsonObject channelJson) throws Exception {
@@ -97,7 +97,8 @@ public class ChannelTeam extends Channel {
 			Channel channel = ChannelManager.getChannel("Team_" + teamName);
 			if (channel == null) {
 				try {
-					channel = new ChannelTeam(teamName);
+					String description = mUnsetDescription;
+					channel = new ChannelTeam(teamName, description);
 				} catch (Exception e) {
 					throw CommandUtils.fail(sender, "Could not create new team channel: Could not connect to RabbitMQ.");
 				}
@@ -143,7 +144,8 @@ public class ChannelTeam extends Channel {
 			Channel channel = ChannelManager.getChannel("Team_" + teamName);
 			if (channel == null) {
 				try {
-					channel = new ChannelTeam(teamName);
+					String description = mUnsetDescription;
+					channel = new ChannelTeam(teamName, description);
 				} catch (Exception e) {
 					throw CommandUtils.fail(sender, "Could not create new team channel: Could not connect to RabbitMQ.");
 				}
@@ -358,7 +360,9 @@ public class ChannelTeam extends Channel {
 		if (prefix == null) {
 			prefix = "";
 		}
-		prefix = prefix.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
+		prefix = prefix
+			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)
+			.replace("<channel_description>", mDescription)) + " ";
 
 		return Component.empty()
 			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix,
