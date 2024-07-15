@@ -41,21 +41,21 @@ public class ItemHoverReplacement extends InlineReplacement {
 		super("Item Hover",
 			"(?<=^|[^\\\\])<(mainhand|offhand)>",
 			"itemhover");
-		mReplacements.add(Pair.of(mMainhandRegex, sender -> {
+		addHandler(mMainhandRegex, sender -> {
 			if (sender instanceof Player player
 				&& !BANNED_MATERIALS.contains(player.getInventory().getItemInMainHand().getType())) {
 				ItemStack item = player.getInventory().getItemInMainHand();
 				return item.displayName().hoverEvent(item);
 			}
 			return Component.text("<mainhand>");
-		}));
-		mReplacements.add(Pair.of(mOffhandRegex, sender -> {
+		});
+		addHandler(mOffhandRegex, sender -> {
 			if (sender instanceof Player player
 				&& !BANNED_MATERIALS.contains(player.getInventory().getItemInOffHand().getType())) {
 				ItemStack item = player.getInventory().getItemInOffHand();
 				return item.displayName().hoverEvent(item);
 			}
 			return Component.text("<offhand>");
-		}));
+		});
 	}
 }

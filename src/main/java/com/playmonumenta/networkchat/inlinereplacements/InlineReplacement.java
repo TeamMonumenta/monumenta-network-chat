@@ -20,7 +20,7 @@ public class InlineReplacement {
 	public String mPermission;
 
 	//List of replacements, each of which is a pair of regex and a function that takes
-	protected List<Pair<String, Function<CommandSender, Component>>> mReplacements = new ArrayList<>();
+	private List<Pair<String, Function<CommandSender, Component>>> mReplacements = new ArrayList<>();
 
 	public boolean mRequirePlayer = true;
 
@@ -49,4 +49,7 @@ public class InlineReplacement {
 		return false;
 	}
 
+	protected void addHandler(String key, Function<CommandSender, Component> str) {
+		mReplacements.add(Pair.of(key, str));
+	}
 }

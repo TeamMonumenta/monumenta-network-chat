@@ -44,7 +44,7 @@ public class EquipmentHoverReplacement extends InlineReplacement {
 		super("Equipment Hover",
 			"(?<=^|[^\\\\])<(equipment)>",
 			"equipmenthover");
-		mReplacements.add(Pair.of(mEquipmentRegex, sender -> {
+		addHandler(mEquipmentRegex, sender -> {
 			if (sender instanceof Player player
 				&& !BANNED_MATERIALS.contains(player.getInventory().getItemInMainHand().getType())
 				&& !BANNED_MATERIALS.contains(player.getInventory().getItemInOffHand().getType())) {
@@ -63,6 +63,6 @@ public class EquipmentHoverReplacement extends InlineReplacement {
 				return Component.text("EQUIPMENT").decoration(TextDecoration.BOLD, true).hoverEvent(item);
 			}
 			return Component.text("<equipment>");
-		}));
+		});
 	}
 }
