@@ -9,12 +9,22 @@ import org.bukkit.command.CommandSender;
 
 
 public class ReplacementsManager {
-	public List<InlineReplacement> mReplacements = new ArrayList<>();
+	private static ReplacementsManager INSTANCE = new ReplacementsManager();
 
-	public ReplacementsManager() {
-		mReplacements.add(new ItemHoverReplacement());
-		mReplacements.add(new DiceRollReplacement());
-		mReplacements.add(new EquipmentHoverReplacement());
+	public ReplacementsManager getInstance() {
+		return INSTANCE;
+	}
+
+	private List<InlineReplacement> mReplacements = new ArrayList<>();
+
+	private ReplacementsManager() {
+		registerReplacement(new ItemHoverReplacement());
+		registerReplacement(new DiceRollReplacement());
+		registerReplacement(new EquipmentHoverReplacement());
+	}
+
+	public void registerReplacement(InlineReplacement replacement) {
+		mReplacements.add(replacement);
 	}
 
 	public Component run(CommandSender sender, Component input) {
