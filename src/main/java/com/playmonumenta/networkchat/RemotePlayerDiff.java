@@ -136,7 +136,7 @@ public class RemotePlayerDiff {
 		}
 	}
 
-	public static final int TIME_LIMIT_TICKS = 200;
+	public static final int TIME_LIMIT_TICKS = 100;
 
 	private static final List<DiffDeadline> mUpcomingDeadlines = new ArrayList<>();
 	private static final Map<UUID, DiffDeadline> mDeadlinesByPlayer = new HashMap<>();

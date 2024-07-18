@@ -17,6 +17,7 @@ public class ChatPlayerRefreshCommand {
 		ChatCommand.getBaseCommand()
 			.withArguments(new LiteralArgument("player"))
 			.withArguments(new LiteralArgument("refresh"))
+			.withPermission("networkchat.player.refresh")
 			.executesNative((sender, args) -> {
 				CommandSender callee = CommandUtils.getCallee(sender);
 				if (!(callee instanceof Player target)) {
@@ -33,6 +34,7 @@ public class ChatPlayerRefreshCommand {
 			.withArguments(new LiteralArgument("player"))
 			.withArguments(new LiteralArgument("refresh"))
 			.withArguments(playersArg)
+			.withPermission("networkchat.player.refresh")
 			.executesNative((sender, args) -> {
 				@SuppressWarnings("unchecked")
 				Collection<Player> players = args.getByArgument(playersArg);
