@@ -270,6 +270,7 @@ public class ChannelLocal extends Channel implements ChannelAutoJoin, ChannelPer
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()

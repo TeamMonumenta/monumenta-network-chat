@@ -358,7 +358,9 @@ public class ChannelTeam extends Channel {
 		if (prefix == null) {
 			prefix = "";
 		}
-		prefix = prefix.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
+		prefix = prefix
+			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)
+			.replace("<channel_description>", mDescription)) + " ";
 
 		return Component.empty()
 			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix,

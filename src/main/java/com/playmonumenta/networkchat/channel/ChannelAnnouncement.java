@@ -250,6 +250,7 @@ public class ChannelAnnouncement extends Channel implements ChannelAutoJoin, Cha
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()

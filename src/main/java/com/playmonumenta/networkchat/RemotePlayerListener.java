@@ -34,7 +34,6 @@ public class RemotePlayerListener implements Listener {
 	private static final Map<UUID, Component> mPlayerComponents = new HashMap<>();
 
 	private RemotePlayerListener() {
-
 	}
 
 	public static RemotePlayerListener getInstance() {

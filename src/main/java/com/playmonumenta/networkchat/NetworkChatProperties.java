@@ -18,6 +18,7 @@ public class NetworkChatProperties {
 	private boolean mChatCommandCreateEnabled = true;
 	private boolean mChatCommandModifyEnabled = true;
 	private boolean mChatCommandDeleteEnabled = true;
+	private boolean mChatCommandDescriptionEnabled = true;
 	private boolean mChatRequiresPlayer = false;
 	private boolean mSudoEnabled = false;
 
@@ -48,6 +49,10 @@ public class NetworkChatProperties {
 		return getInstance().mChatCommandDeleteEnabled;
 	}
 
+	public static boolean getChatCommandDescriptionEnabled() {
+		return getInstance().mChatCommandDescriptionEnabled;
+	}
+
 	public static boolean getChatRequiresPlayer() {
 		return getInstance().mChatRequiresPlayer;
 	}
@@ -70,6 +75,10 @@ public class NetworkChatProperties {
 
 		if (config.isBoolean("ChatCommandDelete")) {
 			mChatCommandDeleteEnabled = config.getBoolean("ChatCommandDelete", mChatCommandDeleteEnabled);
+		}
+
+		if (config.isBoolean("ChatCommandDescription")) {
+			mChatCommandDescriptionEnabled = config.getBoolean("ChatCommandDescription", mChatCommandDescriptionEnabled);
 		}
 
 		if (config.isBoolean("ChatRequiresPlayer")) {
@@ -98,6 +107,7 @@ public class NetworkChatProperties {
 		out.add("mChatCommandCreateEnabled = " + mChatCommandCreateEnabled);
 		out.add("mChatCommandModifyEnabled = " + mChatCommandModifyEnabled);
 		out.add("mChatCommandDeleteEnabled = " + mChatCommandDeleteEnabled);
+		out.add("mChatCommandDescriptionEnabled = " + mChatCommandDescriptionEnabled);
 		out.add("mChatRequiresPlayer = " + mChatRequiresPlayer);
 		out.add("mSudoEnabled = " + mSudoEnabled);
 
@@ -134,6 +144,10 @@ public class NetworkChatProperties {
 
 		if (!config.contains("ChatCommandDelete")) {
 			config.set("ChatCommandDelete", mChatCommandDeleteEnabled);
+		}
+
+		if (!config.contains("ChatCommandDescription")) {
+			config.set("ChatCommandDescription", mChatCommandDescriptionEnabled);
 		}
 
 		if (!config.contains("ChatRequiresPlayer")) {

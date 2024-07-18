@@ -272,6 +272,16 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		return getName(mParticipants);
 	}
 
+	@Override
+	public void setDescription(String description) throws WrapperCommandSyntaxException {
+		throw CommandAPI.failWithString("Whisper channels may not be given a description.");
+	}
+
+	@Override
+	public String getDescription() {
+		return "Whisper channels cannot have a description.";
+	}
+
 	public static String getName(Collection<UUID> participants) {
 		List<UUID> participantsList = new ArrayList<>(participants);
 		if (participantsList.size() == 1) {
