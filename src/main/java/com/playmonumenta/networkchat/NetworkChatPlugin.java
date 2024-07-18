@@ -41,13 +41,20 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_COLORS_KEY = "message_colors";
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
+	private static final String REDIS_CHAT_MOD_LOG_KEY = "chat_mod_log_command";
 
 	private static @Nullable NetworkChatPlugin INSTANCE = null;
 	private @Nullable CustomLogger mLogger = null;
+
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
+	private static final String mDefaultChatModLogCommand
+		= "auditlogchatmod <moderator> <details>";
+
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
+	private static String mChatModLogCommand = mDefaultChatModLogCommand;
+
 	private static ChatFilter mGlobalChatFilter = new ChatFilter();
 	private static final ReplacementsManager mReplacementsManager = new ReplacementsManager();
 
@@ -172,6 +179,15 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			}
 			return dataStr;
 		});
+
+		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_CHAT_MOD_LOG_KEY)
+			.thenApply(dataStr -> {
+				if (dataStr != null) {
+					Bukkit.getServer().getScheduler().runTask(INSTANCE,
+						() -> mChatModLogCommand = dataStr);
+				}
+				return dataStr;
+			});
 	}
 
 	@Override
@@ -296,6 +312,18 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			RemotePlayerManager.refreshLocalPlayers();
 			RemotePlayerListener.refreshLocalPlayers();
 		}
+	}
+
+	public static void logModChatAction(String moderator, String details) {
+		String command = mChatModLogCommand;
+		if (command.isBlank()) {
+			return;
+		}
+		String finishedCommand = command
+			.replace("<moderator>", moderator)
+			.replace("<details>", details);
+		Bukkit.getScheduler().runTask(NetworkChatPlugin.getInstance(),
+			() -> Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand));
 	}
 
 	public static ChatFilter globalFilter() {

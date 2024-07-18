@@ -74,7 +74,7 @@ public class ChatMessageCommand {
 			throw CommandUtils.fail(sender, "Invalid message ID. Click a channel name to open the message GUI.");
 		}
 
-		MessageManager.deleteMessage(messageId);
+		MessageManager.deleteMessage(sender, messageId);
 		return 1;
 	}
 }
