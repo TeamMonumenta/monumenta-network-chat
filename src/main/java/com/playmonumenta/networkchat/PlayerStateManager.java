@@ -220,8 +220,10 @@ public class PlayerStateManager implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		if (NetworkChatPlugin.globalBadWordFilter().hasBadWord(player, Component.text(playerName))) {
-			event.kickMessage(Component.text("Please change your player name", NamedTextColor.RED));
-			event.setResult(PlayerLoginEvent.Result.KICK_OTHER);
+			event.disallow(
+				PlayerLoginEvent.Result.KICK_OTHER,
+				Component.text("Please change your player name", NamedTextColor.RED)
+			);
 		}
 	}
 
