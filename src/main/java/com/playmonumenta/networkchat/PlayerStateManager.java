@@ -40,6 +40,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -215,9 +216,20 @@ public class PlayerStateManager implements Listener {
 	}
 
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+	public void playerLoginEvent(PlayerLoginEvent event) {
+		Player player = event.getPlayer();
+		String playerName = player.getName();
+		if (NetworkChatPlugin.globalBadWordFilter().hasBadWord(player, Component.text(playerName))) {
+			event.kickMessage(Component.text("Please change your player name", NamedTextColor.RED));
+			event.setResult(PlayerLoginEvent.Result.KICK_OTHER);
+		}
+	}
+
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
+		String playerName = player.getName();
 
 		getPlayerChatHistory(playerId);
 
@@ -227,16 +239,16 @@ public class PlayerStateManager implements Listener {
 		if (data == null) {
 			playerState = new PlayerState(player);
 			mPlayerStates.put(playerId, playerState);
-			MMLog.info("Created new chat state for for player " + player.getName());
+			MMLog.info("Created new chat state for for player " + playerName);
 		} else {
 			try {
 				playerState = PlayerState.fromJson(player, data);
 				mPlayerStates.put(playerId, playerState);
-				MMLog.info("Loaded chat state for player " + player.getName());
+				MMLog.info("Loaded chat state for player " + playerName);
 			} catch (Exception e) {
 				playerState = new PlayerState(player);
 				mPlayerStates.put(playerId, playerState);
-				MMLog.warning("Player's chat state could not be loaded and was reset " + player.getName());
+				MMLog.warning("Player's chat state could not be loaded and was reset " + playerName);
 			}
 		}
 
