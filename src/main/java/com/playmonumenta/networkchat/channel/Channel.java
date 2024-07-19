@@ -67,7 +67,6 @@ public abstract class Channel {
 			mLastUpdate = Instant.now();
 		}
 		JsonPrimitive namePrimitive = channelJson.getAsJsonPrimitive("name");
-		JsonPrimitive descriptionPrimitive = channelJson.getAsJsonPrimitive("description");
 		if (namePrimitive != null) {
 			mName = namePrimitive.getAsString();
 		} else if (requireName) {
@@ -76,7 +75,11 @@ public abstract class Channel {
 			mName = "Missing_Name_" + mId;
 		}
 		mPlayerAccess = new HashMap<>();
-		mDescription = descriptionPrimitive.getAsString();
+
+		JsonPrimitive descriptionPrimitive = channelJson.getAsJsonPrimitive("description");
+		if (descriptionPrimitive != null) {
+			mDescription = descriptionPrimitive.getAsString();
+		}
 
 		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
 		if (messageColorJson != null && messageColorJson.isString()) {
