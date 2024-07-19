@@ -79,6 +79,8 @@ public abstract class Channel {
 		JsonPrimitive descriptionPrimitive = channelJson.getAsJsonPrimitive("description");
 		if (descriptionPrimitive != null) {
 			mDescription = descriptionPrimitive.getAsString();
+		} else {
+			mDescription = "";
 		}
 
 		JsonPrimitive messageColorJson = channelJson.getAsJsonPrimitive("messageColor");
