@@ -73,7 +73,7 @@ public class MessageManager implements Listener {
 	public static void deleteMessage(CommandSender moderator, UUID messageId) {
 		Message message = getMessage(messageId);
 		if (message == null) {
-			NetworkChatPlugin.logModChatAction(moderator.toString(), "deleted unknown message " + messageId);
+			NetworkChatPlugin.logModChatAction(moderator.getName(), "deleted unknown message " + messageId);
 		} else {
 			NamespacedKey senderType = message.getSenderType();
 			String senderTypeStr = (senderType == null) ? "console?" : senderType.toString();
@@ -81,7 +81,7 @@ public class MessageManager implements Listener {
 			String shownMessage = MessagingUtils.plainText (message.shownMessage(moderator));
 
 			NetworkChatPlugin.logModChatAction(
-				moderator.toString(),
+				moderator.getName(),
 				"deleted message from " +
 					senderTypeStr +
 					" " +
