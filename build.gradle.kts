@@ -44,7 +44,7 @@ dependencies {
     compileOnly("me.clip:placeholderapi:2.10.9")
     compileOnly("com.comphenix.protocol:ProtocolLib:5.0.0")
     errorprone("com.google.errorprone:error_prone_core:2.29.1")
-    errorprone("com.uber.nullaway:nullaway:0.9.5")
+    errorprone("com.uber.nullaway:nullaway:0.10.18")
 }
 
 group = "com.playmonumenta"
