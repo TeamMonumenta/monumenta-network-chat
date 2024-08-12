@@ -182,7 +182,7 @@ public class RemotePlayerListener implements Listener {
 		JsonObject playerJson = new JsonObject();
 
 		Component component;
-		if (event.mRemotePlayer.isHidden()) {
+		if (event.mRemotePlayer.isHidden() != null && event.mRemotePlayer.isHidden()) {
 			component = Component.text(playerName, NamedTextColor.RED)
 			.hoverEvent(Component.text("Offline", NamedTextColor.RED));
 		} else {
