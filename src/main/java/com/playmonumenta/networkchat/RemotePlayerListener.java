@@ -13,6 +13,7 @@ import com.playmonumenta.networkrelay.RemotePlayerMinecraft;
 import com.playmonumenta.networkrelay.RemotePlayerUnloadedEvent;
 import com.playmonumenta.networkrelay.RemotePlayerUpdatedEvent;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
+import java.net.http.WebSocket.Listener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -24,7 +25,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Nullable;
@@ -181,7 +181,13 @@ public class RemotePlayerListener implements Listener {
 
 		JsonObject playerJson = new JsonObject();
 
-		Component component = MessagingUtils.playerComponent(player);
+		Component component;
+		if (event.mRemotePlayer.isHidden()) {
+			component = Component.text(playerName, NamedTextColor.RED)
+			.hoverEvent(Component.text("Offline", NamedTextColor.RED));
+		} else {
+			component = MessagingUtils.playerComponent(player);
+		}
 		playerJson.add("playerComponent", MessagingUtils.toJson(component));
 
 		event.setPluginData(NetworkChatPlugin.getInstance().getName(), playerJson);
