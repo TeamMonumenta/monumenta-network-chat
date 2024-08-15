@@ -63,8 +63,18 @@ public class PlayerStateManager implements Listener {
 			public void onPacketSending(PacketEvent event) {
 				if (event.getPacketType().equals(PacketType.Play.Server.CHAT)) {
 					PacketContainer packet = event.getPacket();
-					ChatType chatType = packet.getChatTypes().getValues().get(0);
-					if (chatType.equals(ChatType.GAME_INFO)) {
+					/*
+					 * This should never have any more or less than one ChatType in 1.19.4.
+					 * However, we have ViaVersion server-side instead of proxy-side, and
+					 * are incorrectly interpreting 1.20 packets as 1.19.4 packets, since
+					 * 1.19.4 servers do not have access to 1.20 packet types.
+					 *
+					 * Unless we can get at the 1.19.4 version of these packets, we will be
+					 * missing any chat messages that are of other types, such as system messages
+					 * or hotbar messages that 1.19.4 previously bundled into the same packet type.
+					 */
+					List<ChatType> chatTypes = packet.getChatTypes().getValues();
+					if (!chatTypes.isEmpty() && chatTypes.get(0).equals(ChatType.GAME_INFO)) {
 						// Ignore hotbar messages
 						return;
 					}
