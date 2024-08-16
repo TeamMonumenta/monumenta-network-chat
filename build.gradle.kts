@@ -38,13 +38,13 @@ dependencies {
     implementation("org.apache.commons:commons-text:1.3")
     compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
     compileOnly("dev.jorel:commandapi-bukkit-core:9.4.1")
-    compileOnly("com.playmonumenta:monumenta-network-relay:2.7")
+    compileOnly("com.playmonumenta:monumenta-network-relay:2.8.2")
     compileOnly("com.playmonumenta:redissync:4.1:all")
     compileOnly("io.lettuce:lettuce-core:5.3.5.RELEASE")
     compileOnly("me.clip:placeholderapi:2.10.9")
     compileOnly("com.comphenix.protocol:ProtocolLib:5.0.0")
     errorprone("com.google.errorprone:error_prone_core:2.29.1")
-    errorprone("com.uber.nullaway:nullaway:0.9.5")
+    errorprone("com.uber.nullaway:nullaway:0.10.18")
 }
 
 group = "com.playmonumenta"

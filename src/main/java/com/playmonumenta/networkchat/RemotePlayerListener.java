@@ -181,7 +181,14 @@ public class RemotePlayerListener implements Listener {
 
 		JsonObject playerJson = new JsonObject();
 
-		Component component = MessagingUtils.playerComponent(player);
+		Component component;
+		boolean isHidden = event.mRemotePlayer.isHidden() == null || event.mRemotePlayer.isHidden();
+		if (isHidden) {
+			component = Component.text(playerName, NamedTextColor.RED)
+			.hoverEvent(Component.text("Offline", NamedTextColor.RED));
+		} else {
+			component = MessagingUtils.playerComponent(player);
+		}
 		playerJson.add("playerComponent", MessagingUtils.toJson(component));
 
 		event.setPluginData(NetworkChatPlugin.getInstance().getName(), playerJson);

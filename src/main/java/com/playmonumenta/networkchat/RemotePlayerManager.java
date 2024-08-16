@@ -299,6 +299,14 @@ public class RemotePlayerManager implements Listener {
 		}
 		MMLog.fine("Registering shard " + remoteShardName);
 		mRemotePlayersByShard.put(remoteShardName, new ConcurrentSkipListMap<>());
+		// force NetworkChat to refresh as well for desync purposes
+		try {
+			NetworkRelayAPI.sendExpiringMessage(remoteShardName, REFRESH_CHANNEL,
+				new JsonObject(),
+				NetworkChatPlugin.getMessageTtl());
+		} catch (Exception ex) {
+			MMLog.severe(() -> "Failed to broadcast to channel " + REFRESH_CHANNEL);
+		}
 	}
 
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
