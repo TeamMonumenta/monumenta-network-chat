@@ -27,7 +27,6 @@ repositories {
 	maven("https://oss.sonatype.org/content/repositories/snapshots/")
 	maven("https://libraries.minecraft.net")
 	maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
-	maven("https://repo.dmulloy2.net/repository/public/")
 	maven("https://repo.maven.apache.org/maven2/")
 	maven("https://repo.codemc.org/repository/maven-public/")
 	maven("https://maven.playmonumenta.com/releases/")
