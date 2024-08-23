@@ -93,7 +93,7 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mDefaultMessageFormats.put("sender", "<sender_name>");
 
 		mDefaultMessageColors.put(ChannelAnnouncement.CHANNEL_CLASS_ID, NamedTextColor.RED);
-		mDefaultMessageFormats.put(ChannelAnnouncement.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<gray><<channel_color><channel_name><gray>> <channel_description>\\n<dark_gray>Type: Announcement Channel.\\nClick to open this channel's settings in a GUI.\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
+		mDefaultMessageFormats.put(ChannelAnnouncement.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<gray><<channel_color><channel_name><gray>> <channel_description>\\n<dark_gray>Type: Announcement Channel.\\nClick to open this channel's settings in a GUI.\">\\<<channel_color><channel_name><gray>></hover></click> <gray>»");
 		mDefaultMessageColors.put(ChannelGlobal.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
 		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<gray><<channel_color><channel_name><gray>> <channel_description>\\n<dark_gray>Type: Global Channel.\\nClick to open this channel's settings in a GUI.\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelLocal.CHANNEL_CLASS_ID, NamedTextColor.YELLOW);
