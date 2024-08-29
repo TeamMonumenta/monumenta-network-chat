@@ -1,11 +1,14 @@
 package com.playmonumenta.networkchat.commands.chat;
 
 import com.playmonumenta.networkchat.NetworkChatPlugin;
+import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import java.io.BufferedReader;
@@ -36,6 +39,10 @@ public class ChatHelpCommand {
 	}
 
 	public static void register(NetworkChatPlugin plugin, final @Nullable ZipFile zip) {
+		if (NetworkChatProperties.getReplaceHelpCommand()) {
+			CommandAPI.unregister("help", true);
+		}
+
 		// Start loading entries for help command
 		final HelpTreeNode helpTree = new HelpTreeNode();
 
@@ -102,11 +109,10 @@ public class ChatHelpCommand {
 
 	private static void registerHelpCommandNode(final @Nullable ZipFile zip, final List<String> argStrings, final HelpTreeNode node) {
 		List<Argument<?>> arguments = new ArrayList<>();
-		arguments.add(new LiteralArgument("help"));
 		for (String arg : argStrings) {
 			arguments.add(new LiteralArgument(arg));
 		}
-		ChatCommand.getBaseCommand()
+		CommandAPICommand helpCommand = new CommandAPICommand("help")
 			.withArguments(arguments)
 			.executesNative((sender, args) -> {
 				if (CommandUtils.checkSudoCommandDisallowed(sender)) {
@@ -176,7 +182,12 @@ public class ChatHelpCommand {
 						.clickEvent(ClickEvent.runCommand(childCmdBuilder.toString())));
 				}
 				return 1;
-			})
+			});
+		if (NetworkChatProperties.getReplaceHelpCommand()) {
+			helpCommand.register();
+		}
+		ChatCommand.getBaseCommand()
+			.withSubcommand(helpCommand)
 			.register();
 
 		for (Map.Entry<String, HelpTreeNode> entry : node.entrySet()) {

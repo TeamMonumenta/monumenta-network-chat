@@ -15,10 +15,10 @@ public class NetworkChatProperties {
 
 	private static @Nullable NetworkChatProperties INSTANCE = null;
 
+	private boolean mReplaceHelpCommand = false;
 	private boolean mChatCommandCreateEnabled = true;
 	private boolean mChatCommandModifyEnabled = true;
 	private boolean mChatCommandDeleteEnabled = true;
-	private boolean mChatCommandDescriptionEnabled = true;
 	private boolean mChatRequiresPlayer = false;
 	private boolean mSudoEnabled = false;
 
@@ -37,6 +37,10 @@ public class NetworkChatProperties {
 		return getInstance().mSudoEnabled;
 	}
 
+	public static boolean getReplaceHelpCommand() {
+		return getInstance().mReplaceHelpCommand;
+	}
+
 	public static boolean getChatCommandCreateEnabled() {
 		return getInstance().mChatCommandCreateEnabled;
 	}
@@ -47,10 +51,6 @@ public class NetworkChatProperties {
 
 	public static boolean getChatCommandDeleteEnabled() {
 		return getInstance().mChatCommandDeleteEnabled;
-	}
-
-	public static boolean getChatCommandDescriptionEnabled() {
-		return getInstance().mChatCommandDescriptionEnabled;
 	}
 
 	public static boolean getChatRequiresPlayer() {
@@ -65,6 +65,10 @@ public class NetworkChatProperties {
 		File configFile = new File(plugin.getDataFolder(), "config.yml");
 		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
+		if (config.isBoolean("ReplaceHelpCommand")) {
+			mReplaceHelpCommand = config.getBoolean("ReplaceHelpCommand", mReplaceHelpCommand);
+		}
+
 		if (config.isBoolean("ChatCommandCreate")) {
 			mChatCommandCreateEnabled = config.getBoolean("ChatCommandCreate", mChatCommandCreateEnabled);
 		}
@@ -75,10 +79,6 @@ public class NetworkChatProperties {
 
 		if (config.isBoolean("ChatCommandDelete")) {
 			mChatCommandDeleteEnabled = config.getBoolean("ChatCommandDelete", mChatCommandDeleteEnabled);
-		}
-
-		if (config.isBoolean("ChatCommandDescription")) {
-			mChatCommandDescriptionEnabled = config.getBoolean("ChatCommandDescription", mChatCommandDescriptionEnabled);
 		}
 
 		if (config.isBoolean("ChatRequiresPlayer")) {
@@ -104,10 +104,10 @@ public class NetworkChatProperties {
 	private List<String> toDisplay() {
 		List<String> out = new ArrayList<>();
 
+		out.add("mReplaceHelpCommand = " + mReplaceHelpCommand);
 		out.add("mChatCommandCreateEnabled = " + mChatCommandCreateEnabled);
 		out.add("mChatCommandModifyEnabled = " + mChatCommandModifyEnabled);
 		out.add("mChatCommandDeleteEnabled = " + mChatCommandDeleteEnabled);
-		out.add("mChatCommandDescriptionEnabled = " + mChatCommandDescriptionEnabled);
 		out.add("mChatRequiresPlayer = " + mChatRequiresPlayer);
 		out.add("mSudoEnabled = " + mSudoEnabled);
 
@@ -134,6 +134,10 @@ public class NetworkChatProperties {
 
 		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
+		if (!config.contains("ReplaceHelpCommand")) {
+			config.set("ReplaceHelpCommand", mReplaceHelpCommand);
+		}
+
 		if (!config.contains("ChatCommandCreate")) {
 			config.set("ChatCommandCreate", mChatCommandCreateEnabled);
 		}
@@ -144,10 +148,6 @@ public class NetworkChatProperties {
 
 		if (!config.contains("ChatCommandDelete")) {
 			config.set("ChatCommandDelete", mChatCommandDeleteEnabled);
-		}
-
-		if (!config.contains("ChatCommandDescription")) {
-			config.set("ChatCommandDescription", mChatCommandDescriptionEnabled);
 		}
 
 		if (!config.contains("ChatRequiresPlayer")) {

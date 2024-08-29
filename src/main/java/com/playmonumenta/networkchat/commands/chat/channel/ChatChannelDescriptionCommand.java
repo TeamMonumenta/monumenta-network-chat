@@ -14,7 +14,7 @@ import org.bukkit.command.CommandSender;
 
 public class ChatChannelDescriptionCommand {
 	public static void register() {
-		if (NetworkChatProperties.getChatCommandDescriptionEnabled()) {
+		if (NetworkChatProperties.getChatCommandModifyEnabled()) {
 			Argument<String> newChannelDescription = ChannelManager.getChannelDescriptionArgument("New Channel Description");
 			Argument<String> channelName = ChannelManager.getChannelNameArgument("Channel Name", ChannelPredicate.MAY_MANAGE);
 
