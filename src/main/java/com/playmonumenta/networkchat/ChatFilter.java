@@ -15,6 +15,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
@@ -276,7 +277,7 @@ public class ChatFilter {
 					command = command.replace("@S", sender.getName());
 					if (callee instanceof Entity entity) {
 						senderType = entity.getType().key().toString();
-						senderUuid = entity.getUniqueId().toString().toLowerCase();
+						senderUuid = entity.getUniqueId().toString().toLowerCase(Locale.ENGLISH);
 					} else if (callee instanceof CommandBlock commandBlock) {
 						senderType = commandBlock.getType().key().toString();
 					} else {

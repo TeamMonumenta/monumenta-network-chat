@@ -8,7 +8,6 @@ import com.playmonumenta.networkchat.MessageManager;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
-import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.commands.ChatCommand;
@@ -68,7 +67,7 @@ public class ChannelParty extends Channel implements ChannelInviteOnly {
 			.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID)));
 		Argument<String> channelListenArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
 			.and(ChannelPredicate.channelType(CHANNEL_CLASS_ID)));
-		Argument<String> playerArg = new StringArgument("Player").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES);
+		Argument<String> playerArg = new StringArgument("Player").replaceSuggestions(ChatCommand.SUGGESTIONS_VISIBLE_PLAYER_NAMES);
 
 		ChatCommand.getBaseCommand()
 			.withArguments(newArg)

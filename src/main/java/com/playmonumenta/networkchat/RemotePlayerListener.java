@@ -131,24 +131,20 @@ public class RemotePlayerListener implements Listener {
 		JsonObject chatMinecraftData = minecraftPlayerData.getPluginData(pluginName);
 		if (chatMinecraftData == null) {
 			unsetPlayerComponent(minecraftPlayerData);
-			RemotePlayerDiff.update(playerUuid, "missing chat data", true);
 			return;
 		}
 		JsonElement componentJson = chatMinecraftData.get("playerComponent");
 		if (componentJson == null) {
 			unsetPlayerComponent(minecraftPlayerData);
-			RemotePlayerDiff.update(playerUuid, "missing player component", true);
 			return;
 		}
 		Component playerComponent = MessagingUtils.fromJson(componentJson);
 		mPlayerComponents.put(playerUuid, playerComponent);
-		RemotePlayerDiff.update(playerUuid, "update/load", true);
 	}
 
 	private static void unsetPlayerComponent(RemotePlayerMinecraft minecraftPlayerData) {
 		UUID playerUuid = minecraftPlayerData.getUuid();
 		mPlayerComponents.remove(playerUuid);
-		RemotePlayerDiff.update(playerUuid, "unload", true);
 	}
 
 	// Player ran a command
@@ -182,7 +178,8 @@ public class RemotePlayerListener implements Listener {
 		JsonObject playerJson = new JsonObject();
 
 		Component component;
-		boolean isHidden = event.mRemotePlayer.isHidden() == null || event.mRemotePlayer.isHidden();
+		Boolean nullableIsHidden = event.mRemotePlayer.isHidden();
+		boolean isHidden = nullableIsHidden == null || nullableIsHidden;
 		if (isHidden) {
 			component = Component.text(playerName, NamedTextColor.RED)
 			.hoverEvent(Component.text("Offline", NamedTextColor.RED));

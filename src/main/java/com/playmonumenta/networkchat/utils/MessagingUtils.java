@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
-import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.networkchat.RemotePlayerListener;
 import com.playmonumenta.networkchat.tagresolvers.OptSpace;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import java.io.PrintWriter;
@@ -151,7 +151,7 @@ public class MessagingUtils {
 
 	public static Component entityComponent(NamespacedKey type, UUID id, @Nullable Component name) {
 		if (type.toString().equals("minecraft:player")) {
-			return RemotePlayerManager.getPlayerComponent(id);
+			return RemotePlayerListener.getPlayerComponent(id);
 		}
 
 		Component entityName = name;
