@@ -69,6 +69,7 @@ public class RemotePlayerListener implements Listener {
 	}
 
 	public static void showOnlinePlayers(Audience audience) {
+		String localShardName = NetworkChatPlugin.getShardName();
 		boolean lightRow = true;
 		boolean firstName;
 		// Sorts as it goes
@@ -78,18 +79,17 @@ public class RemotePlayerListener implements Listener {
 
 		// Local first
 		shardPlayers = new ConcurrentSkipListMap<>();
-		for (Player player : Bukkit.getOnlinePlayers()) {
-			UUID playerUuid = player.getUniqueId();
-			RemotePlayerData remotePlayerData = RemotePlayerAPI.getRemotePlayer(playerUuid);
+		for (RemotePlayerData remotePlayerData : RemotePlayerAPI.getVisiblePlayersOnServer(localShardName)) {
+			UUID playerUuid = remotePlayerData.mUuid;
 			Component playerComponent = mPlayerComponents.get(playerUuid);
-			if (remotePlayerData == null || !remotePlayerData.isHidden() || playerComponent == null) {
+			if (remotePlayerData.isHidden() || playerComponent == null) {
 				continue;
 			}
 
 			shardPlayers.put(remotePlayerData.mName, playerComponent);
 		}
 		firstName = true;
-		Component line = Component.text(NetworkChatPlugin.getShardName() + ": ").color(NamedTextColor.BLUE);
+		Component line = Component.text(localShardName + ": ").color(NamedTextColor.BLUE);
 		for (Component playerComp : shardPlayers.values()) {
 			if (!firstName) {
 				line = line.append(Component.text(", "));
@@ -100,13 +100,19 @@ public class RemotePlayerListener implements Listener {
 		audience.sendMessage(line);
 
 		// Remote shards
-		shardPlayers.clear();
 		for (String remoteShardName : NetworkRelayAPI.getOnlineShardNames()) {
+			if (localShardName.equals(remoteShardName)) {
+				continue;
+			}
+			if (!"minecraft".equals(NetworkRelayAPI.getOnlineDestinationType(remoteShardName))) {
+				continue;
+			}
+			shardPlayers.clear();
 			lightRow = !lightRow;
 			for (RemotePlayerData remotePlayerData : RemotePlayerAPI.getVisiblePlayersOnServer(remoteShardName)) {
 				UUID playerUuid = remotePlayerData.mUuid;
 				Component playerComponent = mPlayerComponents.get(playerUuid);
-				if (playerComponent == null) {
+				if (remotePlayerData.isHidden() || playerComponent == null) {
 					continue;
 				}
 				String playerName = remotePlayerData.mName;
