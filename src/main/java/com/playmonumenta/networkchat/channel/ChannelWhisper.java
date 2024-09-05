@@ -7,13 +7,16 @@ import com.playmonumenta.networkchat.MessageManager;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
-import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.networkchat.RemotePlayerListener;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.channel.property.ChannelSettings;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import com.playmonumenta.networkrelay.RemotePlayerAPI;
+import com.playmonumenta.networkrelay.RemotePlayerData;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -75,7 +78,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	public static void registerNewChannelCommands() {
 		// Setting up new whisper channels will be done via /msg, /tell, /w, and similar,
 		// not through /chat new Blah whisper. The provided arguments are ignored.
-		Argument<String> recipientArg = new StringArgument("recipient").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES);
+		Argument<String> recipientArg = new StringArgument("recipient").replaceSuggestions(ChatCommand.SUGGESTIONS_VISIBLE_PLAYER_NAMES);
 		GreedyStringArgument messageArg = new GreedyStringArgument("message");
 
 		for (String command : WHISPER_COMMANDS) {
@@ -116,7 +119,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
-			UUID recipientUuid = RemotePlayerManager.getPlayerId(recipientName);
+			RemotePlayerData recipientData = RemotePlayerAPI.getRemotePlayer(recipientName);
+			UUID recipientUuid = recipientData == null ? null : recipientData.mUuid;
 			if (recipientUuid == null) {
 				throw CommandUtils.fail(sender, recipientName + " is not online.");
 			}
@@ -149,7 +153,8 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
-			UUID recipientUuid = RemotePlayerManager.getPlayerId(recipientName);
+			RemotePlayerData recipientData = RemotePlayerAPI.getRemotePlayer(recipientName);
+			UUID recipientUuid = recipientData == null ? null : recipientData.mUuid;
 			if (recipientUuid == null) {
 				throw CommandUtils.fail(sender, recipientName + " is not online.");
 			}
@@ -432,7 +437,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		UUID senderId = ((Player) sender).getUniqueId();
 		UUID receiverId = getOtherParticipant(senderId);
 
-		if (!RemotePlayerManager.isPlayerVisible(receiverId)) {
+		if (!RemotePlayerAPI.isPlayerVisible(receiverId)) {
 			sender.sendMessage(Component.text("That player is not online.", NamedTextColor.RED));
 		}
 
@@ -506,7 +511,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		Component receiverComp;
 		try {
 			UUID receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
-			receiverComp = RemotePlayerManager.getPlayerComponent(receiverUuid);
+			receiverComp = RemotePlayerListener.getPlayerComponent(receiverUuid);
 		} catch (Exception e) {
 			MMLog.warning("Could not get receiver from Message; reason: " + e.getMessage());
 			receiverComp = Component.text("ErrorLoadingName");

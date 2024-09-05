@@ -2,10 +2,10 @@ package com.playmonumenta.networkchat.commands.chat.player;
 
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
-import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import com.playmonumenta.networkrelay.RemotePlayerAPI;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
@@ -30,7 +30,7 @@ public class ChatPlayerIgnoreCommand {
 				if (sender.hasPermission(ChatCommand.LIST_OFFLINE_PLAYERS_PERM)) {
 					return MonumentaRedisSyncAPI.getAllCachedPlayerNames().stream().filter(player -> !player.equals(selfStr)).toArray(String[]::new);
 				}
-				return RemotePlayerManager.visiblePlayerNames().stream().filter(player -> !player.equals(selfStr)).toArray(String[]::new);
+				return RemotePlayerAPI.getVisiblePlayerNames().stream().filter(player -> !player.equals(selfStr)).toArray(String[]::new);
 			}));
 
 		Argument<String> nameArg2 = new StringArgument("name")
@@ -69,7 +69,7 @@ public class ChatPlayerIgnoreCommand {
 						throw CommandUtils.fail(sender, MessagingUtils.noChatStateStr(target));
 					}
 					String ignoredName = args.getByArgument(nameArg1);
-					if (ignoredName.equals(target.getName())) {
+					if (target.getName().equals(ignoredName)) {
 						throw CommandUtils.fail(sender, "You cannot ignore yourself.");
 					}
 					@Nullable UUID ignoredId = MonumentaRedisSyncAPI.cachedNameToUuid(ignoredName);

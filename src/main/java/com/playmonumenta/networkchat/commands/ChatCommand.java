@@ -1,7 +1,6 @@
 package com.playmonumenta.networkchat.commands;
 
 import com.playmonumenta.networkchat.NetworkChatPlugin;
-import com.playmonumenta.networkchat.RemotePlayerManager;
 import com.playmonumenta.networkchat.commands.chat.ChatChannelCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatGuiCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatHelpCommand;
@@ -15,6 +14,7 @@ import com.playmonumenta.networkchat.commands.chat.ChatPlayerCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatReloadCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatSayCommand;
 import com.playmonumenta.networkchat.commands.chat.ChatServerCommand;
+import com.playmonumenta.networkrelay.RemotePlayerAPI;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
@@ -31,8 +31,10 @@ public class ChatCommand {
 		if (info.sender().hasPermission(LIST_OFFLINE_PLAYERS_PERM)) {
 			return MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new);
 		}
-		return RemotePlayerManager.visiblePlayerNames().toArray(new String[0]);
+		return RemotePlayerAPI.getVisiblePlayerNames().toArray(new String[0]);
 	});
+	public static final ArgumentSuggestions<CommandSender> SUGGESTIONS_VISIBLE_PLAYER_NAMES
+		= ArgumentSuggestions.strings(info -> RemotePlayerAPI.getVisiblePlayerNames().toArray(new String[0]));
 
 	public static void register(NetworkChatPlugin plugin, final @Nullable ZipFile zip) {
 		ChatHelpCommand.register(plugin, zip);

@@ -69,6 +69,7 @@ public class RemotePlayerListener implements Listener {
 	}
 
 	public static void showOnlinePlayers(Audience audience) {
+		String localShardName = NetworkChatPlugin.getShardName();
 		boolean lightRow = true;
 		boolean firstName;
 		// Sorts as it goes
@@ -78,18 +79,17 @@ public class RemotePlayerListener implements Listener {
 
 		// Local first
 		shardPlayers = new ConcurrentSkipListMap<>();
-		for (Player player : Bukkit.getOnlinePlayers()) {
-			UUID playerUuid = player.getUniqueId();
-			RemotePlayerData remotePlayerData = RemotePlayerAPI.getRemotePlayer(playerUuid);
+		for (RemotePlayerData remotePlayerData : RemotePlayerAPI.getVisiblePlayersOnServer(localShardName)) {
+			UUID playerUuid = remotePlayerData.mUuid;
 			Component playerComponent = mPlayerComponents.get(playerUuid);
-			if (remotePlayerData == null || !remotePlayerData.isHidden() || playerComponent == null) {
+			if (remotePlayerData.isHidden() || playerComponent == null) {
 				continue;
 			}
 
 			shardPlayers.put(remotePlayerData.mName, playerComponent);
 		}
 		firstName = true;
-		Component line = Component.text(NetworkChatPlugin.getShardName() + ": ").color(NamedTextColor.BLUE);
+		Component line = Component.text(localShardName + ": ").color(NamedTextColor.BLUE);
 		for (Component playerComp : shardPlayers.values()) {
 			if (!firstName) {
 				line = line.append(Component.text(", "));
@@ -100,13 +100,19 @@ public class RemotePlayerListener implements Listener {
 		audience.sendMessage(line);
 
 		// Remote shards
-		shardPlayers.clear();
 		for (String remoteShardName : NetworkRelayAPI.getOnlineShardNames()) {
+			if (localShardName.equals(remoteShardName)) {
+				continue;
+			}
+			if (!"minecraft".equals(NetworkRelayAPI.getOnlineDestinationType(remoteShardName))) {
+				continue;
+			}
+			shardPlayers.clear();
 			lightRow = !lightRow;
 			for (RemotePlayerData remotePlayerData : RemotePlayerAPI.getVisiblePlayersOnServer(remoteShardName)) {
 				UUID playerUuid = remotePlayerData.mUuid;
 				Component playerComponent = mPlayerComponents.get(playerUuid);
-				if (playerComponent == null) {
+				if (remotePlayerData.isHidden() || playerComponent == null) {
 					continue;
 				}
 				String playerName = remotePlayerData.mName;
@@ -131,24 +137,20 @@ public class RemotePlayerListener implements Listener {
 		JsonObject chatMinecraftData = minecraftPlayerData.getPluginData(pluginName);
 		if (chatMinecraftData == null) {
 			unsetPlayerComponent(minecraftPlayerData);
-			RemotePlayerDiff.update(playerUuid, "missing chat data", true);
 			return;
 		}
 		JsonElement componentJson = chatMinecraftData.get("playerComponent");
 		if (componentJson == null) {
 			unsetPlayerComponent(minecraftPlayerData);
-			RemotePlayerDiff.update(playerUuid, "missing player component", true);
 			return;
 		}
 		Component playerComponent = MessagingUtils.fromJson(componentJson);
 		mPlayerComponents.put(playerUuid, playerComponent);
-		RemotePlayerDiff.update(playerUuid, "update/load", true);
 	}
 
 	private static void unsetPlayerComponent(RemotePlayerMinecraft minecraftPlayerData) {
 		UUID playerUuid = minecraftPlayerData.getUuid();
 		mPlayerComponents.remove(playerUuid);
-		RemotePlayerDiff.update(playerUuid, "unload", true);
 	}
 
 	// Player ran a command
@@ -182,7 +184,8 @@ public class RemotePlayerListener implements Listener {
 		JsonObject playerJson = new JsonObject();
 
 		Component component;
-		boolean isHidden = event.mRemotePlayer.isHidden() == null || event.mRemotePlayer.isHidden();
+		Boolean nullableIsHidden = event.mRemotePlayer.isHidden();
+		boolean isHidden = nullableIsHidden == null || nullableIsHidden;
 		if (isHidden) {
 			component = Component.text(playerName, NamedTextColor.RED)
 			.hoverEvent(Component.text("Offline", NamedTextColor.RED));

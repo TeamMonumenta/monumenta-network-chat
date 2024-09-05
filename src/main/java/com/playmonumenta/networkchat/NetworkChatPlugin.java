@@ -137,7 +137,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		getServer().getPluginManager().registerEvents(MessageManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(RemotePlayerListener.getInstance(), this);
 		getServer().getPluginManager().registerEvents(PlayerStateManager.getInstance(), this);
-		getServer().getPluginManager().registerEvents(RemotePlayerManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(this, this);
 
 		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_MESSAGE_COLORS_KEY)
@@ -309,7 +308,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mMessageFormats.put(id, value);
 		saveFormats();
 		if (id.equals("player")) {
-			RemotePlayerManager.refreshLocalPlayers();
 			RemotePlayerListener.refreshLocalPlayers();
 		}
 	}
