@@ -150,7 +150,9 @@ public class ChatHelpCommand {
 						for (@Nullable String line; (line = helpFile.readLine()) != null; ) {
 							callee.sendMessage(Component.empty()
 								.color(NamedTextColor.GREEN)
-								.append(MessagingUtils.getSenderFmtMinimessage().deserialize(line)));
+								.append(MessagingUtils
+									.getSenderFmtMinimessage()
+									.deserialize(line.replace("\\n", "\n"))));
 						}
 					} catch (IOException ex) {
 						throw CommandUtils.fail(callee, "Failed to read all lines from help file. This shard may need to restart.");
