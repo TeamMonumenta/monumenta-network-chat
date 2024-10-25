@@ -15,8 +15,6 @@ import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import com.playmonumenta.networkrelay.RemotePlayerAPI;
-import com.playmonumenta.networkrelay.RemotePlayerData;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -119,10 +117,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
-			RemotePlayerData recipientData = RemotePlayerAPI.getRemotePlayer(recipientName);
-			UUID recipientUuid = recipientData == null ? null : recipientData.mUuid;
+			UUID recipientUuid = MonumentaRedisSyncAPI.cachedNameToUuid(recipientName);
 			if (recipientUuid == null) {
-				throw CommandUtils.fail(sender, recipientName + " is not online.");
+				throw CommandUtils.fail(sender, "Could not identify the player " + recipientName);
 			}
 
 			@Nullable PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
@@ -153,10 +150,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
-			RemotePlayerData recipientData = RemotePlayerAPI.getRemotePlayer(recipientName);
-			UUID recipientUuid = recipientData == null ? null : recipientData.mUuid;
+			UUID recipientUuid = MonumentaRedisSyncAPI.cachedNameToUuid(recipientName);
 			if (recipientUuid == null) {
-				throw CommandUtils.fail(sender, recipientName + " is not online.");
+				throw CommandUtils.fail(sender, "Could not identify the player " + recipientName);
 			}
 
 			senderState = PlayerStateManager.getPlayerState(sendingPlayer);
@@ -436,10 +432,6 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 
 		UUID senderId = ((Player) sender).getUniqueId();
 		UUID receiverId = getOtherParticipant(senderId);
-
-		if (!RemotePlayerAPI.isPlayerVisible(receiverId)) {
-			sender.sendMessage(Component.text("That player is not online.", NamedTextColor.RED));
-		}
 
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("receiver", receiverId.toString());
