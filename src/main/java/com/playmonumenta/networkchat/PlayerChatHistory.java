@@ -121,7 +121,14 @@ public class PlayerChatHistory {
 	// Re-show chat with deleted messages removed, even while paused.
 	public void refreshChat() {
 		mIsReplayingChat = true;
-		mSeenMessages.removeIf(Message::isDeleted);
+		mSeenMessages.removeIf(message -> {
+			if (message.senderIsPlayer() && mPlayerId.equals(message.getSenderId())) {
+				// Show deleted messages to the original sender
+				return false;
+			}
+
+			return message.isDeleted();
+		});
 
 		int messageCount = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
 		Component emptyMessage = Component.empty();

@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -59,15 +58,15 @@ public class Message implements AutoCloseable {
 	private boolean mIsDeleted = false;
 
 	private Message(UUID id,
-	                Instant instant,
-	                @Nullable UUID channelId,
-	                @Nullable UUID senderId,
-	                String senderName,
-	                @Nullable NamespacedKey senderType,
-	                boolean senderIsPlayer,
-	                Component senderComponent,
-	                @Nullable JsonObject extraData,
-	                Component message) {
+					Instant instant,
+					@Nullable UUID channelId,
+					@Nullable UUID senderId,
+					String senderName,
+					@Nullable NamespacedKey senderType,
+					boolean senderIsPlayer,
+					Component senderComponent,
+					@Nullable JsonObject extraData,
+					Component message) {
 		mId = id;
 		mInstant = instant;
 		mChannelId = channelId;
@@ -87,9 +86,9 @@ public class Message implements AutoCloseable {
 
 	// Normally called through a channel
 	protected static @Nullable Message createMessage(Channel channel,
-	                                                 CommandSender sender,
-	                                                 @Nullable JsonObject extraData,
-	                                                 Component message) throws WrapperCommandSyntaxException {
+													 CommandSender sender,
+													 @Nullable JsonObject extraData,
+													 Component message) throws WrapperCommandSyntaxException {
 		Message result;
 		CommandSender callee = CommandUtils.getCallee(sender);
 		Instant instant = Instant.now();
@@ -142,29 +141,29 @@ public class Message implements AutoCloseable {
 		result = new Message(UUID.randomUUID(),
 			instant,
 			channelId,
-		    senderId,
-		    sender.getName(),
-		    senderType,
-		    senderIsPlayer,
-		    senderComponent,
-		    extraData,
+			senderId,
+			sender.getName(),
+			senderType,
+			senderIsPlayer,
+			senderComponent,
+			extraData,
 			updatedMessage);
 		return result;
 	}
 
 	// Normally called through a channel
 	public static @Nullable Message createMessage(Channel channel,
-	                                       CommandSender sender,
-	                                       @Nullable JsonObject extraData,
-	                                       String message) throws WrapperCommandSyntaxException {
+												  CommandSender sender,
+												  @Nullable JsonObject extraData,
+												  String message) throws WrapperCommandSyntaxException {
 		Component messageComponent = MessagingUtils.getAllowedMiniMessage(sender).deserialize(message);
 		return createMessage(channel, sender, extraData, messageComponent);
 	}
 
 	// Raw, non-channel messages (use sparingly)
 	protected static Message createRawMessage(@Nullable UUID senderId,
-	                                          @Nullable JsonObject extraData,
-	                                          Component message) {
+											  @Nullable JsonObject extraData,
+											  Component message) {
 		UUID id = UUID.randomUUID();
 		Instant instant = Instant.now();
 		if (senderId != null) {
@@ -183,15 +182,15 @@ public class Message implements AutoCloseable {
 		String senderName = "";
 		Component senderComponent = Component.empty();
 		return new Message(id,
-		                   instant,
-		                   null,
-		                   senderId,
-		                   senderName,
-		                   senderType,
-		                   senderIsPlayer,
-		                   senderComponent,
-		                   extraData,
-		                   message);
+			instant,
+			null,
+			senderId,
+			senderName,
+			senderType,
+			senderIsPlayer,
+			senderComponent,
+			extraData,
+			message);
 	}
 
 	// For when receiving remote messages
@@ -262,16 +261,28 @@ public class Message implements AutoCloseable {
 			message = GsonComponentSerializer.gson().deserializeFromTree(messageJson);
 		}
 
-		return new Message(id,
-		                   instant,
-		                   channelId,
-		                   senderId,
-		                   senderName,
-		                   senderType,
-		                   senderIsPlayer,
-		                   senderComponent,
-		                   extraData,
-		                   message);
+		Message remoteMessage = new Message(
+			id,
+			instant,
+			channelId,
+			senderId,
+			senderName,
+			senderType,
+			senderIsPlayer,
+			senderComponent,
+			extraData,
+			message
+		);
+
+		if (
+			object.get("isDeleted") instanceof JsonPrimitive isDeletedPrimitive
+				&& isDeletedPrimitive.isBoolean()
+				&& isDeletedPrimitive.getAsBoolean()
+		) {
+			remoteMessage.mIsDeleted = true;
+		}
+
+		return remoteMessage;
 	}
 
 	protected JsonObject toJson() {
@@ -279,6 +290,7 @@ public class Message implements AutoCloseable {
 
 		object.addProperty("id", mId.toString());
 		object.addProperty("instant", mInstant.toEpochMilli());
+		object.addProperty("isDeleted", mIsDeleted);
 		if (mChannelId != null) {
 			object.addProperty("channelId", mChannelId.toString());
 		}
@@ -313,10 +325,6 @@ public class Message implements AutoCloseable {
 			return "/chat gui";
 		}
 		return "/chat gui message " + mId;
-	}
-
-	public ClickEvent getGuiClickEvent() {
-		return ClickEvent.runCommand(getGuiCommand());
 	}
 
 	public Instant getInstant() {
@@ -359,11 +367,16 @@ public class Message implements AutoCloseable {
 	}
 
 	public Component getMessage() {
+		if (mIsDeleted) {
+			return Component.text("")
+				.append(Component.text("[DELETED] ", NamedTextColor.DARK_RED, TextDecoration.BOLD))
+				.append(Component.text(MessagingUtils.plainText(mMessage), NamedTextColor.RED));
+		}
 		return mMessage;
 	}
 
 	public String getPlainMessage() {
-		return MessagingUtils.plainText(mMessage);
+		return MessagingUtils.plainText(getMessage());
 	}
 
 	public boolean isDeleted() {
@@ -372,9 +385,6 @@ public class Message implements AutoCloseable {
 
 	// Get the message as shown to a given recipient
 	public Component shownMessage(CommandSender recipient) {
-		if (mIsDeleted) {
-			return Component.text("[DELETED]", NamedTextColor.RED, TextDecoration.BOLD);
-		}
 		@Nullable Channel channel;
 		if (mChannelId == null) {
 			channel = null;
@@ -399,9 +409,6 @@ public class Message implements AutoCloseable {
 
 	// Must be called from PlayerState to allow pausing messages.
 	protected void showMessage(CommandSender recipient) {
-		if (mIsDeleted) {
-			return;
-		}
 		@Nullable Channel channel;
 		if (mChannelId == null) {
 			channel = null;
