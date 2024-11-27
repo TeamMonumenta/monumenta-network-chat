@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
@@ -78,7 +77,7 @@ public class MessageManager implements Listener {
 			NamespacedKey senderType = message.getSenderType();
 			String senderTypeStr = (senderType == null) ? "console?" : senderType.toString();
 			String sender = message.getSenderName();
-			String shownMessage = MessagingUtils.plainText (message.shownMessage(moderator));
+			String shownMessage = MessagingUtils.plainText(message.shownMessage(moderator));
 
 			NetworkChatPlugin.logModChatAction(
 				moderator.getName(),
