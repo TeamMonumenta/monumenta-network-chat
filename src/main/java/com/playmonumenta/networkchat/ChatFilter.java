@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.FileUtils;
@@ -112,6 +113,7 @@ public class ChatFilter {
 		private final String mPatternString;
 		private final Pattern mPattern;
 		private final boolean mIsBadWord;
+		private boolean mHasPlaceholder;
 		private String mReplacementMiniMessage;
 		private @Nullable String mCommand = null;
 
@@ -136,6 +138,7 @@ public class ChatFilter {
 				throw CommandUtils.fail(sender, "Could not load chat filter " + mId);
 			}
 			mPattern = pattern;
+			mHasPlaceholder = false;
 			if (mIsBadWord) {
 				mReplacementMiniMessage = "<red>" + mId + "</red>";
 			} else {
@@ -148,6 +151,8 @@ public class ChatFilter {
 			boolean isLiteral = object.get("mIsLiteral").getAsBoolean();
 			String regex = object.get("mPatternString").getAsString();
 			boolean isBadWord = object.get("mIsBadWord").getAsBoolean();
+			boolean hasPlaceholder = object.get("mHasPlaceholder") instanceof JsonPrimitive primitive
+				&& primitive.getAsBoolean();
 			String replacementMiniMessage = object.get("mReplacementMiniMessage").getAsString();
 			@Nullable String command = null;
 			if (object.has("mCommand")) {
@@ -155,6 +160,7 @@ public class ChatFilter {
 			}
 
 			ChatFilterPattern pattern = new ChatFilterPattern(sender, id, isLiteral, regex, isBadWord);
+			pattern.mHasPlaceholder = hasPlaceholder;
 			pattern.mReplacementMiniMessage = replacementMiniMessage;
 			pattern.mCommand = command;
 			return pattern;
@@ -166,6 +172,7 @@ public class ChatFilter {
 			object.addProperty("mIsLiteral", mIsLiteral);
 			object.addProperty("mPatternString", mPatternString);
 			object.addProperty("mIsBadWord", mIsBadWord);
+			object.addProperty("mHasPlaceholder", mHasPlaceholder);
 			object.addProperty("mReplacementMiniMessage", mReplacementMiniMessage);
 			if (mCommand != null) {
 				object.addProperty("mCommand", mCommand);
@@ -183,6 +190,15 @@ public class ChatFilter {
 
 		public boolean isBadWord() {
 			return mIsBadWord;
+		}
+
+		public boolean hasPlaceholder() {
+			return mHasPlaceholder;
+		}
+
+		public ChatFilterPattern hasPlaceholder(boolean value) {
+			mHasPlaceholder = value;
+			return this;
 		}
 
 		public String replacementMessage() {
@@ -205,7 +221,7 @@ public class ChatFilter {
 
 		public void run(CommandSender sender, final ChatFilterResult filterResult) {
 			CommandSender callee = CommandUtils.getCallee(sender);
-			ReplacerWithEscape replacer = new ReplacerWithEscape(sender, mReplacementMiniMessage);
+			ReplacerWithEscape replacer = new ReplacerWithEscape(sender, mReplacementMiniMessage, mHasPlaceholder);
 			final ChatFilterResult localResult = filterResult.getCleanCopy();
 			TextReplacementConfig replacementConfig = TextReplacementConfig.builder()
 				.match(mPattern)
