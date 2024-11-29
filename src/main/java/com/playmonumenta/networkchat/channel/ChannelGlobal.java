@@ -10,21 +10,19 @@ import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelAutoJoin;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelPermissionNode;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -76,81 +74,41 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 		mAutoJoin = autoJoin;
 	}
 
-	public static void registerNewChannelCommands(String[] baseCommands, List<Argument<?>> prefixArguments) {
-		List<Argument<?>> arguments;
+	public static void registerNewChannelCommands(LiteralArgument newArg, Argument<String> channelArg) {
+		BooleanArgument autoJoinArg = new BooleanArgument("Auto Join");
+		GreedyStringArgument permissionArg = new GreedyStringArgument("Channel Permission");
 
-		for (String baseCommand : baseCommands) {
-			arguments = new ArrayList<>(prefixArguments);
-			// last element of prefixArguments is channel ID
-			arguments.add(new MultiLiteralArgument(CHANNEL_CLASS_ID));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
-						throw CommandUtils.fail(sender, "You do not have permission to create global channels.");
+		ChatCommand.getBaseCommand()
+			.withArguments(newArg)
+			.withArguments(channelArg)
+			.withArguments(new MultiLiteralArgument("Channel Type", CHANNEL_CLASS_ID))
+			.withOptionalArguments(autoJoinArg)
+			.withOptionalArguments(permissionArg)
+			.executesNative((sender, args) -> {
+				if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
+					throw CommandUtils.fail(sender, "You do not have permission to create global channels.");
+				}
+
+				String channelName = args.getByArgument(channelArg);
+				ChannelGlobal newChannel;
+
+				try {
+					newChannel = new ChannelGlobal(channelName);
+					Boolean autoJoin = args.getByArgument(autoJoinArg);
+					if (autoJoin != null) {
+						newChannel.setAutoJoin(autoJoin);
 					}
-
-					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel;
-
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
-					try {
-						newChannel = new ChannelGlobal(channelName);
-					} catch (Exception e) {
-						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+					String permission = args.getByArgument(permissionArg);
+					if (permission != null && !permission.isEmpty()) {
+						newChannel.setChannelPermission(permission);
 					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
-				})
-				.register();
-
-			arguments.add(new BooleanArgument("Auto Join"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
-						throw CommandUtils.fail(sender, "You do not have permission to create global channels.");
-					}
-
-					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel;
-
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
-					try {
-						newChannel = new ChannelGlobal(channelName);
-						newChannel.setAutoJoin((boolean)args[prefixArguments.size() + 1]);
-					} catch (Exception e) {
-						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
-					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
-				})
-				.register();
-
-			arguments.add(new GreedyStringArgument("Channel Permission"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					if (!CommandUtils.hasPermission(sender, "networkchat.new.global")) {
-						throw CommandUtils.fail(sender, "You do not have permission to create global channels.");
-					}
-
-					String channelName = (String)args[prefixArguments.size() - 1];
-					ChannelGlobal newChannel;
-
-					// Ignore [prefixArguments.size()], which is just the channel class ID.
-					try {
-						newChannel = new ChannelGlobal(channelName);
-						newChannel.setAutoJoin((boolean)args[prefixArguments.size() + 1]);
-						newChannel.mChannelPermission = (String)args[prefixArguments.size() + 2];
-					} catch (Exception e) {
-						throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
-					}
-					// Throws an exception if the channel already exists, failing the command.
-					ChannelManager.registerNewChannel(sender, newChannel);
-				})
-				.register();
-		}
+				} catch (Exception e) {
+					throw CommandUtils.fail(sender, "Could not create new channel " + channelName + ": Could not connect to RabbitMQ.");
+				}
+				// Throws an exception if the channel already exists, failing the command.
+				ChannelManager.registerNewChannel(sender, newChannel);
+			})
+			.register();
 	}
 
 	@Override
@@ -181,6 +139,10 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 
 	@Override
 	public boolean mayChat(CommandSender sender) {
+		if (!mayListen(sender)) {
+			return false;
+		}
+
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.global")) {
 			return false;
 		}
@@ -243,7 +205,7 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 			throw notListeningEx;
 		}
 
-		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, null, messageText);
+		@Nullable Message message = Message.createMessage(this, sender, null, messageText);
 		if (message == null) {
 			return;
 		}
@@ -282,10 +244,11 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 		}
 		prefix = prefix
 			.replace("<message_gui_cmd>", message.getGuiCommand())
+			.replace("<channel_description>", mDescription)
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix,
 				Placeholder.unparsed("channel_name", mName),
 				Placeholder.component("sender", message.getSenderComponent())))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
@@ -294,7 +257,7 @@ public class ChannelGlobal extends Channel implements ChannelAutoJoin, ChannelPe
 	@Override
 	public void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
-		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
+		recipient.sendMessage(shownMessage(recipient, message));
 		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {

@@ -1,5 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat;
 
+import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.channel.ChannelAnnouncement;
 import com.playmonumenta.networkchat.channel.ChannelGlobal;
@@ -10,23 +12,21 @@ import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.channel.ChannelWorld;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatNewCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
-
 		if (NetworkChatProperties.getChatCommandCreateEnabled()) {
-			arguments.add(new MultiLiteralArgument("new"));
-			arguments.add(new StringArgument("channel name"));
-			ChannelAnnouncement.registerNewChannelCommands(ChatCommand.COMMANDS, new ArrayList<>(arguments));
-			ChannelLocal.registerNewChannelCommands(ChatCommand.COMMANDS, new ArrayList<>(arguments));
-			ChannelGlobal.registerNewChannelCommands(ChatCommand.COMMANDS, new ArrayList<>(arguments));
-			ChannelParty.registerNewChannelCommands(ChatCommand.COMMANDS, new ArrayList<>(arguments));
-			ChannelWorld.registerNewChannelCommands(ChatCommand.COMMANDS, new ArrayList<>(arguments));
+			LiteralArgument newArg = new LiteralArgument("new");
+			Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN);
+			ChannelAnnouncement.registerNewChannelCommands(newArg, channelArg);
+			ChannelLocal.registerNewChannelCommands(newArg, channelArg);
+			ChannelGlobal.registerNewChannelCommands(newArg, channelArg);
+			ChannelParty.registerNewChannelCommands(newArg, channelArg);
+			ChannelWorld.registerNewChannelCommands(newArg, channelArg);
 		}
 		ChannelTeam.registerNewChannelCommands();
 		ChannelWhisper.registerNewChannelCommands();

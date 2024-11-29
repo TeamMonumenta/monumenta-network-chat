@@ -12,12 +12,12 @@ import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.channel.ChannelWorld;
 import com.playmonumenta.networkchat.commands.ChangeLogLevel;
 import com.playmonumenta.networkchat.commands.ChatCommand;
+import com.playmonumenta.networkchat.inlinereplacements.ReplacementsManager;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.RedisAPI;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -40,14 +41,35 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	private static final String REDIS_MESSAGE_COLORS_KEY = "message_colors";
 	private static final String REDIS_MESSAGE_FORMATS_KEY = "message_formats";
 	private static final String REDIS_CHAT_FILTERS_KEY = "chat_filters";
+	private static final String REDIS_CHAT_MOD_LOG_KEY = "chat_mod_log_command";
 
 	private static @Nullable NetworkChatPlugin INSTANCE = null;
 	private @Nullable CustomLogger mLogger = null;
+
 	private static final Map<String, TextColor> mDefaultMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mDefaultMessageFormats = new ConcurrentSkipListMap<>();
+	private static final String mDefaultChatModLogCommand
+		= "auditlogchatmod <moderator> <details>";
+
 	private static final Map<String, TextColor> mMessageColors = new ConcurrentSkipListMap<>();
 	private static final Map<String, String> mMessageFormats = new ConcurrentSkipListMap<>();
+	private static String mChatModLogCommand = mDefaultChatModLogCommand;
+
 	private static ChatFilter mGlobalChatFilter = new ChatFilter();
+	private static final ReplacementsManager mReplacementsManager = new ReplacementsManager();
+
+	public static String getShardName() {
+		@Nullable String shardName = null;
+		try {
+			shardName = NetworkRelayAPI.getShardName();
+		} catch (Exception e) {
+			MMLog.severe("Failed to get shard name");
+		}
+		if (shardName == null) {
+			throw new RuntimeException("Got null shard name");
+		}
+		return shardName;
+	}
 
 	@Override
 	public void onLoad() {
@@ -71,15 +93,15 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mDefaultMessageFormats.put("sender", "<sender_name>");
 
 		mDefaultMessageColors.put(ChannelAnnouncement.CHANNEL_CLASS_ID, NamedTextColor.RED);
-		mDefaultMessageFormats.put(ChannelAnnouncement.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Announcement Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click>");
+		mDefaultMessageFormats.put(ChannelAnnouncement.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<gray><<channel_color><channel_name><gray>> <channel_description>\\n<dark_gray>Type: Announcement Channel.\\nClick to open this channel's settings in a GUI.\">\\<<channel_color><channel_name><gray>></hover></click> <gray>»");
 		mDefaultMessageColors.put(ChannelGlobal.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
-		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><click:run_command\":<message_gui_cmd>\"><hover:show_text:\"<channel_color>Global Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
+		mDefaultMessageFormats.put(ChannelGlobal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<gray><<channel_color><channel_name><gray>> <channel_description>\\n<dark_gray>Type: Global Channel.\\nClick to open this channel's settings in a GUI.\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelLocal.CHANNEL_CLASS_ID, NamedTextColor.YELLOW);
-		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Local Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
+		mDefaultMessageFormats.put(ChannelLocal.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<gray><<channel_color><channel_name><gray>> <channel_description>\\n<dark_gray>Type: Local Channel.\\nClick to open this channel's settings in a GUI.\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelWorld.CHANNEL_CLASS_ID, NamedTextColor.BLUE);
-		mDefaultMessageFormats.put(ChannelWorld.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>World Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
+		mDefaultMessageFormats.put(ChannelWorld.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<gray><<channel_color><channel_name><gray>> <channel_description>\\n<dark_gray>Type: World Channel.\\nClick to open this channel's settings in a GUI.\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelParty.CHANNEL_CLASS_ID, NamedTextColor.LIGHT_PURPLE);
-		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<channel_color>Party Channel\nClick for GUI\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
+		mDefaultMessageFormats.put(ChannelParty.CHANNEL_CLASS_ID, "<gray><click:run_command:\"<message_gui_cmd>\"><hover:show_text:\"<gray><<channel_color><channel_name><gray>> <channel_description>\\n<dark_gray>Type: Party Channel.\\nClick to open this channel's settings in a GUI.\">\\<<channel_color><channel_name><gray>></hover></click> <white><sender> <gray>»");
 		mDefaultMessageColors.put(ChannelTeam.CHANNEL_CLASS_ID, NamedTextColor.WHITE);
 		mDefaultMessageFormats.put(ChannelTeam.CHANNEL_CLASS_ID, "<channel_color><team_displayname> \\<<sender>>");
 		mDefaultMessageColors.put(ChannelWhisper.CHANNEL_CLASS_ID, NamedTextColor.GRAY);
@@ -87,75 +109,6 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 		mMessageColors.putAll(mDefaultMessageColors);
 		mMessageFormats.putAll(mDefaultMessageFormats);
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-				                        "LOG4J_EXPLOIT",
-				                        false,
-				                        "\\{jndi:([^}]+)\\}",
-				                        true)
-				.command("auditlogsevereplayer @S \"@S attempted a Log4J exploit\"")
-				.replacementMessage("<red>Log4J exploit attempt: $1</red>");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-			                            "N_WORD",
-			                            false,
-			                            "(^|[^a-z0-9])(n[i1]gg+(?:a|[e3]r))([^a-z0-9]|$)",
-			                            true)
-				.command("auditlogsevereplayer @S \"@S said the N word in <channel_name>: @OE\"")
-				.replacementMessage("$1<red>$2</red>$3");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-					"F_HOMOPHOBIC",
-					false,
-					"(^|[^a-z0-9])(f[a4]g(?:g(?:[o0]t)?)?)([^a-z0-9]|$)",
-					true)
-				.command("auditlogsevereplayer @S \"@S said the homophobic F slur in <channel_name>: @OE\"")
-				.replacementMessage("$1<red>$2</red>$3");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-			                            "URL",
-			                            false,
-			                            "(?<=^|[^\\\\])https?://[!#-&(-;=?-\\[\\]-z|~]+",
-			                            false)
-				.replacementMessage("<blue><u><click:open_url:\"$0\">$0</click></u></blue>");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-			                            "Spoiler",
-			                            false,
-			                            "(?<=^|[^\\\\])\\|\\|([^|]*[^|\\s\\\\][^|\\\\]*)\\|\\|",
-			                            false)
-				.replacementMessage("<b><hover:show_text:\"$\\1\">SPOILER</hover></b>");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
-
-		try {
-			mGlobalChatFilter.addFilter(Bukkit.getConsoleSender(),
-					"CodeBlock",
-					false,
-					"(?<=^|[^\\\\])`([^`]*[^`\\s\\\\][^`\\\\]*)`",
-					false)
-				.replacementMessage("<font:uniform><hover:show_text:\"Click to copy\nShift+click to insert\n$\\1\"><click:copy_to_clipboard:\"$\\1\"><insert:\"$\\1\">$1</insert></click></hover></font>");
-		} catch (WrapperCommandSyntaxException e) {
-			MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), e);
-		}
 
 		ChangeLogLevel.register();
 		@Nullable ZipFile zip = null;
@@ -171,6 +124,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 	public void onEnable() {
 		INSTANCE = this;
 
+		reload(Bukkit.getConsoleSender());
+
 		/* Check for Placeholder API */
 		if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
 			MMLog.severe("Could not find PlaceholderAPI! This plugin is required.");
@@ -180,8 +135,8 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 
 		getServer().getPluginManager().registerEvents(ChannelManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(MessageManager.getInstance(), this);
+		getServer().getPluginManager().registerEvents(RemotePlayerListener.getInstance(), this);
 		getServer().getPluginManager().registerEvents(PlayerStateManager.getInstance(), this);
-		getServer().getPluginManager().registerEvents(RemotePlayerManager.getInstance(), this);
 		getServer().getPluginManager().registerEvents(this, this);
 
 		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_MESSAGE_COLORS_KEY)
@@ -223,6 +178,15 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			}
 			return dataStr;
 		});
+
+		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_CHAT_MOD_LOG_KEY)
+			.thenApply(dataStr -> {
+				if (dataStr != null) {
+					Bukkit.getServer().getScheduler().runTask(INSTANCE,
+						() -> mChatModLogCommand = dataStr);
+				}
+				return dataStr;
+			});
 	}
 
 	@Override
@@ -245,6 +209,11 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
 		}
 		return mLogger;
+	}
+
+	public static void reload(CommandSender sender) {
+		Bukkit.getScheduler().runTaskAsynchronously(NetworkChatPlugin.getInstance(),
+			() -> mGlobalChatFilter = ChatFilter.globalFilter(sender));
 	}
 
 	public static int getMessageTtl() {
@@ -339,12 +308,32 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 		mMessageFormats.put(id, value);
 		saveFormats();
 		if (id.equals("player")) {
-			RemotePlayerManager.refreshLocalPlayers();
+			RemotePlayerListener.refreshLocalPlayers();
 		}
+	}
+
+	public static void logModChatAction(String moderator, String details) {
+		String command = mChatModLogCommand;
+		if (command.isBlank()) {
+			return;
+		}
+		String finishedCommand = command
+			.replace("<moderator>", moderator)
+			.replace("<details>", details);
+		Bukkit.getScheduler().runTask(NetworkChatPlugin.getInstance(),
+			() -> Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand));
 	}
 
 	public static ChatFilter globalFilter() {
 		return mGlobalChatFilter;
+	}
+
+	/**
+	 * Gets the global bad word filter for use in external plugins
+	 * @return the global bad word filter
+	 */
+	public static ChatFilter globalBadWordFilter() {
+		return mGlobalChatFilter.badWordFiltersOnly();
 	}
 
 	public static void globalFilterFromJson(JsonObject dataJson) {
@@ -393,5 +382,9 @@ public class NetworkChatPlugin extends JavaPlugin implements Listener {
 			default -> {
 			}
 		}
+	}
+
+	public static ReplacementsManager getReplacementsManagerInstance() {
+		return mReplacementsManager;
 	}
 }

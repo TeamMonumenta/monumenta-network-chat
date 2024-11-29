@@ -7,12 +7,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.channel.ChannelAnnouncement;
+import com.playmonumenta.networkchat.channel.ChannelFuture;
+import com.playmonumenta.networkchat.channel.ChannelLoading;
 import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
 import com.playmonumenta.networkchat.channel.property.ChannelSettings;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import com.playmonumenta.networkrelay.RemotePlayerAPI;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
@@ -699,6 +702,10 @@ public class PlayerState {
 			return;
 		}
 
+		if (channel instanceof ChannelLoading || channel instanceof ChannelFuture) {
+			return;
+		}
+
 		ChannelAccess currentAccess = channel.playerAccess(mPlayerId);
 		ChannelAccess channelAccess = currentAccess;
 		for (UUID previousId : mPreviousPlayerIds) {
@@ -755,7 +762,7 @@ public class PlayerState {
 		}
 		if (profileMessage == null) {
 			mProfileMessage = "";
-			RemotePlayerManager.refreshLocalPlayer(player);
+			RemotePlayerAPI.refreshPlayer(player.getUniqueId());
 			return;
 		}
 
@@ -765,6 +772,6 @@ public class PlayerState {
 		}
 
 		mProfileMessage = profileMessage;
-		RemotePlayerManager.refreshLocalPlayer(player);
+		RemotePlayerAPI.refreshPlayer(player.getUniqueId());
 	}
 }

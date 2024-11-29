@@ -1,6 +1,7 @@
 package com.playmonumenta.networkchat.commands.chat;
 
 import com.playmonumenta.networkchat.ChannelManager;
+import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.DefaultChannels;
 import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.PlayerState;
@@ -12,12 +13,9 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
-import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
@@ -27,30 +25,25 @@ import org.bukkit.entity.Player;
 
 public class ChatSayCommand {
 	public static void register() {
-		List<Argument<?>> arguments = new ArrayList<>();
+		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT);
+		GreedyStringArgument messageArg = new GreedyStringArgument("message");
 
-		for (String baseCommand : ChatCommand.COMMANDS) {
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("say"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_CHATABLE_CHANNEL_NAMES));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					return setActiveChannel(sender, (String) args[1]);
-				})
-				.register();
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("say"))
+			.withArguments(channelArg)
+			.executesNative((sender, args) -> {
+				return setActiveChannel(sender, args.getByArgument(channelArg));
+			})
+			.register();
 
-			arguments.clear();
-			arguments.add(new MultiLiteralArgument("say"));
-			arguments.add(new StringArgument("Channel Name").replaceSuggestions(ChannelManager.SUGGESTIONS_CHATABLE_CHANNEL_NAMES));
-			arguments.add(new GreedyStringArgument("message"));
-			new CommandAPICommand(baseCommand)
-				.withArguments(arguments)
-				.executesNative((sender, args) -> {
-					return sendMessage(sender, (String) args[1], (String) args[2]);
-				})
-				.register();
-		}
+		ChatCommand.getBaseCommand()
+			.withArguments(new LiteralArgument("say"))
+			.withArguments(channelArg)
+			.withArguments(messageArg)
+			.executesNative((sender, args) -> {
+				return sendMessage(sender, args.getByArgument(channelArg), args.getByArgument(messageArg));
+			})
+			.register();
 
 		Set<String> usedShortcuts = new HashSet<>();
 		for (String channelType : DefaultChannels.CHANNEL_TYPES) {
@@ -64,12 +57,10 @@ public class ChatSayCommand {
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(channelType)
-				.withArguments(arguments)
+				.withArguments(messageArg)
 				.executesNative((sender, args) -> {
-					return sendMessageInDefault(sender, channelType, (String) args[0]);
+					return sendMessageInDefault(sender, channelType, args.getByArgument(messageArg));
 				})
 				.register();
 
@@ -91,12 +82,10 @@ public class ChatSayCommand {
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(shortcut)
-				.withArguments(arguments)
+				.withArguments(messageArg)
 				.executesNative((sender, args) -> {
-					return sendMessageInDefault(sender, channelType, (String) args[0]);
+					return sendMessageInDefault(sender, channelType, args.getByArgument(messageArg));
 				})
 				.register();
 		}

@@ -13,16 +13,12 @@ import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -65,7 +61,7 @@ public class ChannelTeam extends Channel {
 	public static void registerNewChannelCommands() {
 		// Setting up new team channels will be done via /teammsg, /tm, and similar,
 		// not through /chat new Blah team. The provided arguments are ignored.
-		List<Argument<?>> arguments = new ArrayList<>();
+		GreedyStringArgument messageArg = new GreedyStringArgument("message");
 
 		for (String command : TEAM_COMMANDS) {
 			CommandAPI.unregister(command);
@@ -76,12 +72,10 @@ public class ChannelTeam extends Channel {
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
-				.withArguments(arguments)
+				.withArguments(messageArg)
 				.executesNative((sender, args) -> {
-					return runCommandSay(sender, (String) args[0]);
+					return runCommandSay(sender, args.getByArgument(messageArg));
 				})
 				.register();
 		}
@@ -197,6 +191,10 @@ public class ChannelTeam extends Channel {
 
 	@Override
 	public boolean mayChat(CommandSender sender) {
+		if (!mayListen(sender)) {
+			return false;
+		}
+
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.team")) {
 			return false;
 		}
@@ -271,7 +269,7 @@ public class ChannelTeam extends Channel {
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("team", mTeamName);
 
-		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		@Nullable Message message = Message.createMessage(this, sender, extraData, messageText);
 		if (message == null) {
 			return;
 		}
@@ -360,10 +358,12 @@ public class ChannelTeam extends Channel {
 		if (prefix == null) {
 			prefix = "";
 		}
-		prefix = prefix.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
+		prefix = prefix
+			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)
+			.replace("<channel_description>", mDescription)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix,
 				Placeholder.component("sender", message.getSenderComponent()),
 				Placeholder.parsed("team_color", (color == null) ? "" : "<" + color.asHexString() + ">"),
 				Placeholder.component("team_prefix", teamPrefix),
@@ -375,7 +375,7 @@ public class ChannelTeam extends Channel {
 	@Override
 	public void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
-		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
+		recipient.sendMessage(shownMessage(recipient, message));
 		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {

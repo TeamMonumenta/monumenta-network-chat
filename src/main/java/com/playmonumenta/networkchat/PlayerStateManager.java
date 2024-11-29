@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -41,6 +40,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -63,8 +63,18 @@ public class PlayerStateManager implements Listener {
 			public void onPacketSending(PacketEvent event) {
 				if (event.getPacketType().equals(PacketType.Play.Server.CHAT)) {
 					PacketContainer packet = event.getPacket();
-					ChatType chatType = packet.getChatTypes().getValues().get(0);
-					if (chatType.equals(ChatType.GAME_INFO)) {
+					/*
+					 * This should never have any more or less than one ChatType in 1.19.4.
+					 * However, we have ViaVersion server-side instead of proxy-side, and
+					 * are incorrectly interpreting 1.20 packets as 1.19.4 packets, since
+					 * 1.19.4 servers do not have access to 1.20 packet types.
+					 *
+					 * Unless we can get at the 1.19.4 version of these packets, we will be
+					 * missing any chat messages that are of other types, such as system messages
+					 * or hotbar messages that 1.19.4 previously bundled into the same packet type.
+					 */
+					List<ChatType> chatTypes = packet.getChatTypes().getValues();
+					if (!chatTypes.isEmpty() && chatTypes.get(0).equals(ChatType.GAME_INFO)) {
 						// Ignore hotbar messages
 						return;
 					}
@@ -74,7 +84,7 @@ public class PlayerStateManager implements Listener {
 						sender = uuids.get(0);
 					}
 					List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
-					if (messageParts.size() == 0) {
+					if (messageParts.isEmpty()) {
 						return;
 					}
 
@@ -105,13 +115,7 @@ public class PlayerStateManager implements Listener {
 						}
 					}
 
-					MessageType messageType;
-					if (chatType.equals(ChatType.CHAT)) {
-						messageType = MessageType.CHAT;
-					} else {
-						messageType = MessageType.SYSTEM;
-					}
-					Message message = Message.createRawMessage(messageType, sender, null, messageComponent);
+					Message message = Message.createRawMessage(sender, null, messageComponent);
 
 					PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
 					if (playerState != null) {
@@ -222,9 +226,22 @@ public class PlayerStateManager implements Listener {
 	}
 
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+	public void playerLoginEvent(PlayerLoginEvent event) {
+		Player player = event.getPlayer();
+		String playerName = player.getName();
+		if (NetworkChatPlugin.globalBadWordFilter().hasBadWord(player, Component.text(playerName))) {
+			event.disallow(
+				PlayerLoginEvent.Result.KICK_OTHER,
+				Component.text("Please change your player name", NamedTextColor.RED)
+			);
+		}
+	}
+
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		UUID playerId = player.getUniqueId();
+		String playerName = player.getName();
 
 		getPlayerChatHistory(playerId);
 
@@ -234,16 +251,16 @@ public class PlayerStateManager implements Listener {
 		if (data == null) {
 			playerState = new PlayerState(player);
 			mPlayerStates.put(playerId, playerState);
-			MMLog.info("Created new chat state for for player " + player.getName());
+			MMLog.info("Created new chat state for for player " + playerName);
 		} else {
 			try {
 				playerState = PlayerState.fromJson(player, data);
 				mPlayerStates.put(playerId, playerState);
-				MMLog.info("Loaded chat state for player " + player.getName());
+				MMLog.info("Loaded chat state for player " + playerName);
 			} catch (Exception e) {
 				playerState = new PlayerState(player);
 				mPlayerStates.put(playerId, playerState);
-				MMLog.warning("Player's chat state could not be loaded and was reset " + player.getName());
+				MMLog.warning("Player's chat state could not be loaded and was reset " + playerName);
 			}
 		}
 
@@ -354,7 +371,7 @@ public class PlayerStateManager implements Listener {
 		try {
 			channel.sendMessage(player, messageStr);
 		} catch (WrapperCommandSyntaxException ex) {
-			String error = MessagingUtils.getCommandExceptionMessage(ex);
+			String error = ex.getMessage();
 			player.sendMessage(Component.text(error, NamedTextColor.RED));
 			MMLog.info("Player " + player.getName() + " tried talking in channel " + channel.getName() + ", but got this error: " + error);
 		} catch (Exception ex) {

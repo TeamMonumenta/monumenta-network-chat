@@ -15,6 +15,7 @@ public class NetworkChatProperties {
 
 	private static @Nullable NetworkChatProperties INSTANCE = null;
 
+	private boolean mReplaceHelpCommand = false;
 	private boolean mChatCommandCreateEnabled = true;
 	private boolean mChatCommandModifyEnabled = true;
 	private boolean mChatCommandDeleteEnabled = true;
@@ -34,6 +35,10 @@ public class NetworkChatProperties {
 
 	public static boolean getSudoEnabled() {
 		return getInstance().mSudoEnabled;
+	}
+
+	public static boolean getReplaceHelpCommand() {
+		return getInstance().mReplaceHelpCommand;
 	}
 
 	public static boolean getChatCommandCreateEnabled() {
@@ -59,6 +64,10 @@ public class NetworkChatProperties {
 	private void loadInternal(Plugin plugin, @Nullable CommandSender sender) {
 		File configFile = new File(plugin.getDataFolder(), "config.yml");
 		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
+		if (config.isBoolean("ReplaceHelpCommand")) {
+			mReplaceHelpCommand = config.getBoolean("ReplaceHelpCommand", mReplaceHelpCommand);
+		}
 
 		if (config.isBoolean("ChatCommandCreate")) {
 			mChatCommandCreateEnabled = config.getBoolean("ChatCommandCreate", mChatCommandCreateEnabled);
@@ -95,6 +104,7 @@ public class NetworkChatProperties {
 	private List<String> toDisplay() {
 		List<String> out = new ArrayList<>();
 
+		out.add("mReplaceHelpCommand = " + mReplaceHelpCommand);
 		out.add("mChatCommandCreateEnabled = " + mChatCommandCreateEnabled);
 		out.add("mChatCommandModifyEnabled = " + mChatCommandModifyEnabled);
 		out.add("mChatCommandDeleteEnabled = " + mChatCommandDeleteEnabled);
@@ -123,6 +133,10 @@ public class NetworkChatProperties {
 		}
 
 		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
+		if (!config.contains("ReplaceHelpCommand")) {
+			config.set("ReplaceHelpCommand", mReplaceHelpCommand);
+		}
 
 		if (!config.contains("ChatCommandCreate")) {
 			config.set("ChatCommandCreate", mChatCommandCreateEnabled);

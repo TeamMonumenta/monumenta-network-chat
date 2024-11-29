@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -122,7 +121,14 @@ public class PlayerChatHistory {
 	// Re-show chat with deleted messages removed, even while paused.
 	public void refreshChat() {
 		mIsReplayingChat = true;
-		mSeenMessages.removeIf(Message::isDeleted);
+		mSeenMessages.removeIf(message -> {
+			if (message.senderIsPlayer() && mPlayerId.equals(message.getSenderId())) {
+				// Show deleted messages to the original sender
+				return false;
+			}
+
+			return message.isDeleted();
+		});
 
 		int messageCount = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
 		Component emptyMessage = Component.empty();
@@ -144,7 +150,7 @@ public class PlayerChatHistory {
 	public void clearChat() {
 		mUnseenMessages.clear();
 		mSeenMessages.clear();
-		mSeenMessages.add(Message.createRawMessage(MessageType.SYSTEM, null, null, Component.text("Chat has been cleared.", NamedTextColor.RED, TextDecoration.BOLD)));
+		mSeenMessages.add(Message.createRawMessage(null, null, Component.text("Chat has been cleared.", NamedTextColor.RED, TextDecoration.BOLD)));
 		refreshChat();
 	}
 

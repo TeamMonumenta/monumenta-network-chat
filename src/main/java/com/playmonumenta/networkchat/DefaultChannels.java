@@ -94,7 +94,7 @@ public class DefaultChannels {
 		mDefaultsByType.put(channel.getClassId(), channel.getUniqueId());
 	}
 
-	public void setDefaultId(String key, UUID value) {
+	public void setDefaultId(String key, @Nullable UUID value) {
 		if (CHANNEL_TYPES.contains(key)) {
 			if (value == null) {
 				mDefaultsByType.remove(key);
@@ -102,6 +102,10 @@ public class DefaultChannels {
 				mDefaultsByType.put(key, value);
 			}
 		}
+	}
+
+	public void unsetDefaultId(String key) {
+		mDefaultsByType.remove(key);
 	}
 
 	public void unsetChannel(UUID channelId) {

@@ -7,12 +7,15 @@ import com.playmonumenta.networkchat.MessageManager;
 import com.playmonumenta.networkchat.NetworkChatPlugin;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
-import com.playmonumenta.networkchat.RemotePlayerManager;
+import com.playmonumenta.networkchat.RemotePlayerListener;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
 import com.playmonumenta.networkchat.channel.property.ChannelAccess;
+import com.playmonumenta.networkchat.channel.property.ChannelSettings;
+import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
@@ -28,7 +31,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -59,6 +61,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	protected ChannelWhisper(JsonObject channelJson) throws Exception {
 		super(channelJson);
 		participantsFromJson(mParticipants, channelJson);
+		mDefaultSettings = new ChannelSettings();
+		mDefaultSettings.clearSound();
+		mDefaultSettings.addSound(Sound.ENTITY_PLAYER_LEVELUP, 1, 0.5f);
 	}
 
 	@Override
@@ -71,27 +76,24 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	public static void registerNewChannelCommands() {
 		// Setting up new whisper channels will be done via /msg, /tell, /w, and similar,
 		// not through /chat new Blah whisper. The provided arguments are ignored.
-		List<Argument<?>> arguments = new ArrayList<>();
+		Argument<String> recipientArg = new StringArgument("recipient").replaceSuggestions(ChatCommand.SUGGESTIONS_VISIBLE_PLAYER_NAMES);
+		GreedyStringArgument messageArg = new GreedyStringArgument("message");
 
 		for (String command : WHISPER_COMMANDS) {
 			CommandAPI.unregister(command);
 
-			arguments.clear();
-			arguments.add(new StringArgument("recipient").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
 			new CommandAPICommand(command)
-				.withArguments(arguments)
+				.withArguments(recipientArg)
 				.executesNative((sender, args) -> {
-					return runCommandSet(sender, (String)args[0]);
+					return runCommandSet(sender, args.getByArgument(recipientArg));
 				})
 				.register();
 
-			arguments.clear();
-			arguments.add(new StringArgument("recipient").replaceSuggestions(RemotePlayerManager.SUGGESTIONS_VISIBLE_PLAYER_NAMES));
-			arguments.add(new GreedyStringArgument("message"));
 			new CommandAPICommand(command)
-				.withArguments(arguments)
+				.withArguments(recipientArg)
+				.withArguments(messageArg)
 				.executesNative((sender, args) -> {
-					return runCommandSay(sender, (String)args[0], (String)args[1]);
+					return runCommandSay(sender, args.getByArgument(recipientArg), args.getByArgument(messageArg));
 				})
 				.register();
 		}
@@ -102,12 +104,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			})
 			.register();
 
-		arguments.clear();
-		arguments.add(new GreedyStringArgument("message"));
 		new CommandAPICommand(REPLY_COMMAND)
-			.withArguments(arguments)
+			.withArguments(messageArg)
 			.executesNative((sender, args) -> {
-				return runCommandReplySay(sender, (String)args[0]);
+				return runCommandReplySay(sender, args.getByArgument(messageArg));
 			})
 			.register();
 	}
@@ -117,9 +117,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
-			UUID recipientUuid = RemotePlayerManager.getPlayerId(recipientName);
+			UUID recipientUuid = MonumentaRedisSyncAPI.cachedNameToUuid(recipientName);
 			if (recipientUuid == null) {
-				throw CommandUtils.fail(sender, recipientName + " is not online.");
+				throw CommandUtils.fail(sender, "Could not identify the player " + recipientName);
 			}
 
 			@Nullable PlayerState senderState = PlayerStateManager.getPlayerState(sendingPlayer);
@@ -150,9 +150,9 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		if (!(callee instanceof Player sendingPlayer)) {
 			throw CommandUtils.fail(sender, "This command can only be run as a player.");
 		} else {
-			UUID recipientUuid = RemotePlayerManager.getPlayerId(recipientName);
+			UUID recipientUuid = MonumentaRedisSyncAPI.cachedNameToUuid(recipientName);
 			if (recipientUuid == null) {
-				throw CommandUtils.fail(sender, recipientName + " is not online.");
+				throw CommandUtils.fail(sender, "Could not identify the player " + recipientName);
 			}
 
 			senderState = PlayerStateManager.getPlayerState(sendingPlayer);
@@ -273,6 +273,16 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		return getName(mParticipants);
 	}
 
+	@Override
+	public void setDescription(String description) throws WrapperCommandSyntaxException {
+		throw CommandAPI.failWithString("Whisper channels may not be given a description.");
+	}
+
+	@Override
+	public String getDescription() {
+		return "Whisper channels cannot have a description.";
+	}
+
 	public static String getName(Collection<UUID> participants) {
 		List<UUID> participantsList = new ArrayList<>(participants);
 		if (participantsList.size() == 1) {
@@ -283,6 +293,29 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		StringBuilder name = new StringBuilder("Whisper");
 		for (UUID participant : participantsList) {
 			name.append("_").append(participant.toString());
+		}
+		return name.toString();
+	}
+
+	@Override
+	public String getFriendlyName() {
+		return getFriendlyName(mParticipants);
+	}
+
+	public static String getFriendlyName(Collection<UUID> participants) {
+		List<UUID> participantsList = new ArrayList<>(participants);
+		if (participantsList.size() == 1) {
+			participantsList.add(participantsList.get(0));
+		} else {
+			Collections.sort(participantsList);
+		}
+		StringBuilder name = new StringBuilder("Whisper");
+		for (UUID participant : participantsList) {
+			String participantName = MonumentaRedisSyncAPI.cachedUuidToName(participant);
+			if (participantName == null) {
+				participantName = participant.toString();
+			}
+			name.append(":").append(participantName);
 		}
 		return name.toString();
 	}
@@ -329,12 +362,11 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	}
 
 	@Override
-	public boolean mayManage(CommandSender sender) {
-		return isParticipantOrModerator(sender);
-	}
-
-	@Override
 	public boolean mayChat(CommandSender sender) {
+		if (!mayListen(sender)) {
+			return false;
+		}
+
 		if (!CommandUtils.hasPermission(sender, "networkchat.say.whisper")) {
 			return false;
 		}
@@ -401,14 +433,10 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		UUID senderId = ((Player) sender).getUniqueId();
 		UUID receiverId = getOtherParticipant(senderId);
 
-		if (!RemotePlayerManager.isPlayerVisible(receiverId)) {
-			sender.sendMessage(Component.text("That player is not online.", NamedTextColor.RED));
-		}
-
 		JsonObject extraData = new JsonObject();
 		extraData.addProperty("receiver", receiverId.toString());
 
-		@Nullable Message message = Message.createMessage(this, MessageType.CHAT, sender, extraData, messageText);
+		@Nullable Message message = Message.createMessage(this, sender, extraData, messageText);
 		if (message == null) {
 			return;
 		}
@@ -448,14 +476,14 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			MMLog.finer("Receiver not on this shard.");
 			return;
 		}
+		Player player = state.getPlayer();
+		if (player == null) {
+			MMLog.warning("Receiver not on this shard, but their player state is!");
+			return;
+		}
 		state.setWhisperChannel(otherId, this);
 
-		ChannelAccess playerAccess = mPlayerAccess.get(playerId);
-		if (playerAccess == null) {
-			if (Boolean.FALSE.equals(mDefaultAccess.mayListen())) {
-				return;
-			}
-		} else if (Boolean.FALSE.equals(playerAccess.mayListen())) {
+		if (!mayListen(player)) {
 			return;
 		}
 
@@ -475,7 +503,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 		Component receiverComp;
 		try {
 			UUID receiverUuid = UUID.fromString(extraData.getAsJsonPrimitive("receiver").getAsString());
-			receiverComp = RemotePlayerManager.getPlayerComponent(receiverUuid);
+			receiverComp = RemotePlayerListener.getPlayerComponent(receiverUuid);
 		} catch (Exception e) {
 			MMLog.warning("Could not get receiver from Message; reason: " + e.getMessage());
 			receiverComp = Component.text("ErrorLoadingName");
@@ -490,7 +518,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)) + " ";
 
 		return Component.empty()
-			.append(MessagingUtils.SENDER_FMT_MINIMESSAGE.deserialize(prefix,
+			.append(MessagingUtils.getSenderFmtMinimessage().deserialize(prefix,
 				Placeholder.component("sender", message.getSenderComponent()),
 				Placeholder.component("receiver", receiverComp)))
 			.append(Component.empty().color(channelColor).append(message.getMessage()));
@@ -499,7 +527,7 @@ public class ChannelWhisper extends Channel implements ChannelInviteOnly {
 	@Override
 	public void showMessage(CommandSender recipient, Message message) {
 		UUID senderUuid = message.getSenderId();
-		recipient.sendMessage(message.getSenderIdentity(), shownMessage(recipient, message), message.getMessageType());
+		recipient.sendMessage(shownMessage(recipient, message));
 		if (recipient instanceof Player player && !player.getUniqueId().equals(senderUuid)) {
 			@Nullable PlayerState playerState = PlayerStateManager.getPlayerState(player);
 			if (playerState == null) {
