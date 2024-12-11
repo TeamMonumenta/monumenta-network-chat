@@ -56,130 +56,26 @@ public class PlayerStateManager implements Listener {
 
 	private PlayerStateManager() {
 		INSTANCE = this;
-		ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(NetworkChatPlugin.getInstance(),
-		                                                                         ListenerPriority.NORMAL,
-		                                                                         PacketType.Play.Server.CHAT) {
-			@Override
-			public void onPacketSending(PacketEvent event) {
-				PacketType packetType = event.getPacketType();
-				if (packetType.equals(PacketType.Play.Server.CHAT)) {
+		ProtocolLibrary.getProtocolManager().addPacketListener(
+			new PacketAdapter(NetworkChatPlugin.getInstance(),
+				ListenerPriority.NORMAL,
+				PacketType.Play.Server.CHAT
+			) {
+				@Override
+				public void onPacketSending(PacketEvent event) {
 					onSendingChat(event);
-				} else if (packetType.equals(PacketType.Play.Server.SYSTEM_CHAT)) {
+				}
+			});
+		ProtocolLibrary.getProtocolManager().addPacketListener(
+			new PacketAdapter(NetworkChatPlugin.getInstance(),
+				ListenerPriority.NORMAL,
+				PacketType.Play.Server.SYSTEM_CHAT
+			) {
+				@Override
+				public void onPacketSending(PacketEvent event) {
 					onSendingSystemChat(event);
 				}
-			}
-
-			private void onSendingChat(PacketEvent event) {
-				PacketContainer packet = event.getPacket();
-				/*
-				 * This should never have any more or less than one ChatType in 1.19.4.
-				 * However, we have ViaVersion server-side instead of proxy-side, and
-				 * are incorrectly interpreting 1.20 packets as 1.19.4 packets, since
-				 * 1.19.4 servers do not have access to 1.20 packet types.
-				 *
-				 * Unless we can get at the 1.19.4 version of these packets, we will be
-				 * missing any chat messages that are of other types, such as system messages
-				 * or hotbar messages that 1.19.4 previously bundled into the same packet type.
-				 */
-				List<ChatType> chatTypes = packet.getChatTypes().getValues();
-				if (!chatTypes.isEmpty() && chatTypes.get(0).equals(ChatType.GAME_INFO)) {
-					// Ignore hotbar messages
-					return;
-				}
-				UUID sender = null;
-				List<UUID> uuids = packet.getUUIDs().getValues();
-				if (uuids.size() == 1) {
-					sender = uuids.get(0);
-				}
-				List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
-				if (messageParts.isEmpty()) {
-					return;
-				}
-
-				Gson gson = new Gson();
-				String messageJsonStr;
-				JsonObject messageJson;
-				Component messageComponent = null;
-				WrappedChatComponent messagePart = messageParts.get(0);
-				if (messagePart != null) {
-					messageJsonStr = messagePart.getJson();
-					messageJson = gson.fromJson(messageJsonStr, JsonObject.class);
-					try {
-						messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
-					} catch (JsonParseException e) {
-						// This is the fault of some other plugin, with no way to trace it. Silently ignore it.
-						return;
-					}
-				} else {
-					List<Object> packetParts = packet.getModifier().getValues();
-					for (Object possiblyMessage : packetParts) {
-						if (possiblyMessage instanceof Component) {
-							messageComponent = (Component) possiblyMessage;
-							break;
-						}
-					}
-					if (messageComponent == null) {
-						return;
-					}
-				}
-
-				Message message = Message.createRawMessage(sender, null, messageComponent);
-
-				PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
-				if (playerState != null) {
-					// A message or two may get lost when a player first joins, and their chat state hasn't loaded yet.
-					playerState.receiveExternalMessage(message);
-				}
-			}
-
-			private void onSendingSystemChat(PacketEvent event) {
-				PacketContainer packet = event.getPacket();
-				List<Boolean> overlay = packet.getBooleans().getValues();
-				if (!overlay.isEmpty() && overlay.get(overlay.size() - 1)) {
-					// Ignore hotbar messages
-					return;
-				}
-				List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
-				if (messageParts.isEmpty()) {
-					return;
-				}
-
-				Gson gson = new Gson();
-				String messageJsonStr;
-				JsonObject messageJson;
-				Component messageComponent = null;
-				WrappedChatComponent messagePart = messageParts.get(0);
-				if (messagePart != null) {
-					messageJsonStr = messagePart.getJson();
-					messageJson = gson.fromJson(messageJsonStr, JsonObject.class);
-					try {
-						messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
-					} catch (JsonParseException e) {
-						// This is the fault of some other plugin, with no way to trace it. Silently ignore it.
-						return;
-					}
-				} else {
-					List<Object> packetParts = packet.getModifier().getValues();
-					for (Object possiblyMessage : packetParts) {
-						if (possiblyMessage instanceof Component) {
-							messageComponent = (Component) possiblyMessage;
-							break;
-						}
-					}
-					if (messageComponent == null) {
-						return;
-					}
-				}
-
-				Message message = Message.createRawMessage(null, null, messageComponent);
-
-				PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
-				if (playerState != null) {
-					// A message or two may get lost when a player first joins, and their chat state hasn't loaded yet.
-					playerState.receiveExternalMessage(message);
-				}
-			}
-		});
+			});
 		reload();
 	}
 
@@ -485,6 +381,117 @@ public class PlayerStateManager implements Listener {
 			}
 			default -> {
 			}
+		}
+	}
+
+	private void onSendingChat(PacketEvent event) {
+		PacketContainer packet = event.getPacket();
+		/*
+		 * This should never have any more or less than one ChatType in 1.19.4.
+		 * However, we have ViaVersion server-side instead of proxy-side, and
+		 * are incorrectly interpreting 1.20 packets as 1.19.4 packets, since
+		 * 1.19.4 servers do not have access to 1.20 packet types.
+		 *
+		 * Unless we can get at the 1.19.4 version of these packets, we will be
+		 * missing any chat messages that are of other types, such as system messages
+		 * or hotbar messages that 1.19.4 previously bundled into the same packet type.
+		 */
+		List<ChatType> chatTypes = packet.getChatTypes().getValues();
+		if (!chatTypes.isEmpty() && chatTypes.get(0).equals(ChatType.GAME_INFO)) {
+			// Ignore hotbar messages
+			return;
+		}
+		UUID sender = null;
+		List<UUID> uuids = packet.getUUIDs().getValues();
+		if (uuids.size() == 1) {
+			sender = uuids.get(0);
+		}
+		List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
+		if (messageParts.isEmpty()) {
+			return;
+		}
+
+		Gson gson = new Gson();
+		String messageJsonStr;
+		JsonElement messageJson;
+		Component messageComponent = null;
+		WrappedChatComponent messagePart = messageParts.get(0);
+		if (messagePart != null) {
+			messageJsonStr = messagePart.getJson();
+			messageJson = gson.fromJson("{\"data\":" + messageJsonStr + "}", JsonObject.class).get("data");
+			try {
+				messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
+			} catch (JsonParseException e) {
+				// This is the fault of some other plugin, with no way to trace it. Silently ignore it.
+				return;
+			}
+		} else {
+			List<Object> packetParts = packet.getModifier().getValues();
+			for (Object possiblyMessage : packetParts) {
+				if (possiblyMessage instanceof Component) {
+					messageComponent = (Component) possiblyMessage;
+					break;
+				}
+			}
+			if (messageComponent == null) {
+				return;
+			}
+		}
+
+		Message message = Message.createRawMessage(sender, null, messageComponent);
+
+		PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
+		if (playerState != null) {
+			// A message or two may get lost when a player first joins, and their chat state hasn't loaded yet.
+			playerState.receiveExternalMessage(message);
+		}
+	}
+
+	private void onSendingSystemChat(PacketEvent event) {
+		PacketContainer packet = event.getPacket();
+		List<Boolean> overlay = packet.getBooleans().getValues();
+		if (!overlay.isEmpty() && overlay.get(overlay.size() - 1)) {
+			// Ignore hotbar messages
+			return;
+		}
+		List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
+		if (messageParts.isEmpty()) {
+			return;
+		}
+
+		Gson gson = new Gson();
+		String messageJsonStr;
+		JsonElement messageJson;
+		Component messageComponent = null;
+		WrappedChatComponent messagePart = messageParts.get(0);
+		if (messagePart != null) {
+			messageJsonStr = messagePart.getJson();
+			messageJson = gson.fromJson("{\"data\":" + messageJsonStr + "}", JsonObject.class).get("data");
+			try {
+				messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
+			} catch (JsonParseException e) {
+				// This is the fault of some other plugin, with no way to trace it. Silently ignore it.
+				return;
+			}
+		} else {
+			List<Object> packetParts = packet.getModifier().getValues();
+			for (Object possiblyMessage : packetParts) {
+				if (possiblyMessage instanceof Component) {
+					messageComponent = (Component) possiblyMessage;
+					break;
+				}
+			}
+			if (messageComponent == null) {
+				return;
+			}
+		}
+
+		Message message = Message.createRawMessage(null, null, messageComponent);
+
+		PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
+		if (playerState != null) {
+			// A message or two may get lost when a player first joins, and their chat state hasn't loaded yet.
+			playerState.receiveExternalMessage(message);
 		}
 	}
 }
