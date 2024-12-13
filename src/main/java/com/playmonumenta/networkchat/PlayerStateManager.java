@@ -382,7 +382,7 @@ public class PlayerStateManager implements Listener {
 				getPlayerChatHistory(playerId).updateFromJson(data);
 				Integer playerVersion = playerVersion(playerId);
 				if (playerVersion != null && playerVersion == VERSION_REQUIRES_REFRESHING_CHAT) {
-					PlayerState playerState = PlayerStateManager.getPlayerState(playerId);
+					PlayerState playerState = getPlayerState(playerId);
 					if (playerState != null) {
 						MMLog.info("Refreshing chat due to received RemoteChatHistory");
 						playerState.refreshChat();
