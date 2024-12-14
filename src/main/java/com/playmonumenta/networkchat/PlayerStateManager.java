@@ -22,10 +22,10 @@ import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.networkrelay.RemotePlayerAbstraction;
 import com.playmonumenta.networkrelay.RemotePlayerData;
-import com.playmonumenta.networkrelay.RemotePlayerProxy;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import com.playmonumenta.redissync.RedisAPI;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
+import com.viaversion.viaversion.api.Via;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import java.util.HashMap;
@@ -46,6 +46,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerStateManager implements Listener {
@@ -187,6 +188,11 @@ public class PlayerStateManager implements Listener {
 			return null;
 		}
 
+		PluginManager pluginManager = Bukkit.getPluginManager();
+		if (pluginManager.isPluginEnabled("viaversion")) {
+			return Via.getAPI().getPlayerVersion(playerId);
+		}
+
 		RemotePlayerAbstraction abstractProxyData = remotePlayerData.get("proxy");
 		if (abstractProxyData != null) {
 			JsonObject proxyNetworkRelayData = abstractProxyData.getPluginData("networkrelay");
@@ -196,19 +202,35 @@ public class PlayerStateManager implements Listener {
 					&& protocolVersionPrimitive.isNumber()
 			) {
 				return protocolVersionPrimitive.getAsInt();
+			} else if (proxyNetworkRelayData == null) {
+				MMLog.info("(Proxy) No NetworkRelay plugin data found");
+			} else if (!(proxyNetworkRelayData.get("protocol_version") instanceof JsonPrimitive)) {
+				MMLog.info("(Proxy) protocol_version not a json primitive");
+			} else {
+				MMLog.info("(Proxy) protocol_version not a number");
 			}
+		} else {
+			MMLog.info("(Proxy) No data found");
 		}
 
 		RemotePlayerAbstraction abstractMinecraftData = remotePlayerData.get("minecraft");
 		if (abstractMinecraftData != null) {
-			JsonObject proxyNetworkRelayData = abstractMinecraftData.getPluginData("networkrelay");
+			JsonObject minecraftNetworkRelayData = abstractMinecraftData.getPluginData("networkrelay");
 			if (
-				proxyNetworkRelayData != null
-					&& (proxyNetworkRelayData.get("protocol_version") instanceof JsonPrimitive protocolVersionPrimitive)
+				minecraftNetworkRelayData != null
+					&& (minecraftNetworkRelayData.get("protocol_version") instanceof JsonPrimitive protocolVersionPrimitive)
 					&& protocolVersionPrimitive.isNumber()
 			) {
 				return protocolVersionPrimitive.getAsInt();
+			} else if (minecraftNetworkRelayData == null) {
+				MMLog.info("(Minecraft) No NetworkRelay plugin data found");
+			} else if (!(minecraftNetworkRelayData.get("protocol_version") instanceof JsonPrimitive)) {
+				MMLog.info("(Minecraft) protocol_version not a json primitive");
+			} else {
+				MMLog.info("(Minecraft) protocol_version not a number");
 			}
+		} else {
+			MMLog.info("(Minecraft) No data found");
 		}
 
 		return null;
