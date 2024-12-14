@@ -186,23 +186,32 @@ public class PlayerStateManager implements Listener {
 		if (remotePlayerData == null) {
 			return null;
 		}
+
 		RemotePlayerAbstraction abstractProxyData = remotePlayerData.get("proxy");
-		if (
-			!(abstractProxyData instanceof RemotePlayerProxy proxyData)
-		) {
-			return null;
+		if (abstractProxyData != null) {
+			JsonObject proxyNetworkRelayData = abstractProxyData.getPluginData("networkrelay");
+			if (
+				proxyNetworkRelayData != null
+					&& (proxyNetworkRelayData.get("protocol_version") instanceof JsonPrimitive protocolVersionPrimitive)
+					&& protocolVersionPrimitive.isNumber()
+			) {
+				return protocolVersionPrimitive.getAsInt();
+			}
 		}
 
-		JsonObject proxyNetworkRelayData = proxyData.getPluginData("networkrelay");
-		if (
-			proxyNetworkRelayData == null
-				|| !(proxyNetworkRelayData.get("protocol_version") instanceof JsonPrimitive protocolVersionPrimitive)
-				|| !protocolVersionPrimitive.isNumber()
-		) {
-			return null;
+		RemotePlayerAbstraction abstractMinecraftData = remotePlayerData.get("minecraft");
+		if (abstractMinecraftData != null) {
+			JsonObject proxyNetworkRelayData = abstractMinecraftData.getPluginData("networkrelay");
+			if (
+				proxyNetworkRelayData != null
+					&& (proxyNetworkRelayData.get("protocol_version") instanceof JsonPrimitive protocolVersionPrimitive)
+					&& protocolVersionPrimitive.isNumber()
+			) {
+				return protocolVersionPrimitive.getAsInt();
+			}
 		}
 
-		return protocolVersionPrimitive.getAsInt();
+		return null;
 	}
 
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
