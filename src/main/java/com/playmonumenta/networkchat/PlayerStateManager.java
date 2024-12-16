@@ -202,15 +202,7 @@ public class PlayerStateManager implements Listener {
 					&& protocolVersionPrimitive.isNumber()
 			) {
 				return protocolVersionPrimitive.getAsInt();
-			} else if (proxyNetworkRelayData == null) {
-				MMLog.info("(Proxy) No NetworkRelay plugin data found");
-			} else if (!(proxyNetworkRelayData.get("protocol_version") instanceof JsonPrimitive)) {
-				MMLog.info("(Proxy) protocol_version not a json primitive");
-			} else {
-				MMLog.info("(Proxy) protocol_version not a number");
 			}
-		} else {
-			MMLog.info("(Proxy) No data found");
 		}
 
 		RemotePlayerAbstraction abstractMinecraftData = remotePlayerData.get("minecraft");
@@ -222,15 +214,7 @@ public class PlayerStateManager implements Listener {
 					&& protocolVersionPrimitive.isNumber()
 			) {
 				return protocolVersionPrimitive.getAsInt();
-			} else if (minecraftNetworkRelayData == null) {
-				MMLog.info("(Minecraft) No NetworkRelay plugin data found");
-			} else if (!(minecraftNetworkRelayData.get("protocol_version") instanceof JsonPrimitive)) {
-				MMLog.info("(Minecraft) protocol_version not a json primitive");
-			} else {
-				MMLog.info("(Minecraft) protocol_version not a number");
 			}
-		} else {
-			MMLog.info("(Minecraft) No data found");
 		}
 
 		return null;
