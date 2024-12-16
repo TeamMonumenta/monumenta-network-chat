@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.channel.Channel;
 import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.channel.interfaces.ChannelInviteOnly;
@@ -19,9 +20,12 @@ import com.playmonumenta.networkchat.utils.MMLog;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
+import com.playmonumenta.networkrelay.RemotePlayerAbstraction;
+import com.playmonumenta.networkrelay.RemotePlayerData;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import com.playmonumenta.redissync.RedisAPI;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
+import com.viaversion.viaversion.api.Via;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import java.util.HashMap;
@@ -42,11 +46,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerStateManager implements Listener {
 	private static final String IDENTIFIER = "NetworkChat";
 	private static final String REDIS_PLAYER_EVENT_SETTINGS_KEY = "player_event_settings";
+	private static final int VERSION_REQUIRES_REFRESHING_CHAT = 765;
 
 	private static @Nullable PlayerStateManager INSTANCE = null;
 	private static final Map<UUID, PlayerState> mPlayerStates = new HashMap<>();
@@ -56,75 +62,26 @@ public class PlayerStateManager implements Listener {
 
 	private PlayerStateManager() {
 		INSTANCE = this;
-		ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(NetworkChatPlugin.getInstance(),
-		                                                                         ListenerPriority.NORMAL,
-		                                                                         PacketType.Play.Server.CHAT) {
-			@Override
-			public void onPacketSending(PacketEvent event) {
-				if (event.getPacketType().equals(PacketType.Play.Server.CHAT)) {
-					PacketContainer packet = event.getPacket();
-					/*
-					 * This should never have any more or less than one ChatType in 1.19.4.
-					 * However, we have ViaVersion server-side instead of proxy-side, and
-					 * are incorrectly interpreting 1.20 packets as 1.19.4 packets, since
-					 * 1.19.4 servers do not have access to 1.20 packet types.
-					 *
-					 * Unless we can get at the 1.19.4 version of these packets, we will be
-					 * missing any chat messages that are of other types, such as system messages
-					 * or hotbar messages that 1.19.4 previously bundled into the same packet type.
-					 */
-					List<ChatType> chatTypes = packet.getChatTypes().getValues();
-					if (!chatTypes.isEmpty() && chatTypes.get(0).equals(ChatType.GAME_INFO)) {
-						// Ignore hotbar messages
-						return;
-					}
-					UUID sender = null;
-					List<UUID> uuids = packet.getUUIDs().getValues();
-					if (uuids.size() == 1) {
-						sender = uuids.get(0);
-					}
-					List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
-					if (messageParts.isEmpty()) {
-						return;
-					}
-
-					Gson gson = new Gson();
-					String messageJsonStr;
-					JsonObject messageJson;
-					Component messageComponent = null;
-					WrappedChatComponent messagePart = messageParts.get(0);
-					if (messagePart != null) {
-						messageJsonStr = messagePart.getJson();
-						messageJson = gson.fromJson(messageJsonStr, JsonObject.class);
-						try {
-							messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
-						} catch (JsonParseException e) {
-							// This is the fault of some other plugin, with no way to trace it. Silently ignore it.
-							return;
-						}
-					} else {
-						List<Object> packetParts = packet.getModifier().getValues();
-						for (Object possiblyMessage : packetParts) {
-							if (possiblyMessage instanceof Component) {
-								messageComponent = (Component) possiblyMessage;
-								break;
-							}
-						}
-						if (messageComponent == null) {
-							return;
-						}
-					}
-
-					Message message = Message.createRawMessage(sender, null, messageComponent);
-
-					PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
-					if (playerState != null) {
-						// A message or two may get lost when a player first joins, and their chat state hasn't loaded yet.
-						playerState.receiveExternalMessage(message);
-					}
+		ProtocolLibrary.getProtocolManager().addPacketListener(
+			new PacketAdapter(NetworkChatPlugin.getInstance(),
+				ListenerPriority.NORMAL,
+				PacketType.Play.Server.CHAT
+			) {
+				@Override
+				public void onPacketSending(PacketEvent event) {
+					onSendingChat(event);
 				}
-			}
-		});
+			});
+		ProtocolLibrary.getProtocolManager().addPacketListener(
+			new PacketAdapter(NetworkChatPlugin.getInstance(),
+				ListenerPriority.NORMAL,
+				PacketType.Play.Server.SYSTEM_CHAT
+			) {
+				@Override
+				public void onPacketSending(PacketEvent event) {
+					onSendingSystemChat(event);
+				}
+			});
 		reload();
 	}
 
@@ -138,13 +95,13 @@ public class PlayerStateManager implements Listener {
 	public static void reload() {
 		RedisAPI.getInstance().async().hget(NetworkChatPlugin.REDIS_CONFIG_PATH, REDIS_PLAYER_EVENT_SETTINGS_KEY)
 			.thenApply(dataStr -> {
-			if (dataStr != null) {
-				Gson gson = new Gson();
-				JsonObject dataJson = gson.fromJson(dataStr, JsonObject.class);
-				loadSettings(dataJson);
-			}
-			return dataStr;
-		});
+				if (dataStr != null) {
+					Gson gson = new Gson();
+					JsonObject dataJson = gson.fromJson(dataStr, JsonObject.class);
+					loadSettings(dataJson);
+				}
+				return dataStr;
+			});
 	}
 
 	public static void loadSettings(JsonObject playerEventSettingsJson) {
@@ -165,8 +122,8 @@ public class PlayerStateManager implements Listener {
 		wrappedConfigJson.add(REDIS_PLAYER_EVENT_SETTINGS_KEY, playerEventSettingsJson);
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE,
-			                                             wrappedConfigJson,
-			                                             NetworkChatPlugin.getMessageTtl());
+				wrappedConfigJson,
+				NetworkChatPlugin.getMessageTtl());
 		} catch (Exception e) {
 			MMLog.severe("Failed to broadcast " + NetworkChatPlugin.NETWORK_CHAT_CONFIG_UPDATE);
 		}
@@ -223,6 +180,44 @@ public class PlayerStateManager implements Listener {
 			PlayerState playerState = playerStateEntry.getValue();
 			playerState.unregisterChannel(channelId);
 		}
+	}
+
+	public static @Nullable Integer playerVersion(UUID playerId) {
+		RemotePlayerData remotePlayerData = NetworkRelayAPI.getRemotePlayer(playerId);
+		if (remotePlayerData == null) {
+			return null;
+		}
+
+		PluginManager pluginManager = Bukkit.getPluginManager();
+		if (pluginManager.isPluginEnabled("viaversion")) {
+			return Via.getAPI().getPlayerVersion(playerId);
+		}
+
+		RemotePlayerAbstraction abstractProxyData = remotePlayerData.get("proxy");
+		if (abstractProxyData != null) {
+			JsonObject proxyNetworkRelayData = abstractProxyData.getPluginData("networkrelay");
+			if (
+				proxyNetworkRelayData != null
+					&& (proxyNetworkRelayData.get("protocol_version") instanceof JsonPrimitive protocolVersionPrimitive)
+					&& protocolVersionPrimitive.isNumber()
+			) {
+				return protocolVersionPrimitive.getAsInt();
+			}
+		}
+
+		RemotePlayerAbstraction abstractMinecraftData = remotePlayerData.get("minecraft");
+		if (abstractMinecraftData != null) {
+			JsonObject minecraftNetworkRelayData = abstractMinecraftData.getPluginData("networkrelay");
+			if (
+				minecraftNetworkRelayData != null
+					&& (minecraftNetworkRelayData.get("protocol_version") instanceof JsonPrimitive protocolVersionPrimitive)
+					&& protocolVersionPrimitive.isNumber()
+			) {
+				return protocolVersionPrimitive.getAsInt();
+			}
+		}
+
+		return null;
 	}
 
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
@@ -294,6 +289,15 @@ public class PlayerStateManager implements Listener {
 			ChannelManager.loadChannel(channelId, playerState);
 		}
 
+		Integer playerVersion = playerVersion(playerId);
+		if (
+			playerVersion != null
+				&& playerVersion == VERSION_REQUIRES_REFRESHING_CHAT
+		) {
+			MMLog.info("Refreshing chat during login event");
+			playerState.refreshChat();
+		}
+
 		// TODO Send login messages here (once implemented)
 	}
 
@@ -332,9 +336,10 @@ public class PlayerStateManager implements Listener {
 			return;
 		}
 		try {
+			MMLog.info("Broadcasting player chat history");
 			NetworkRelayAPI.sendExpiringBroadcastMessage(PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY,
-			                                             oldChatHistory.toJson(),
-			                                             PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
+				oldChatHistory.toJson(),
+				PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
 		} catch (Exception e) {
 			MMLog.severe("Failed to broadcast " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY);
 			mPlayerChatHistories.remove(playerId);
@@ -390,15 +395,26 @@ public class PlayerStateManager implements Listener {
 				final UUID playerId = UUID.fromString(playerIdJson.getAsString());
 
 				getPlayerChatHistory(playerId).updateFromJson(data);
+				Integer playerVersion = playerVersion(playerId);
+				if (playerVersion != null && playerVersion == VERSION_REQUIRES_REFRESHING_CHAT) {
+					PlayerState playerState = getPlayerState(playerId);
+					if (playerState != null) {
+						MMLog.info("Refreshing chat due to received RemoteChatHistory");
+						playerState.refreshChat();
+					}
+				}
+
+				// Failsafe in case the proxy data was outdated, and the player was just leaving
 				new BukkitRunnable() {
 					@Override
 					public void run() {
 						OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerId);
 						if (!offlinePlayer.isOnline()) {
 							mPlayerChatHistories.remove(playerId);
-				        }
+						}
 					}
 				}.runTaskLater(NetworkChatPlugin.getInstance(), 20 * PlayerChatHistory.MAX_OFFLINE_HISTORY_SECONDS);
+				MMLog.info("Got player chat history successfully");
 			} catch (Exception e) {
 				MMLog.severe("Got " + PlayerChatHistory.NETWORK_CHAT_PLAYER_CHAT_HISTORY + " with invalid data");
 			}
@@ -430,6 +446,117 @@ public class PlayerStateManager implements Listener {
 			}
 			default -> {
 			}
+		}
+	}
+
+	private void onSendingChat(PacketEvent event) {
+		PacketContainer packet = event.getPacket();
+		/*
+		 * This should never have any more or less than one ChatType in 1.19.4.
+		 * However, we have ViaVersion server-side instead of proxy-side, and
+		 * are incorrectly interpreting 1.20 packets as 1.19.4 packets, since
+		 * 1.19.4 servers do not have access to 1.20 packet types.
+		 *
+		 * Unless we can get at the 1.19.4 version of these packets, we will be
+		 * missing any chat messages that are of other types, such as system messages
+		 * or hotbar messages that 1.19.4 previously bundled into the same packet type.
+		 */
+		List<ChatType> chatTypes = packet.getChatTypes().getValues();
+		if (!chatTypes.isEmpty() && chatTypes.get(0).equals(ChatType.GAME_INFO)) {
+			// Ignore hotbar messages
+			return;
+		}
+		UUID sender = null;
+		List<UUID> uuids = packet.getUUIDs().getValues();
+		if (uuids.size() == 1) {
+			sender = uuids.get(0);
+		}
+		List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
+		if (messageParts.isEmpty()) {
+			return;
+		}
+
+		Gson gson = new Gson();
+		String messageJsonStr;
+		JsonElement messageJson;
+		Component messageComponent = null;
+		WrappedChatComponent messagePart = messageParts.get(0);
+		if (messagePart != null) {
+			messageJsonStr = messagePart.getJson();
+			messageJson = gson.fromJson("{\"data\":" + messageJsonStr + "}", JsonObject.class).get("data");
+			try {
+				messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
+			} catch (JsonParseException e) {
+				// This is the fault of some other plugin, with no way to trace it. Silently ignore it.
+				return;
+			}
+		} else {
+			List<Object> packetParts = packet.getModifier().getValues();
+			for (Object possiblyMessage : packetParts) {
+				if (possiblyMessage instanceof Component) {
+					messageComponent = (Component) possiblyMessage;
+					break;
+				}
+			}
+			if (messageComponent == null) {
+				return;
+			}
+		}
+
+		Message message = Message.createRawMessage(sender, null, messageComponent);
+
+		PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
+		if (playerState != null) {
+			// A message or two may get lost when a player first joins, and their chat state hasn't loaded yet.
+			playerState.receiveExternalMessage(message);
+		}
+	}
+
+	private void onSendingSystemChat(PacketEvent event) {
+		PacketContainer packet = event.getPacket();
+		List<Boolean> overlay = packet.getBooleans().getValues();
+		if (!overlay.isEmpty() && overlay.get(overlay.size() - 1)) {
+			// Ignore hotbar messages
+			return;
+		}
+		List<WrappedChatComponent> messageParts = packet.getChatComponents().getValues();
+		if (messageParts.isEmpty()) {
+			return;
+		}
+
+		Gson gson = new Gson();
+		String messageJsonStr;
+		JsonElement messageJson;
+		Component messageComponent = null;
+		WrappedChatComponent messagePart = messageParts.get(0);
+		if (messagePart != null) {
+			messageJsonStr = messagePart.getJson();
+			messageJson = gson.fromJson("{\"data\":" + messageJsonStr + "}", JsonObject.class).get("data");
+			try {
+				messageComponent = MessagingUtils.GSON_SERIALIZER.deserializeFromTree(messageJson);
+			} catch (JsonParseException e) {
+				// This is the fault of some other plugin, with no way to trace it. Silently ignore it.
+				return;
+			}
+		} else {
+			List<Object> packetParts = packet.getModifier().getValues();
+			for (Object possiblyMessage : packetParts) {
+				if (possiblyMessage instanceof Component) {
+					messageComponent = (Component) possiblyMessage;
+					break;
+				}
+			}
+			if (messageComponent == null) {
+				return;
+			}
+		}
+
+		Message message = Message.createRawMessage(null, null, messageComponent);
+
+		PlayerState playerState = mPlayerStates.get(event.getPlayer().getUniqueId());
+		if (playerState != null) {
+			// A message or two may get lost when a player first joins, and their chat state hasn't loaded yet.
+			playerState.receiveExternalMessage(message);
 		}
 	}
 }
