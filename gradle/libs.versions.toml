@@ -7,6 +7,7 @@ redissync = "4.1"
 lettuce = "5.3.5.RELEASE"
 placeholderapi ="2.10.9"
 protocollib = "5.0.0"
+viaversion = "5.2.0"
 
 [libraries]
 minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "minimessage" }
@@ -17,3 +18,4 @@ redissync = { module = "com.playmonumenta:redissync", version.ref = "redissync" 
 lettuce = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
 placeholderapi = {  module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
 protocollib = {module = "com.comphenix.protocol:ProtocolLib", version.ref = "protocollib"}
+viaversion = { module = "com.viaversion:viaversion-api", version.ref = "viaversion" }

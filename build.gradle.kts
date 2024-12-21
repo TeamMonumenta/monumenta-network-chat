@@ -4,6 +4,12 @@ plugins {
 	id("com.playmonumenta.gradle-config") version "1.+"
 }
 
+repositories {
+	mavenCentral()
+	maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+	maven("https://repo.viaversion.com")
+}
+
 dependencies {
 	implementation(libs.minimessage)
 	implementation(libs.commons)
@@ -17,6 +23,7 @@ dependencies {
 	compileOnly(libs.lettuce)
 	compileOnly(libs.placeholderapi)
 	compileOnly(libs.protocollib)
+	compileOnly(libs.viaversion)
 }
 
 monumenta {
@@ -31,6 +38,6 @@ monumenta {
 			"PlaceholderAPI",
 			"ProtocolLib"
 		),
-		softDepends = listOf()
+		softDepends = listOf("ViaVersion")
 	)
 }
