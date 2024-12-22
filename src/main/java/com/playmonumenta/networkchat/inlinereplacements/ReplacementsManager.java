@@ -15,6 +15,7 @@ public class ReplacementsManager {
 		mReplacements.add(new ItemHoverReplacement());
 		mReplacements.add(new DiceRollReplacement());
 		mReplacements.add(new EquipmentHoverReplacement());
+		mReplacements.add(new CoordinatesReplacement());
 	}
 
 	public Component run(CommandSender sender, Component input) {
