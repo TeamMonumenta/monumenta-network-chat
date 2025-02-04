@@ -7,6 +7,7 @@ import com.playmonumenta.networkchat.NetworkChatProperties;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.channel.Channel;
+import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -25,7 +26,8 @@ import org.bukkit.entity.Player;
 
 public class ChatSayCommand {
 	public static void register() {
-		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT);
+		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_CHAT
+			.and(ChannelPredicate.not(ChannelPredicate.channelType(ChannelWhisper.CHANNEL_CLASS_ID))));
 		GreedyStringArgument messageArg = new GreedyStringArgument("message");
 
 		ChatCommand.getBaseCommand()

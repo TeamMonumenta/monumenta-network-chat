@@ -5,6 +5,7 @@ import com.playmonumenta.networkchat.ChannelPredicate;
 import com.playmonumenta.networkchat.PlayerState;
 import com.playmonumenta.networkchat.PlayerStateManager;
 import com.playmonumenta.networkchat.channel.Channel;
+import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.commands.ChatCommand;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.MessagingUtils;
@@ -18,7 +19,8 @@ import org.bukkit.entity.Player;
 
 public class ChatJoinCommand {
 	public static void register() {
-		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN);
+		Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
+			.and(ChannelPredicate.not(ChannelPredicate.channelType(ChannelWhisper.CHANNEL_CLASS_ID))));
 
 		CommandAPICommand joinCommand = new CommandAPICommand("join")
 			.withArguments(channelArg)
