@@ -21,7 +21,8 @@ public class ChatNewCommand {
 	public static void register() {
 		if (NetworkChatProperties.getChatCommandCreateEnabled()) {
 			LiteralArgument newArg = new LiteralArgument("new");
-			Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN);
+			Argument<String> channelArg = ChannelManager.getChannelNameArgument(ChannelPredicate.MAY_LISTEN
+				.and(ChannelPredicate.not(ChannelPredicate.channelType(ChannelWhisper.CHANNEL_CLASS_ID))));
 			ChannelAnnouncement.registerNewChannelCommands(newArg, channelArg);
 			ChannelLocal.registerNewChannelCommands(newArg, channelArg);
 			ChannelGlobal.registerNewChannelCommands(newArg, channelArg);
