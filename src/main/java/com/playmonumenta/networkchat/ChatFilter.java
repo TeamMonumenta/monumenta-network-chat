@@ -12,9 +12,9 @@ import com.playmonumenta.networkchat.utils.MessagingUtils;
 import com.playmonumenta.networkchat.utils.ReplacerWithEscape;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.MatchResult;
@@ -315,7 +315,7 @@ public class ChatFilter {
 		} else {
 			Gson gson = new Gson();
 
-			ArrayList<File> files = FileUtils.getFilesInDirectory(sender,
+			List<File> files = FileUtils.getFilesInDirectory(sender,
 				folderLocation,
 				".json",
 				"Unable to find global filters due to IO error:");

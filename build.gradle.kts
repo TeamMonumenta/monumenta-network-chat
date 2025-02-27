@@ -11,7 +11,6 @@ repositories {
 }
 
 dependencies {
-	implementation(libs.minimessage)
 	implementation(libs.commons)
 	compileOnly(libs.commandapi)
 	compileOnly(libs.networkrelay)
@@ -20,7 +19,6 @@ dependencies {
 			classifier = "all"
 		}
 	}
-	compileOnly(libs.lettuce)
 	compileOnly(libs.placeholderapi)
 	compileOnly(libs.protocollib)
 	compileOnly(libs.viaversion)
@@ -30,7 +28,7 @@ monumenta {
 	name("MonumentaNetworkChat")
 	deploymentName("NetworkChat")
 	paper(
-		"com.playmonumenta.networkchat.NetworkChatPlugin", BukkitPluginDescription.PluginLoadOrder.POSTWORLD, "1.19",
+		"com.playmonumenta.networkchat.NetworkChatPlugin", BukkitPluginDescription.PluginLoadOrder.POSTWORLD, "1.20.4",
 		depends = listOf(
 			"CommandAPI",
 			"MonumentaNetworkRelay",
