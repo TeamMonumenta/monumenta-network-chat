@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkchat.channel.Channel;
+import com.playmonumenta.networkchat.channel.ChannelWhisper;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import com.playmonumenta.networkchat.utils.FileUtils;
 import com.playmonumenta.networkchat.utils.MMLog;
@@ -264,9 +265,11 @@ public class ChatFilter {
 
 					Message message = filterResult.mMessage;
 					String channelName = "CHANNEL_NAME_NOT_FOUND";
+					boolean isWhisperChannel = false;
 					if (message != null) {
 						Channel channel = message.getChannel();
 						if (channel != null) {
+							isWhisperChannel = channel instanceof ChannelWhisper;
 							channelName = channel.getFriendlyName();
 						}
 					}
@@ -292,8 +295,19 @@ public class ChatFilter {
 					command = command.replace("@O", originalMessage);
 					command = command.replace("@M", replacedMessage);
 					final String finishedCommand = command;
-					Bukkit.getScheduler().runTask(NetworkChatPlugin.getInstance(),
-						() -> Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand));
+					if (isWhisperChannel && command.contains("auditlogsevereplayer")) {
+						/*
+						 * Monumenta has chat filter rules configured to automatically elevate messages that match certain patterns to moderators for review.
+						 * This happens by running /auditlogsevereplayer with message context, which is provided by a different plugin.
+						 * Messages in whisper channels should not be automatically forwarded for review, though other filter actions still apply to them.
+						 * The command is instead logged to the console so it can be retrieved if necessary.
+						 * TODO: It would be nice to have better infrastructure to make this possible via config, rather than hardcoding it here.
+						 */
+						MMLog.info(() -> "Skipping automated audit logging for whisper channel. Command would have been '" + finishedCommand + "'");
+					} else {
+						Bukkit.getScheduler().runTask(NetworkChatPlugin.getInstance(),
+							() -> Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), finishedCommand));
+					}
 				}
 			}
 			filterResult.copyResults(localResult);
