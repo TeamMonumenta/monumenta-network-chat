@@ -49,6 +49,9 @@ public class PlayerChatHistory {
 			for (JsonElement messageJson : unseenMessagesJson) {
 				if (messageJson instanceof JsonObject messageJsonObject) {
 					Message message = Message.fromJson(messageJsonObject);
+					while (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+						mUnseenMessages.remove(0);
+					}
 					mUnseenMessages.add(message);
 				}
 			}
@@ -93,12 +96,12 @@ public class PlayerChatHistory {
 		}
 
 		if (getPlayerState().isPaused() || mIsReplayingChat) {
-			if (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+			while (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
 				mUnseenMessages.remove(0);
 			}
 			mUnseenMessages.add(message);
 		} else {
-			if (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+			while (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
 				mSeenMessages.remove(0);
 			}
 			mIsDisplayingMessage = true;
@@ -112,7 +115,7 @@ public class PlayerChatHistory {
 		if (mIsReplayingChat || mIsDisplayingMessage) {
 			return;
 		}
-		if (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+		while (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
 			mSeenMessages.remove(0);
 		}
 		mSeenMessages.add(message);
@@ -130,9 +133,8 @@ public class PlayerChatHistory {
 			return message.isDeleted();
 		});
 
-		int messageCount = MAX_DISPLAYED_MESSAGES - mSeenMessages.size();
 		Component emptyMessage = Component.empty();
-		for (int i = 0; i < messageCount; ++i) {
+		for (int i = mSeenMessages.size(); i < MAX_DISPLAYED_MESSAGES; ++i) {
 			getPlayer().sendMessage(emptyMessage);
 		}
 
@@ -169,7 +171,7 @@ public class PlayerChatHistory {
 	public void unpauseChat() {
 		// Delete old seen messages
 		if (mUnseenMessages.size() + mSeenMessages.size() > MAX_DISPLAYED_MESSAGES) {
-			int newSeenStartIndex = mUnseenMessages.size() + mSeenMessages.size() - MAX_DISPLAYED_MESSAGES;
+			int newSeenStartIndex = Integer.min(MAX_DISPLAYED_MESSAGES, mUnseenMessages.size() + mSeenMessages.size() - MAX_DISPLAYED_MESSAGES);
 			int newSeenToIndex = Integer.min(MAX_DISPLAYED_MESSAGES, mSeenMessages.size());
 			mSeenMessages = mSeenMessages.subList(newSeenStartIndex, newSeenToIndex);
 		}
@@ -177,6 +179,10 @@ public class PlayerChatHistory {
 	}
 
 	private void showUnseen() {
+		while (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+			mUnseenMessages.remove(0);
+		}
+
 		mIsDisplayingMessage = true;
 		Player player = getPlayer();
 		for (Message message : mUnseenMessages) {
@@ -187,5 +193,8 @@ public class PlayerChatHistory {
 		mIsDisplayingMessage = false;
 
 		getPlayerState().setPauseState(false);
+		while (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+			mSeenMessages.remove(0);
+		}
 	}
 }
