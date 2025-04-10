@@ -60,6 +60,20 @@ public class PlayerChatHistory {
 				}
 			}
 		}
+
+		JsonArray unprocessedMessagesJson = obj.getAsJsonArray("unprocessedMessages");
+		if (unprocessedMessagesJson != null) {
+			mUnprocessedMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
+			for (JsonElement messageJson : unprocessedMessagesJson) {
+				if (messageJson instanceof JsonObject messageJsonObject) {
+					Message message = Message.fromJson(messageJsonObject);
+					while (mUnprocessedMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+						mUnprocessedMessages.remove(0);
+					}
+					mUnprocessedMessages.add(message);
+				}
+			}
+		}
 	}
 
 	public JsonObject toJson() {
@@ -68,16 +82,24 @@ public class PlayerChatHistory {
 		for (Message message : seenMessagesCopy) {
 			seenMessages.add(message.toJson());
 		}
+
 		List<Message> unseenMessagesCopy = new ArrayList<>(mUnseenMessages);
 		JsonArray unseenMessages = new JsonArray();
 		for (Message message : unseenMessagesCopy) {
 			unseenMessages.add(message.toJson());
 		}
 
+		List<Message> unprocessedMessagesCopy = new ArrayList<>(mUnseenMessages);
+		JsonArray unprocessedMessages = new JsonArray();
+		for (Message message : unprocessedMessagesCopy) {
+			unprocessedMessages.add(message.toJson());
+		}
+
 		JsonObject result = new JsonObject();
 		result.addProperty("playerId", mPlayerId.toString());
 		result.add("seenMessages", seenMessages);
 		result.add("unseenMessages", unseenMessages);
+		result.add("unprocessedMessages", unprocessedMessages);
 
 		return result;
 	}
