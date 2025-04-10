@@ -24,8 +24,12 @@ public class PlayerChatHistory {
 	private final UUID mPlayerId;
 	private boolean mIsReplayingChat = false;
 	private boolean mIsDisplayingMessage = false;
+	// Messages the player has seen
 	private List<Message> mSeenMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
+	// Messages the player should see, but has not yet due to paused chat
 	private List<Message> mUnseenMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
+	// Messages received while chat is being refreshed, to be sorted into seen/unseen
+	private List<Message> mUnprocessedMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
 
 	public PlayerChatHistory(UUID playerId) {
 		mPlayerId = playerId;
@@ -56,6 +60,20 @@ public class PlayerChatHistory {
 				}
 			}
 		}
+
+		JsonArray unprocessedMessagesJson = obj.getAsJsonArray("unprocessedMessages");
+		if (unprocessedMessagesJson != null) {
+			mUnprocessedMessages = new ArrayList<>(MAX_DISPLAYED_MESSAGES);
+			for (JsonElement messageJson : unprocessedMessagesJson) {
+				if (messageJson instanceof JsonObject messageJsonObject) {
+					Message message = Message.fromJson(messageJsonObject);
+					while (mUnprocessedMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+						mUnprocessedMessages.remove(0);
+					}
+					mUnprocessedMessages.add(message);
+				}
+			}
+		}
 	}
 
 	public JsonObject toJson() {
@@ -64,16 +82,24 @@ public class PlayerChatHistory {
 		for (Message message : seenMessagesCopy) {
 			seenMessages.add(message.toJson());
 		}
+
 		List<Message> unseenMessagesCopy = new ArrayList<>(mUnseenMessages);
 		JsonArray unseenMessages = new JsonArray();
 		for (Message message : unseenMessagesCopy) {
 			unseenMessages.add(message.toJson());
 		}
 
+		List<Message> unprocessedMessagesCopy = new ArrayList<>(mUnseenMessages);
+		JsonArray unprocessedMessages = new JsonArray();
+		for (Message message : unprocessedMessagesCopy) {
+			unprocessedMessages.add(message.toJson());
+		}
+
 		JsonObject result = new JsonObject();
 		result.addProperty("playerId", mPlayerId.toString());
 		result.add("seenMessages", seenMessages);
 		result.add("unseenMessages", unseenMessages);
+		result.add("unprocessedMessages", unprocessedMessages);
 
 		return result;
 	}
@@ -90,18 +116,36 @@ public class PlayerChatHistory {
 		return playerState;
 	}
 
+	/**
+	 * Receives a message that is from a chat channel
+	 * @param message The message to display
+	 */
 	public void receiveMessage(Message message) {
 		if (message.isDeleted()) {
 			return;
 		}
 
-		if (getPlayerState().isPaused() || mIsReplayingChat) {
+		if (mIsReplayingChat) {
+			while (mUnprocessedMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+				// The message may be used elsewhere
+				//noinspection resource
+				mUnprocessedMessages.remove(0);
+			}
+			mUnprocessedMessages.add(message);
+			return;
+		}
+
+		if (getPlayerState().isPaused()) {
 			while (mUnseenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+				// The message may be used elsewhere
+				//noinspection resource
 				mUnseenMessages.remove(0);
 			}
 			mUnseenMessages.add(message);
 		} else {
 			while (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+				// The message may be used elsewhere
+				//noinspection resource
 				mSeenMessages.remove(0);
 			}
 			mIsDisplayingMessage = true;
@@ -111,14 +155,55 @@ public class PlayerChatHistory {
 		}
 	}
 
+	/**
+	 * Receives a message that isn't from a chat channel
+	 * @param message The message to display
+	 */
 	public void receiveExternalMessage(Message message) {
-		if (mIsReplayingChat || mIsDisplayingMessage) {
+		if (mIsDisplayingMessage) {
 			return;
 		}
+
+		if (mIsReplayingChat) {
+			while (mUnprocessedMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+				// The message may be used elsewhere
+				//noinspection resource
+				mUnprocessedMessages.remove(0);
+			}
+			mUnprocessedMessages.add(message);
+			return;
+		}
+
 		while (mSeenMessages.size() >= MAX_DISPLAYED_MESSAGES) {
+			// The message may be used elsewhere
+			//noinspection resource
 			mSeenMessages.remove(0);
 		}
 		mSeenMessages.add(message);
+	}
+
+	/**
+	 * Displays messages that were received while refreshing chat
+	 */
+	public void processUnprocessedMessages() {
+		while (!mUnprocessedMessages.isEmpty()) {
+			Message message = mUnprocessedMessages.remove(0);
+
+			if (message.isDeleted()) {
+				continue;
+			}
+
+			if (message.getChannelUniqueId() != null) {
+				// Channel message
+				receiveMessage(message);
+			} else {
+				// External message
+				mIsDisplayingMessage = true;
+				message.showMessage(getPlayer());
+				mIsDisplayingMessage = false;
+				receiveExternalMessage(message);
+			}
+		}
 	}
 
 	// Re-show chat with deleted messages removed, even while paused.
@@ -134,19 +219,21 @@ public class PlayerChatHistory {
 		});
 
 		Component emptyMessage = Component.empty();
+
+		mIsDisplayingMessage = true;
 		for (int i = mSeenMessages.size(); i < MAX_DISPLAYED_MESSAGES; ++i) {
 			getPlayer().sendMessage(emptyMessage);
 		}
-
-		mIsDisplayingMessage = true;
 		for (Message message : mSeenMessages) {
 			message.showMessage(getPlayer());
 		}
 		mIsDisplayingMessage = false;
+
 		mIsReplayingChat = false;
 		if (!getPlayerState().isPaused()) {
 			showUnseen();
 		}
+		processUnprocessedMessages();
 	}
 
 	public void clearChat() {
