@@ -205,10 +205,10 @@ public class ChannelTeam extends Channel {
 		} else {
 			ChannelAccess playerAccess = mPlayerAccess.get(player.getUniqueId());
 			if (playerAccess == null) {
-				if (!Boolean.TRUE.equals(mDefaultAccess.mayChat())) {
+				if (Boolean.FALSE.equals(mDefaultAccess.mayChat())) {
 					return false;
 				}
-			} else if (!Boolean.TRUE.equals(playerAccess.mayChat())) {
+			} else if (Boolean.FALSE.equals(playerAccess.mayChat())) {
 				return false;
 			}
 
@@ -359,6 +359,7 @@ public class ChannelTeam extends Channel {
 			prefix = "";
 		}
 		prefix = prefix
+			.replace("<message_gui_cmd>", message.getGuiCommand())
 			.replace("<channel_color>", MessagingUtils.colorToMiniMessage(channelColor)
 			.replace("<channel_description>", mDescription)) + " ";
 
