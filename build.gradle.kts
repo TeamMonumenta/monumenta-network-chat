@@ -1,7 +1,7 @@
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 
 plugins {
-	id("com.playmonumenta.gradle-config") version "1.+"
+	id("com.playmonumenta.gradle-config") version "3.+"
 }
 
 repositories {
@@ -27,8 +27,8 @@ dependencies {
 }
 
 monumenta {
-	name("MonumentaNetworkChat")
-	deploymentName("NetworkChat")
+	id("MonumentaNetworkChat")
+	name("NetworkChat")
 	paper(
 		"com.playmonumenta.networkchat.NetworkChatPlugin", BukkitPluginDescription.PluginLoadOrder.POSTWORLD, "1.19",
 		depends = listOf(
