@@ -28,7 +28,7 @@ monumenta {
 	id("MonumentaNetworkChat")
 	name("NetworkChat")
 	paper(
-		"com.playmonumenta.networkchat.NetworkChatPlugin", BukkitPluginDescription.PluginLoadOrder.POSTWORLD, "1.20.4",
+		"com.playmonumenta.networkchat.NetworkChatPlugin", BukkitPluginDescription.PluginLoadOrder.POSTWORLD, "1.20",
 		depends = listOf(
 			"CommandAPI",
 			"MonumentaNetworkRelay",
@@ -36,6 +36,7 @@ monumenta {
 			"PlaceholderAPI",
 			"ProtocolLib"
 		),
-		softDepends = listOf("ViaVersion")
+		softDepends = listOf("ViaVersion"),
+		apiJarVersion = "1.20.4-R0.1-SNAPSHOT"
 	)
 }
