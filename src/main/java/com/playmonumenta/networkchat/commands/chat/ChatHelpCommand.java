@@ -72,7 +72,7 @@ public class ChatHelpCommand {
 
 		// Load from plugin data folder
 		String folderLocation = plugin.getDataFolder() + File.separator + "help";
-		ArrayList<File> listOfFiles;
+		List<File> listOfFiles;
 		try {
 			File directory = new File(folderLocation);
 			if (!directory.exists()) {

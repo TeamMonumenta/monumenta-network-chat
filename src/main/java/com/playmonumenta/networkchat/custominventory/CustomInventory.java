@@ -37,6 +37,7 @@ public abstract class CustomInventory {
 			if (mMainListener == null) {
 				mMainListener = new Listener() {
 
+					@SuppressWarnings("unused")
 					@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 					public void pluginDisable(PluginDisableEvent event) {
 						HashSet<CustomInventory> invs = mOpenedInvsByPlugin.remove(event.getPlugin());
@@ -52,12 +53,13 @@ public abstract class CustomInventory {
 						if (mPlugin == event.getPlugin()) {
 							mPlugin = null;
 							HandlerList.unregisterAll(mMainListener);
-							if (mOpenedInvsByPlugin.size() > 0) {
+							if (!mOpenedInvsByPlugin.isEmpty()) {
 								bindListener(mOpenedInvsByPlugin.keySet().iterator().next());
 							}
 						}
 					}
 
+					@SuppressWarnings("unused")
 					@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 					public void inventoryClick(InventoryClickEvent event) {
 						CustomInventory inv = mOpenedInvsByPlayer.get(event.getWhoClicked());
@@ -66,6 +68,7 @@ public abstract class CustomInventory {
 						}
 					}
 
+					@SuppressWarnings("unused")
 					@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 					public void inventoryDrag(InventoryDragEvent event) {
 						CustomInventory inv = mOpenedInvsByPlayer.get(event.getWhoClicked());
@@ -74,6 +77,7 @@ public abstract class CustomInventory {
 						}
 					}
 
+					@SuppressWarnings("unused")
 					@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 					public void inventoryClose(InventoryCloseEvent event) {
 						CustomInventory inv = mOpenedInvsByPlayer.remove(event.getPlayer());
@@ -94,10 +98,12 @@ public abstract class CustomInventory {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public CustomInventory(Player owner, int size) {
 		mInventory = Bukkit.createInventory(owner, size);
 	}
 
+	@SuppressWarnings("unused")
 	public CustomInventory(Player owner, int size, String title) {
 		mInventory = Bukkit.createInventory(owner, size, Component.text(title));
 	}
@@ -123,6 +129,7 @@ public abstract class CustomInventory {
 		return mInventory;
 	}
 
+	@SuppressWarnings("unused")
 	public @Nullable Plugin getPlugin() {
 		return mOwner;
 	}

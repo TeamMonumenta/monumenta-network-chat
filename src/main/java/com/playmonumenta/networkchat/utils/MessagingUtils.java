@@ -74,6 +74,7 @@ public class MessagingUtils {
 		return SENDER_FMT_MINIMESSAGE;
 	}
 
+	@SuppressWarnings("deprecation")
 	public static String legacyToMiniMessage(String legacy) {
 		String result = legacy;
 
