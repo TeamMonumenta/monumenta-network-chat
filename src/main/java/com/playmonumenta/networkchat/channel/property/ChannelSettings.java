@@ -10,6 +10,7 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -34,7 +35,7 @@ public class ChannelSettings {
 
 		public static @Nullable FlagKey of(String s) {
 			try {
-				return valueOf(s.toUpperCase());
+				return valueOf(s.toUpperCase(Locale.ENGLISH));
 			} catch (Exception e) {
 				return null;
 			}
@@ -58,7 +59,7 @@ public class ChannelSettings {
 
 		public static @Nullable FlagValue of(String s) {
 			try {
-				return valueOf(s.toUpperCase());
+				return valueOf(s.toUpperCase(Locale.ENGLISH));
 			} catch (Exception e) {
 				return null;
 			}
@@ -121,7 +122,7 @@ public class ChannelSettings {
 			}
 
 			JsonArray cSoundsArray = object.getAsJsonArray("SoundsList");
-			if (cSoundsArray != null && cSoundsArray.size() > 0) {
+			if (cSoundsArray != null && !cSoundsArray.isEmpty()) {
 				for (JsonElement element : cSoundsArray) {
 					try {
 						settings.mSounds.add(CSound.fromJson(element.getAsJsonObject()));
