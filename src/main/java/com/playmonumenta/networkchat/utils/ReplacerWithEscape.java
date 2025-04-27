@@ -4,8 +4,10 @@ import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.apache.commons.text.StringEscapeUtils;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 /*
  * Matcher replacer function with escape support via "$\\#".
@@ -17,11 +19,13 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 	private static final Pattern RE_REPLACEMENT_NUMERIC_GROUP = Pattern.compile("^\\$(\\\\?)([0-9]+)");
 
 	private final CommandSender mSender;
+	private final boolean mHasPlaceholder;
 	private final String mReplacement;
 
-	public ReplacerWithEscape(CommandSender sender, String replacement) {
+	public ReplacerWithEscape(CommandSender sender, String replacement, boolean hasPlaceholder) {
 		mSender = sender;
 		mReplacement = replacement;
+		mHasPlaceholder = hasPlaceholder;
 	}
 
 	private static void debugMessage(String prefix, String msg) {
@@ -80,6 +84,10 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 						debugMessage("    X ", "Out of bounds (" + groupIndex + " not in 0.." + matchResult.groupCount() + "), using literal instead");
 						result = matcher.group();
 					}
+					if (result == null) {
+						debugMessage("    X ", "Incorrect numeric group match, got null!");
+						result = "";
+					}
 				} catch (NumberFormatException e) {
 					MessagingUtils.sendStackTrace(mSender, e);
 					result = matcher.group();
@@ -87,14 +95,10 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 				if (doEscape) {
 					result = result.replace("\\", "\\\\").replace("\"", "\\\\\"");
 				}
-				if (result.isBlank()) {
-					debugMessage("    X ", "Incorrect numeric group match, got empty!");
-				} else {
-					debugMessage("- ", result);
-					builder.append(result);
-					remainingReplacement = remainingReplacement.substring(part.length());
-					continue;
-				}
+				debugMessage("- ", result);
+				builder.append(result);
+				remainingReplacement = remainingReplacement.substring(part.length());
+				continue;
 			}
 
 			String part = remainingReplacement.substring(0, 1);
@@ -110,6 +114,13 @@ public class ReplacerWithEscape implements Function<MatchResult, String> {
 
 		String result = builder.toString();
 		debugMessage("result: ", result);
+
+		if (mHasPlaceholder) {
+			result = PlaceholderAPI.setPlaceholders((mSender instanceof Player player) ? player : null, result);
+		}
+
+		result = Matcher.quoteReplacement(result);
+
 		return result;
 	}
 }
