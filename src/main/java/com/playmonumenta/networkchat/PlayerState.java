@@ -35,7 +35,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
-// TODO Track how many players are in a channel on this server/overall
 public class PlayerState {
 	private final UUID mPlayerId;
 	private final ConcurrentSkipListSet<UUID> mPreviousPlayerIds = new ConcurrentSkipListSet<>();

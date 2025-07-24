@@ -6,6 +6,7 @@ import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkchat.utils.CommandUtils;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -28,7 +29,7 @@ public class MessageVisibility {
 
 		public static @Nullable VisibilityKey of(String s) {
 			try {
-				return valueOf(s.toUpperCase());
+				return valueOf(s.toUpperCase(Locale.ENGLISH));
 			} catch (Exception e) {
 				return null;
 			}
@@ -54,7 +55,7 @@ public class MessageVisibility {
 
 		public static VisibilityValue of(String s) {
 			try {
-				return valueOf(s.toUpperCase());
+				return valueOf(s.toUpperCase(Locale.ENGLISH));
 			} catch (Exception e) {
 				return DEFAULT;
 			}
@@ -142,32 +143,34 @@ public class MessageVisibility {
 		return getVisibility(VisibilityKey.DEATH);
 	}
 
+	@SuppressWarnings("EnumOrdinal")
 	public int commandVisibility(CommandSender sender, String category) throws WrapperCommandSyntaxException {
 		VisibilityKey visibilityKey = VisibilityKey.of(category);
 		if (visibilityKey != null) {
 			VisibilityValue value = getVisibility(visibilityKey);
 			sender.sendMessage(Component.empty()
-			    .append(Component.text(category, NamedTextColor.AQUA, TextDecoration.BOLD))
-			    .append(Component.text(" is set to ", NamedTextColor.GRAY))
-			    .append(Component.text(value.getValue(), NamedTextColor.AQUA, TextDecoration.BOLD))
-			    .append(Component.text(".", NamedTextColor.GRAY)));
+				.append(Component.text(category, NamedTextColor.AQUA, TextDecoration.BOLD))
+				.append(Component.text(" is set to ", NamedTextColor.GRAY))
+				.append(Component.text(value.getValue(), NamedTextColor.AQUA, TextDecoration.BOLD))
+				.append(Component.text(".", NamedTextColor.GRAY)));
 			return value.ordinal();
 		}
 
 		throw CommandUtils.fail(sender, "No such visibility category: " + category);
 	}
 
+	@SuppressWarnings("EnumOrdinal")
 	public int commandVisibility(CommandSender sender, String category, String value) throws WrapperCommandSyntaxException {
 		VisibilityKey visibilityKey = VisibilityKey.of(category);
 		if (visibilityKey != null) {
 			VisibilityValue visibilityValue = VisibilityValue.of(value);
 			setVisibility(visibilityKey, visibilityValue);
 			sender.sendMessage(Component.empty()
-			    .append(Component.text("Set ", NamedTextColor.GRAY))
-			    .append(Component.text(category, NamedTextColor.AQUA, TextDecoration.BOLD))
-			    .append(Component.text(" to ", NamedTextColor.GRAY))
-			    .append(Component.text(value, NamedTextColor.AQUA, TextDecoration.BOLD))
-			    .append(Component.text(".", NamedTextColor.GRAY)));
+				.append(Component.text("Set ", NamedTextColor.GRAY))
+				.append(Component.text(category, NamedTextColor.AQUA, TextDecoration.BOLD))
+				.append(Component.text(" to ", NamedTextColor.GRAY))
+				.append(Component.text(value, NamedTextColor.AQUA, TextDecoration.BOLD))
+				.append(Component.text(".", NamedTextColor.GRAY)));
 			return visibilityValue.ordinal();
 		}
 
